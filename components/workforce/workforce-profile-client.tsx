@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Icon, Badge } from "@/components/primitives";
 import { AgencyShell } from "@/components/agency-shell";
+import { EntityActivityPanel } from "@/components/activity/entity-activity-panel";
 import { updateHealthcareProfessionalAction } from "@/actions/workforce/update-professional";
 import { deactivateProfessionalAction } from "@/actions/workforce/deactivate-professional";
 import { getProfessionalInviteLinkAction } from "@/actions/workforce/get-professional-invite-link";
@@ -318,6 +319,11 @@ export function WorkforceProfileClient({
           )}
         </section>
       </div>
+
+      <EntityActivityPanel
+        entityType="healthcare_professional"
+        entityId={profile.id}
+      />
 
       {editOpen ? (
         <div

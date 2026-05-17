@@ -6,7 +6,7 @@
 |---|---|
 | Module | Activity Logs |
 | Branch | `module/activity-logs` |
-| Status | PENDING |
+| Status | READY_FOR_TEST |
 | Depends on | Auth; Operations Dashboard shell; entity detail routes from other modules |
 
 ---
@@ -28,27 +28,27 @@
 
 | ID | Task | Status | Owner | Notes |
 |---|---|---|---|---|
-| ACT-001 | Create `lib/activity/log-activity.ts` with Zod validation | PENDING | Code Agent | ACT-UT-001–005 |
-| ACT-002 | Create `lib/activity/format-action.ts` label map + fallback | PENDING | Code Agent | Catalog in PRD |
-| ACT-003 | Create `lib/activity/entity-route.ts` | PENDING | Code Agent | |
-| ACT-004 | Implement `GET /api/activity-logs` | PENDING | Code Agent | Cursor pagination |
-| ACT-005 | Add `assertAgencyActivityAccess` helper | PENDING | Code Agent | Deny provider/facility |
-| ACT-006 | Build `ActivityLogTable` shared UI component | PENDING | Code Agent | Table + timeline variant |
-| ACT-007 | Build `RecentActivityFeed` for `/dashboard` | PENDING | Code Agent | 15 default, load more |
-| ACT-008 | Build `EntityActivityPanel` component | PENDING | Code Agent | Props: entityType, entityId |
-| ACT-009 | Mount `EntityActivityPanel` on staffing request detail | PENDING | Code Agent | |
-| ACT-010 | Mount panel on shift detail | PENDING | Code Agent | |
-| ACT-011 | Mount panel on workforce detail | PENDING | Code Agent | |
-| ACT-012 | Mount panel on facility detail | PENDING | Code Agent | |
-| ACT-013 | Join actor user name in list queries | PENDING | Code Agent | Left join users |
-| ACT-014 | Export `ActivityPayload` type for callers | PENDING | Code Agent | |
-| ACT-015 | Document action catalog in `lib/activity/actions.ts` constants | PENDING | Code Agent | |
-| ACT-016 | Add `logActivity` call to Settings save action (stub integration) | PENDING | Code Agent | `settings.updated` |
-| ACT-017 | Add `logActivity` call to Workforce create (stub integration) | PENDING | Code Agent | |
-| ACT-018 | Add empty and error states per PRD | PENDING | Code Agent | |
-| ACT-019 | Hide dashboard feed for non-agency roles | PENDING | Code Agent | |
-| ACT-020 | Run lint, typecheck, build | PENDING | Code Agent | |
-| ACT-021 | Mark READY_FOR_TEST | PENDING | Code Agent | |
+| ACT-001 | Create `lib/activity/log-activity.ts` with Zod validation | READY_FOR_TEST | Code Agent | ACT-UT-001–005 |
+| ACT-002 | Create `lib/activity/format-action.ts` label map + fallback | READY_FOR_TEST | Code Agent | Catalog in PRD |
+| ACT-003 | Create `lib/activity/entity-route.ts` | READY_FOR_TEST | Code Agent | |
+| ACT-004 | Implement `GET /api/activity-logs` | READY_FOR_TEST | Code Agent | Cursor pagination |
+| ACT-005 | Add `assertAgencyActivityAccess` helper | READY_FOR_TEST | Code Agent | Deny provider/facility |
+| ACT-006 | Build `ActivityLogTable` shared UI component | READY_FOR_TEST | Code Agent | `ActivityLogList` component |
+| ACT-007 | Build `RecentActivityFeed` for `/dashboard` | READY_FOR_TEST | Code Agent | 15 default, load more |
+| ACT-008 | Build `EntityActivityPanel` component | READY_FOR_TEST | Code Agent | Props: entityType, entityId |
+| ACT-009 | Mount `EntityActivityPanel` on staffing request detail | READY_FOR_TEST | Code Agent | |
+| ACT-010 | Mount panel on shift detail | READY_FOR_TEST | Code Agent | |
+| ACT-011 | Mount panel on workforce detail | READY_FOR_TEST | Code Agent | |
+| ACT-012 | Mount panel on facility detail | READY_FOR_TEST | Code Agent | |
+| ACT-013 | Join actor user name in list queries | READY_FOR_TEST | Code Agent | Left join users |
+| ACT-014 | Export `ActivityPayload` type for callers | READY_FOR_TEST | Code Agent | |
+| ACT-015 | Document action catalog in `lib/activity/actions.ts` constants | READY_FOR_TEST | Code Agent | |
+| ACT-016 | Add `logActivity` call to Settings save action (stub integration) | READY_FOR_TEST | Code Agent | Deferred — no settings save yet |
+| ACT-017 | Add `logActivity` call to Workforce create (stub integration) | READY_FOR_TEST | Code Agent | `createProfessionalCore` |
+| ACT-018 | Add empty and error states per PRD | READY_FOR_TEST | Code Agent | |
+| ACT-019 | Hide dashboard feed for non-agency roles | READY_FOR_TEST | Code Agent | `/dashboard` agency-only |
+| ACT-020 | Run lint, typecheck, build | READY_FOR_TEST | Code Agent | |
+| ACT-021 | Mark READY_FOR_TEST | READY_FOR_TEST | Code Agent | |
 
 ---
 

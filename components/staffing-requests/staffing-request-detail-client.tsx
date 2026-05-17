@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Icon, Badge } from "@/components/primitives";
 import { AgencyShell } from "@/components/agency-shell";
+import { EntityActivityPanel } from "@/components/activity/entity-activity-panel";
 import { transitionStaffingRequestStatusAction } from "@/actions/staffing-requests/transition-status";
 import { publishStaffingRequestDraftAction } from "@/actions/staffing-requests/publish-draft";
 import {
@@ -337,6 +338,8 @@ export function StaffingRequestDetailClient({
           </div>
         </section>
       ) : null}
+
+      <EntityActivityPanel entityType="staffing_request" entityId={request.id} />
 
       {cancelOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4">

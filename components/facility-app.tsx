@@ -81,8 +81,6 @@ function Shell({ active, setActive, children, onCreate }:any) {
     { id:"create",   l:"New Request",       i:"plus" },
     { id:"tracking", l:"Status Tracking",   i:"git-branch" },
     { id:"staff",    l:"Assigned Staff",    i:"users", badge:"7" },
-    { id:"messages", l:"Messages",          i:"message-circle", dot:true },
-    { id:"settings", l:"Facility Settings", i:"settings-2" },
   ];
   return (
     <div className="min-h-screen flex bg-paper">
@@ -105,7 +103,6 @@ function Shell({ active, setActive, children, onCreate }:any) {
               <Icon name={n.i} className="w-4 h-4" />
               <span className="flex-1 text-left">{n.l}</span>
               {n.badge && <span className={`text-[10px] font-mono px-1.5 h-4 rounded inline-flex items-center ${active === n.id ? "bg-paper/20 text-paper" : "bg-ink-100 text-ink-600"}`}>{n.badge}</span>}
-              {n.dot && <Dot tone="red" pulse />}
             </button>
           ))}
         </nav>
