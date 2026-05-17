@@ -1,31 +1,90 @@
+import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/drizzle/db";
-import { AgencyTable } from "@/drizzle/schema";
+import { AgencyTable, UserTable } from "@/drizzle/schema";
 import { OpsApp } from "@/components/ops-app";
 import { OnboardingBanner } from "@/components/onboarding-banner";
+import {
+  getDashboardSummary,
+  getActiveRequests,
+  getAvailableWorkforce,
+  getActivityFeed,
+} from "@/lib/dashboard/queries";
 
 export default async function DashboardPage() {
   const session = await auth();
-  const primaryRole = session?.user?.primaryRole;
-  const agencyId = session?.user?.agencyId;
+  const primaryRole = session?.user?.primaryRole ?? null;
+  const agencyId = session?.user?.agencyId ?? null;
+  const userId = session?.user?.id ?? null;
 
-  let showBanner = false;
+  if (!userId || !agencyId) redirect("/login");
 
-  if (agencyId && (primaryRole === "agency_owner" || primaryRole === "agency_admin")) {
-    const agencies = await db
-      .select({ onboardingCompletedAt: AgencyTable.onboardingCompletedAt })
-      .from(AgencyTable)
-      .where(eq(AgencyTable.id, agencyId))
-      .limit(1);
+  const [agency, user, summary, activeRequests, availableWorkforce, activityFeed] =
+    await Promise.all([
+      db
+        .select({
+          name: AgencyTable.name,
+          onboardingCompletedAt: AgencyTable.onboardingCompletedAt,
+        })
+        .from(AgencyTable)
+        .where(eq(AgencyTable.id, agencyId))
+        .limit(1)
+        .then(([r]) => r ?? null),
+      db
+        .select({ name: UserTable.name })
+        .from(UserTable)
+        .where(eq(UserTable.id, userId))
+        .limit(1)
+        .then(([r]) => r ?? null),
+      getDashboardSummary(agencyId),
+      getActiveRequests(agencyId),
+      getAvailableWorkforce(agencyId),
+      getActivityFeed(agencyId),
+    ]);
 
-    showBanner = !agencies[0]?.onboardingCompletedAt;
-  }
+  if (!agency) redirect("/login");
+
+  const showBanner =
+    !agency.onboardingCompletedAt &&
+    (primaryRole === "agency_owner" || primaryRole === "agency_admin");
+
+  const userName = user?.name ?? "Team Member";
+  const userInitials = userName
+    .split(" ")
+    .map((s: string) => s[0] ?? "")
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  const serializedRequests = activeRequests.map((r) => ({
+    ...r,
+    updatedAt: r.updatedAt.toISOString(),
+  }));
+
+  const serializedWorkforce = availableWorkforce.map((p) => ({
+    ...p,
+    lastShiftAt: p.lastShiftAt ? new Date(p.lastShiftAt).toISOString() : null,
+  }));
+
+  const serializedActivity = activityFeed.map((a) => ({
+    ...a,
+    createdAt: a.createdAt.toISOString(),
+  }));
 
   return (
     <>
       {showBanner && <OnboardingBanner />}
-      <OpsApp />
+      <OpsApp
+        agencyName={agency.name}
+        userName={userName}
+        userInitials={userInitials}
+        primaryRole={primaryRole ?? "staffing_coordinator"}
+        summary={summary}
+        activeRequests={serializedRequests}
+        availableWorkforce={serializedWorkforce}
+        activityFeed={serializedActivity}
+      />
     </>
   );
 }

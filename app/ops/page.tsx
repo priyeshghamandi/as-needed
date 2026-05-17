@@ -1,5 +1,5 @@
-import { OpsApp } from "@/components/ops-app";
+import { redirect } from "next/navigation";
 
 export default function OpsPage() {
-  return <OpsApp />;
+  redirect("/dashboard");
 }

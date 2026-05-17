@@ -18,7 +18,7 @@ export function getPostLoginRedirect(roles: ScopedRole[]): string {
     return "/dashboard";
   }
 
-  return "/login";
+  return "/dashboard";
 }
 
 export function getUnauthorizedRedirect(roles: ScopedRole[]): string {
