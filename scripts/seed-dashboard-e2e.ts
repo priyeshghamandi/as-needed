@@ -167,7 +167,12 @@ async function main() {
     "compliance_manager",
     agencyAId,
   );
-  await createUser("e2e-dash-provider@example.com", "E2E Provider", "provider", null);
+  const providerUserId = await createUser(
+    "e2e-dash-provider@example.com",
+    "E2E Provider",
+    "provider",
+    null,
+  );
   await createUser(
     "e2e-dash-facility@example.com",
     "E2E Facility User",
@@ -298,6 +303,7 @@ async function main() {
       startAt: new Date(shiftBase),
       endAt: new Date(shiftBase + 8 * 60 * 60 * 1000),
       status: "open",
+      requiredCount: reqId === requestIds[0] ? 5 : 1,
     });
   }
 
@@ -314,9 +320,10 @@ async function main() {
     status: "open",
   });
 
+  const E2E_PROVIDER_PRO_ID = "e2e00000-0000-4000-8000-0000000000a1";
   const pros: string[] = [];
   const proDefs = [
-    { firstName: "Jane", lastName: "Smith", availabilityStatus: "available" as const, email: "jane.smith.e2e@example.com" },
+    { id: E2E_PROVIDER_PRO_ID, firstName: "Jane", lastName: "Smith", availabilityStatus: "available" as const, email: "jane.smith.e2e@example.com", userId: providerUserId },
     { firstName: "Pro2", lastName: "E2E", availabilityStatus: "available" as const, email: "pro2.e2e@example.com" },
     { firstName: "Pro3", lastName: "E2E", availabilityStatus: "unavailable" as const, email: null },
   ];
@@ -324,6 +331,8 @@ async function main() {
     const [p] = await db
       .insert(HealthcareProfessionalTable)
       .values({
+        ...( "id" in def && def.id ? { id: def.id } : {}),
+        ...( "userId" in def && def.userId ? { userId: def.userId } : {}),
         agencyId: agencyAId,
         firstName: def.firstName,
         lastName: def.lastName,
@@ -401,7 +410,7 @@ async function main() {
 
   console.log("Dashboard E2E seed complete.");
   console.log(
-    `Agency A: ${agencyAId}, Agency B: ${agencyBId}, Agency B pro: ${AGENCY_B_PRO_ID}, Agency B facility: ${AGENCY_B_FACILITY_ID}, Agency B request: e2e00000-0000-4000-8000-000000000011, Agency B shift: e2e00000-0000-4000-8000-000000000012, draft: ${draftRequest.id}`,
+    `Agency A: ${agencyAId}, Agency B: ${agencyBId}, Agency B pro: ${AGENCY_B_PRO_ID}, provider pro: e2e00000-0000-4000-8000-0000000000a1, Agency B facility: ${AGENCY_B_FACILITY_ID}, Agency B request: e2e00000-0000-4000-8000-000000000011, Agency B shift: e2e00000-0000-4000-8000-000000000012, draft: ${draftRequest.id}`,
   );
 }
 
