@@ -44,6 +44,9 @@ async function main() {
   await db.execute(
     sql`ALTER TABLE "healthcare_professionals" ADD COLUMN IF NOT EXISTS "place_id" varchar(255)`,
   );
+  await db.execute(
+    sql`ALTER TABLE "credentials" ADD COLUMN IF NOT EXISTS "review_notes" text`,
+  );
 
   const passwordHash = await hashPassword(PASSWORD);
 
@@ -480,20 +483,76 @@ async function main() {
     },
   ]);
 
+  const in20Days = new Date();
+  in20Days.setDate(in20Days.getDate() + 20);
+  const in20DaysStr = in20Days.toISOString().slice(0, 10);
+  const pastDate = new Date();
+  pastDate.setDate(pastDate.getDate() - 10);
+  const pastDateStr = pastDate.toISOString().slice(0, 10);
+
+  const E2E_CRED_PENDING = "e2e00000-0000-4000-8000-0000000000c1";
+  const E2E_CRED_VERIFIED = "e2e00000-0000-4000-8000-0000000000c2";
+  const E2E_CRED_EXPIRING = "e2e00000-0000-4000-8000-0000000000c3";
+  const E2E_CRED_EXPIRED = "e2e00000-0000-4000-8000-0000000000c4";
+  const E2E_CRED_REJECTED = "e2e00000-0000-4000-8000-0000000000c5";
+  const E2E_CRED_AGENCY_B = "e2e00000-0000-4000-8000-0000000000c6";
+
   await db.insert(CredentialTable).values([
     {
+      id: E2E_CRED_PENDING,
+      agencyId: agencyAId,
+      professionalId: pros[1],
+      type: "cert",
+      name: "BLS Certification",
+      licenseNumber: "BLS-001",
+      status: "pending_review",
+    },
+    {
+      id: E2E_CRED_VERIFIED,
       agencyId: agencyAId,
       professionalId: pros[0],
       type: "license",
       name: "RN License",
-      status: "expiring_soon",
+      licenseNumber: "RN-12345",
+      status: "verified",
+      expiresAt: in20DaysStr,
+      verifiedAt: new Date(),
+      verifiedByUserId: ownerAId,
     },
     {
+      id: E2E_CRED_EXPIRING,
       agencyId: agencyAId,
-      professionalId: pros[1],
+      professionalId: pros[0],
       type: "cert",
-      name: "BLS",
-      status: "pending_review",
+      name: "ACLS",
+      status: "expiring_soon",
+      expiresAt: in20DaysStr,
+    },
+    {
+      id: E2E_CRED_EXPIRED,
+      agencyId: agencyAId,
+      professionalId: pros[2],
+      type: "license",
+      name: "Expired License",
+      status: "expired",
+      expiresAt: pastDateStr,
+    },
+    {
+      id: E2E_CRED_REJECTED,
+      agencyId: agencyAId,
+      professionalId: pros[2],
+      type: "cert",
+      name: "Rejected Cert",
+      status: "rejected",
+      reviewNotes: "Document illegible for E2E seed.",
+    },
+    {
+      id: E2E_CRED_AGENCY_B,
+      agencyId: agencyBId,
+      professionalId: AGENCY_B_PRO_ID,
+      type: "license",
+      name: "Other Agency License",
+      status: "verified",
     },
   ]);
 

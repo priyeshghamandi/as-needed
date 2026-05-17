@@ -15,6 +15,13 @@
       "when": 1778996948774,
       "tag": "0001_mysterious_orphan",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779100000000,
+      "tag": "0003_credentials_review_notes",
+      "breakpoints": true
     }
   ]
 }

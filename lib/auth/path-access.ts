@@ -1,7 +1,9 @@
+import { canViewCompliance } from "@/lib/auth/compliance-access-rules";
 import {
   isAgencyRole,
   isFacilityRole,
   isProviderRole,
+  pickPrimaryRole,
   type ScopedRole,
 } from "@/lib/auth/roles";
 
@@ -48,6 +50,12 @@ export function canAccessPath(pathname: string, roles: ScopedRole[]): boolean {
   if (isAgencyPath && !hasAgency) return false;
   if (isProviderPath && !hasProvider) return false;
   if (isFacilityPath && !hasFacility) return false;
+
+  const isCompliancePath =
+    pathname === "/compliance" || pathname.startsWith("/compliance/");
+  if (isCompliancePath && hasAgency) {
+    return canViewCompliance(pickPrimaryRole(roles));
+  }
 
   return true;
 }

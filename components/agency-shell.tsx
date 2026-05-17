@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon, Avatar } from "@/components/primitives";
+import { canViewCompliance } from "@/lib/auth/compliance-access-rules";
 
 const NAV = [
   { id: "dashboard", href: "/dashboard", label: "Dashboard", icon: "layout-grid" },
@@ -33,6 +34,7 @@ export function AgencyShell({
   subtitle,
   children,
   headerAction,
+  primaryRole,
 }: {
   agencyName: string;
   userName: string;
@@ -41,8 +43,12 @@ export function AgencyShell({
   subtitle?: string;
   children: React.ReactNode;
   headerAction?: React.ReactNode;
+  primaryRole?: string | null;
 }) {
   const pathname = usePathname();
+  const navItems = NAV.filter(
+    (n) => n.id !== "compliance" || canViewCompliance(primaryRole),
+  );
   const agencyInitials = agencyName
     .split(/\s+/)
     .slice(0, 2)
@@ -71,7 +77,7 @@ export function AgencyShell({
           </div>
         </div>
         <nav className="px-2 mt-3 flex flex-col gap-px">
-          {NAV.map((n) => {
+          {navItems.map((n) => {
             const active = activeNav === n.id;
             return (
               <Link

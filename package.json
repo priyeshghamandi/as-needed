@@ -28,6 +28,8 @@
     "test:e2e:matching": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/matching",
     "test:unit:provider": "vitest run lib/validations/availability-block.test.ts lib/provider app/api/provider",
     "test:e2e:provider": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/provider-portal",
+    "test:unit:compliance": "vitest run lib/validations/credential.test.ts lib/compliance lib/auth/compliance-access-rules lib/auth/compliance-access.test.ts lib/auth/compliance-path-access.test.ts app/api/compliance",
+    "test:e2e:compliance": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/compliance",
     "test:e2e": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/dashboard",
     "test:e2e:onboarding": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/onboarding",
     "test:e2e:ui": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/dashboard --ui",
