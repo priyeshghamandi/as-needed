@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { StaffingRequestDetailClient } from "@/components/staffing-requests/staffing-request-detail-client";
+import { getMatchCandidates } from "@/lib/matching/candidate-query";
 import { loadStaffingRequestsPageContext } from "@/lib/staffing-requests/load-page-context";
 import { getStaffingRequestDetail } from "@/lib/staffing-requests/queries";
 
@@ -13,6 +14,12 @@ export default async function StaffingRequestDetailPage({ params }: PageProps) {
   const detail = await getStaffingRequestDetail(ctx.agencyId, id);
 
   if (!detail) notFound();
+
+  const primaryShiftId = detail.shifts[0]?.id ?? "";
+  const suggestedCandidates =
+    primaryShiftId && !["cancelled", "draft", "completed"].includes(detail.status)
+      ? await getMatchCandidates(ctx.agencyId, id, primaryShiftId, { limit: 5 })
+      : [];
 
   const serialized = {
     id: detail.id,
@@ -45,6 +52,8 @@ export default async function StaffingRequestDetailPage({ params }: PageProps) {
       userInitials={ctx.userInitials}
       primaryRole={ctx.primaryRole}
       request={serialized}
+      primaryShiftId={primaryShiftId}
+      suggestedCandidates={suggestedCandidates}
     />
   );
 }

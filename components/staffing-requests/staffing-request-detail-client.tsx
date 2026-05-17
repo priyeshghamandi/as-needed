@@ -7,7 +7,10 @@ import { Icon, Badge } from "@/components/primitives";
 import { AgencyShell } from "@/components/agency-shell";
 import { transitionStaffingRequestStatusAction } from "@/actions/staffing-requests/transition-status";
 import { publishStaffingRequestDraftAction } from "@/actions/staffing-requests/publish-draft";
-import { canManageStaffingRequests } from "@/lib/auth/staffing-requests-access-rules";
+import {
+  canManageStaffingRequests,
+  canViewStaffingRequests,
+} from "@/lib/auth/staffing-requests-access-rules";
 import { formatShiftWindow } from "@/lib/staffing-requests/shift-datetime";
 import {
   PriorityBadge,
@@ -15,6 +18,8 @@ import {
   StatusBadge,
 } from "@/lib/staffing-requests/staffing-requests-ui";
 import { facilityTypeLabel } from "@/lib/facilities/facilities-ui";
+import { SuggestedMatchesPanel } from "@/components/matching/suggested-matches-panel";
+import type { MatchCandidateRow } from "@/lib/matching/types";
 
 export type SerializedStaffingRequestDetail = {
   id: string;
@@ -55,15 +60,20 @@ export function StaffingRequestDetailClient({
   userInitials,
   primaryRole,
   request,
+  primaryShiftId,
+  suggestedCandidates = [],
 }: {
   agencyName: string;
   userName: string;
   userInitials: string;
   primaryRole: string;
   request: SerializedStaffingRequestDetail;
+  primaryShiftId?: string;
+  suggestedCandidates?: MatchCandidateRow[];
 }) {
   const router = useRouter();
   const canWrite = canManageStaffingRequests(primaryRole);
+  const canViewMatch = canViewStaffingRequests(primaryRole);
   const [toast, setToast] = useState<string | null>(null);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [status, setStatus] = useState(request.status);
@@ -74,6 +84,8 @@ export function StaffingRequestDetailClient({
   const [publishEndTime, setPublishEndTime] = useState("15:00");
 
   const canStartMatching = ["open", "partially_filled", "at_risk"].includes(status);
+  const canOpenMatchWorkspace =
+    Boolean(primaryShiftId) && !["draft", "cancelled", "completed"].includes(status);
   const canCancel = !["completed", "cancelled"].includes(status);
   const isDraft = status === "draft";
 
@@ -175,12 +187,12 @@ export function StaffingRequestDetailClient({
             Cancel request
           </button>
         ) : null}
-        {status === "matching" ? (
+        {canViewMatch && canOpenMatchWorkspace ? (
           <Link
-            href={`/staffing-requests/${request.id}/match`}
+            href={`/staffing-requests/${request.id}/match?shiftId=${primaryShiftId}`}
             className="h-9 px-3 inline-flex items-center rounded-md border border-ink-200 text-[13px] text-teal-700"
           >
-            Open matching
+            Match professionals
           </Link>
         ) : null}
       </div>
@@ -262,6 +274,15 @@ export function StaffingRequestDetailClient({
           ) : null}
         </section>
       </div>
+
+      {primaryShiftId && !isDraft && status !== "cancelled" ? (
+        <SuggestedMatchesPanel
+          requestId={request.id}
+          shiftId={primaryShiftId}
+          primaryRole={primaryRole}
+          candidates={suggestedCandidates}
+        />
+      ) : null}
 
       <section className="rounded-xl border border-ink-200 bg-white p-5">
         <h2 className="text-[14px] font-medium tracking-tight">Shifts</h2>
