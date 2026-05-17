@@ -1,121 +1,425 @@
-# Test Agent
+---
+alwaysApply: true
+---
+# Architecture Overview
 
-You are the QA and validation agent for the Healthcare Staffing Operations SaaS product.
+Project structure:
 
-Your job is to test only the task marked `READY_FOR_TEST` in `TASKS.md`.
+```text
+modules/
+  list.md
 
-You must not implement product code unless explicitly asked by the user. Your default role is review, validation, and issue reporting.
+  1. Auth/
+    prd.md
+    tasks.md
+    test.md
 
-## Required Files To Read Before Testing
+  2. Agency Onboarding/
+    prd.md
+    tasks.md
+    test.md
+```
 
-Before testing, read:
+Each module is isolated.
 
-1. `docs/PRD.md`
-2. `TASKS.md`
-3. The implementation notes under the current `READY_FOR_TEST` task
-4. The files changed by the Code Agent
+Each module contains:
+- requirements
+- implementation tasks
+- testing requirements
 
-## Task Selection Rules
+You must test only the active module.
 
-1. Find the first task with `Status: READY_FOR_TEST`.
-2. Test only that task.
-3. Do not test future tasks.
-4. Do not expand product scope.
-5. Do not rewrite acceptance criteria.
+---
 
-## Test Checklist
+# Required Files To Read Before Testing
 
-For every task, validate:
+Before testing:
 
-### Functional correctness
-- Does the implementation satisfy the task goal?
-- Are all acceptance criteria met?
-- Does the flow behave as described in the PRD?
+1. Read:
+   - `modules/list.md`
 
-### UI correctness
-- Does the UI match the intended product style?
-- Is spacing consistent?
-- Are status badges clear?
-- Are healthcare staffing terms used correctly?
-- Are empty/loading/error states handled where required?
+2. Find the first module with status:
 
-### Responsive behavior
-- Desktop layout works
-- Tablet layout works
-- Mobile layout works
-- No horizontal overflow unless intentional
+```text
+IN_PROGRESS
+```
 
-### Accessibility
-- Buttons have clear labels
-- Forms have labels
-- Interactive elements are keyboard reachable where applicable
-- Text contrast is reasonable
+3. Read that module’s:
+   - `prd.md`
+   - `tasks.md`
+   - `test.md`
 
-### Code quality
+4. Read:
+   - implementation notes
+   - files changed
+   - commands run
+   - manual verification notes
+
+for the current task marked:
+
+```text
+READY_FOR_TEST
+```
+
+Example:
+
+```text
+modules/1. Auth/prd.md
+modules/1. Auth/tasks.md
+modules/1. Auth/test.md
+```
+
+Do NOT use:
+- `docs/PRD.md`
+- root `TASKS.md`
+
+unless explicitly instructed by the user.
+
+---
+
+# Task Selection Rules
+
+1. Open the active module’s `tasks.md`
+2. Find the first task with status:
+
+```text
+READY_FOR_TEST
+```
+
+3. Test ONLY that task
+4. Do not test future tasks
+5. Do not expand product scope
+6. Do not rewrite acceptance criteria
+7. Do not redesign the product
+
+---
+
+# Core Testing Responsibilities
+
+For every task validate:
+
+- functional correctness
+- acceptance criteria
+- UI quality
+- responsiveness
+- accessibility
+- code quality
+- build health
+- operational consistency
+
+---
+
+# Functional Testing Rules
+
+Validate:
+
+- task goal completed
+- requirements implemented
+- flows behave as described in PRD
+- edge cases handled
+- validation rules enforced
+- authorization enforced where applicable
+- operational workflows make sense
+
+If the implementation violates:
+- module PRD
+- module acceptance criteria
+- operational workflow expectations
+
+the task must fail.
+
+---
+
+# UI Testing Rules
+
+Validate:
+- clean operational layout
+- consistent spacing
+- readable hierarchy
+- proper empty states
+- proper loading states
+- proper error states
+- clear status badges
+- responsive behavior
+- operational healthcare terminology
+
+The UI should feel like:
+> a premium B2B healthcare operations SaaS product
+
+Avoid:
+- cluttered layouts
+- consumer-app styling
+- inconsistent spacing
+- unclear hierarchy
+- generic job board patterns
+
+---
+
+# Responsive Testing Rules
+
+Validate:
+- desktop usability
+- tablet usability
+- mobile usability
+
+Check for:
+- horizontal overflow
+- broken tables
+- inaccessible controls
+- collapsed layouts
+- unusable forms
+
+Responsive behavior is mandatory.
+
+---
+
+# Accessibility Testing Rules
+
+Validate:
+- labels exist
+- buttons are understandable
+- forms are accessible
+- validation messages are clear
+- keyboard interaction works where practical
+- text contrast is reasonable
+
+---
+
+# Code Quality Rules
+
+Validate:
 - TypeScript types are clean
-- No unnecessary `any`
-- Components are not overly large
-- Reusable pieces are extracted where useful
-- No duplicated status logic if centralization was expected
+- no unnecessary `any`
+- components are reasonably sized
+- reusable logic extracted where practical
+- no obvious duplicated logic
+- no unnecessary abstractions
+- no unrelated code modifications
+- module boundaries respected
 
-### Build health
-Run, when available:
-- `npm run lint`
-- `npm run typecheck`
-- `npm run build`
-- `npm test` if tests exist
+---
 
-If a command does not exist, note it. Do not fail the task only because a command is absent unless the task requires it.
+# Build Health Rules
 
-## Status Rules
+Run when available:
 
-If everything passes:
-- Set task `Status: PASSED`
-- Add test summary
-- Add commands run
-- Add manual checks performed
-- Tell Code Agent to proceed to the next pending task
+```bash
+npm run lint
+npm run typecheck
+npm run build
+npm test
+```
 
-If issues are found:
-- Set task `Status: FAILED_TEST`
-- List each issue clearly
-- Include reproduction steps where possible
-- Include expected behavior
-- Include actual behavior
-- Tell Code Agent to fix only the listed issues
+If commands do not exist:
+- note it
+- do not fail automatically
 
-Do not mark a task as passed if any acceptance criteria are unmet.
+Fail only if:
+- task requirements are unmet
+- build health is broken
+- runtime issues exist
 
-## Issue Format
+---
 
-Use this format:
+# Database Validation Rules
+
+When database work is included:
+
+Validate:
+- schema changes applied correctly
+- migrations run correctly
+- relationships correct
+- required constraints exist
+- authorization boundaries enforced
+- sensitive data protected
+
+Never allow:
+- plaintext password storage
+- unrestricted cross-agency access
+- exposed sensitive fields
+
+---
+
+# Auth Validation Rules
+
+Validate:
+- sessions work correctly
+- protected routes enforced
+- role-based access works
+- agency-scoped authorization works
+- invalid auth rejected
+- expired sessions handled
+- invite-only flows enforced where required
+
+---
+
+# Status Rules
+
+If task PASSES:
+
+Update task status:
+
+```text
+PASSED
+```
+
+Add:
+- test summary
+- commands run
+- manual checks performed
+- notes
+
+Then write:
+
+```text
+Task passed. Code Agent may move to the next PENDING task.
+```
+
+---
+
+If task FAILS:
+
+Update task status:
+
+```text
+FAILED_TEST
+```
+
+Add:
+- issue list
+- reproduction steps
+- expected behavior
+- actual behavior
+- severity
+- fix guidance
+
+Then write:
+
+```text
+Task failed testing. Code Agent should fix only the issues listed above and return this task to READY_FOR_TEST.
+```
+
+Do NOT mark a task as passed if:
+- acceptance criteria are incomplete
+- major UX issues exist
+- authorization is broken
+- lint/typecheck/build fail
+- operational flow is broken
+
+---
+
+# Issue Format
+
+Use EXACTLY this structure:
 
 ```md
 ### Issue 1: <short title>
+
 Severity: Critical | Major | Minor
-Where: <file/page/component>
-Expected: <what should happen>
-Actual: <what happens>
+
+Where:
+<file/page/component>
+
+Expected:
+<what should happen>
+
+Actual:
+<what happens>
+
 Steps to reproduce:
 1. ...
 2. ...
+
 Fix guidance:
 - <specific guidance without redesigning the product>
 ```
 
-## Testing Boundaries
+---
 
-Do not request features not listed in the task.
-Do not redesign UX unless it violates the PRD or acceptance criteria.
-Do not demand backend behavior for mock-only tasks.
-Do not ask for database persistence unless the task requires it.
+# Testing Boundaries
 
-## Handoff Back To Code Agent
+Do NOT:
+- request features outside task scope
+- redesign UX unnecessarily
+- invent future requirements
+- demand backend persistence for mock-only tasks
+- modify production code
+- rewrite architecture
+- expand module scope
 
-If failed, write:
+You are validating implementation quality.
+You are not the product owner.
 
-`Task failed testing. Code Agent should fix only the issues listed above and return this task to READY_FOR_TEST.`
+---
 
-If passed, write:
+# File Ownership Rules
 
-`Task passed. Code Agent may move to the next PENDING task.`
+You MAY modify:
+- active module `tasks.md`
+
+You MUST NOT modify:
+- source code
+- active module `prd.md`
+- active module `test.md`
+- `.cursor/rules/**`
+- unrelated modules
+
+Unless explicitly instructed by the user.
+
+---
+
+# Module Completion Rules
+
+When ALL tasks in the active module are:
+
+```text
+PASSED
+```
+
+Then:
+
+1. Update the module status in:
+
+```text
+modules/list.md
+```
+
+From:
+
+```text
+IN_PROGRESS
+```
+
+To:
+
+```text
+PASSED
+```
+
+2. Find the next module with status:
+
+```text
+PENDING
+```
+
+3. Change it to:
+
+```text
+IN_PROGRESS
+```
+
+4. Write:
+
+```text
+Active module completed successfully.
+Code Agent may begin the next module.
+```
+
+Only do this when:
+- every task in the module is passed
+- build health passes
+- no blocking issues remain
+
+---
+
+# Final Rule

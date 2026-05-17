@@ -1,123 +1,294 @@
-# Code Agent
+---
+alwaysApply: true
+---
+# Architecture Overview
 
-You are the implementation agent for the Healthcare Staffing Operations SaaS product.
+Project structure:
 
-Your job is to implement production-quality code strictly from `docs/PRD.md` and `TASKS.md`.
+```text
+modules/
+  list.md
 
-You must not invent product scope, workflows, routes, entities, or visual behavior outside the approved task.
+  1. Auth/
+    prd.md
+    tasks.md
+    test.md
 
-## Project Context
+  2. Agency Onboarding/
+    prd.md
+    tasks.md
+    test.md
+```
 
-This is a healthcare staffing operations platform.
+Each module is isolated.
 
-Primary customer: staffing agencies.
+Each module contains:
+- requirements
+- implementation tasks
+- testing requirements
 
-Secondary users:
-- Healthcare professionals invited by agencies
-- Facilities/customers connected to agencies
+You must work only inside the active module.
 
-The product helps agencies:
-- manage workforce availability
-- create and fulfill staffing requests
-- coordinate shifts
-- track compliance
-- manage cancellations and exceptions
-- provide visibility to facilities
+---
 
-This is not a job board, ATS, marketplace, payroll system, or generic HR platform.
+# Required Files To Read Before Work
 
-## Tech Stack
+Before starting any work:
+
+1. Read:
+   - `modules/list.md`
+
+2. Find the first module with status:
+
+```text
+IN_PROGRESS
+```
+
+3. Read that module’s:
+   - `prd.md`
+   - `tasks.md`
+   - `test.md`
+
+Example:
+
+```text
+modules/1. Auth/prd.md
+modules/1. Auth/tasks.md
+modules/1. Auth/test.md
+```
+
+Do NOT use:
+- `docs/PRD.md`
+- root `TASKS.md`
+
+unless explicitly instructed by the user.
+
+---
+
+# Task Selection Rules
+
+1. Open the active module’s `tasks.md`
+2. Find the first task with status:
+   - `PENDING`
+   OR
+   - `FAILED_TEST`
+3. Work ONLY on that task
+4. Do not work on future tasks
+5. Do not combine tasks
+6. Do not invent missing product requirements
+7. Do not modify acceptance criteria
+8. If a task is unclear:
+   - stop
+   - write clarification notes into the task
+   - do not guess
+
+---
+
+# Status Rules
+
+When starting a task:
+
+```text
+Status: IN_PROGRESS
+```
+
+When implementation is complete:
+
+```text
+Status: READY_FOR_TEST
+```
+
+Add:
+- summary of what was implemented
+- files changed
+- commands to run
+- manual verification steps
+- known limitations if any
+
+If the Test Agent marks the task:
+
+```text
+FAILED_TEST
+```
+
+Then:
+- fix ONLY the listed issues
+- do not expand scope
+- do not redesign unrelated code
+- set status back to:
+
+```text
+READY_FOR_TEST
+```
+
+Do NOT mark tasks as:
+
+```text
+PASSED
+```
+
+Only the Test Agent may do that.
+
+---
+
+# Git Rules
+
+The current git branch represents the active module.
+
+You must:
+- work only inside the active module branch
+- avoid unrelated module changes
+- avoid cross-module implementation
+
+You may:
+- create commits
+- update the current module branch
+
+You must NOT:
+- merge branches
+- force push
+- rebase shared branches
+- modify unrelated modules
+
+---
+
+# Tech Stack Rules
+
+Use:
 
 - Next.js App Router
 - TypeScript
 - TailwindCSS
 - shadcn/ui
 - lucide-react
-- React Hook Form where forms are needed
-- Zod where validation is needed
+- React Hook Form where forms are required
+- Zod where validation is required
+- Drizzle ORM
+- PostgreSQL
 
-Unless explicitly added later, use mock/static data only. Do not create backend APIs unless a task explicitly asks for them.
+Unless explicitly required:
+- do not add new dependencies
+- do not add external UI libraries
+- do not add state libraries
 
-## Required Files To Read Before Work
+---
 
-Before starting any task, read:
-
-1. `docs/PRD.md`
-2. `TASKS.md`
-3. Any task-specific files mentioned in the selected task
-
-## Task Selection Rules
-
-1. Find the first task in `TASKS.md` with `Status: PENDING`.
-2. Work only on that task.
-3. Do not work on future tasks.
-4. Do not combine tasks.
-5. Do not modify acceptance criteria.
-6. If a task is unclear, stop and write the clarification needed in `TASKS.md` under that task's notes.
-
-## Status Rules
-
-When starting a task:
-- Set `Status: IN_PROGRESS`
-
-When implementation is complete:
-- Set `Status: READY_FOR_TEST`
-- Add implementation notes
-- Add files changed
-- Add manual verification steps
-
-If the Test Agent marks the task `FAILED_TEST`:
-- Fix only the listed issues
-- Do not expand scope
-- Set status back to `READY_FOR_TEST`
-- Add fix notes
-
-Do not mark a task as `PASSED`. Only the Test Agent may do that.
-
-## Coding Rules
+# TypeScript Rules
 
 - Use TypeScript everywhere
-- Prefer reusable components
+- Avoid `any`
+- If `any` is unavoidable:
+  - explain why in task notes
+- Prefer explicit typing
+- Use shared types where possible
+- Avoid duplicate type definitions
+
+---
+
+# Component Rules
+
 - Keep components focused and small
-- Use shadcn/ui components wherever suitable
-- Use lucide-react icons
-- Use Tailwind utility classes
-- Keep mock data in clearly named files when reused
-- Do not hardcode repeated status labels in many places. Centralize status constants where practical
-- Do not create large monolithic components
-- Do not add dependencies without a task explicitly requiring them
-- Do not use `any` unless unavoidable, and explain why in notes
-- Keep forms accessible with labels and validation states
-- Use semantic HTML where possible
-- Ensure responsive behavior for desktop, tablet, and mobile
+- Prefer reusable components
+- Extract repeated UI patterns
+- Avoid large monolithic files
+- Use semantic naming
+- Keep business logic outside UI components where practical
 
-## UI Quality Rules
+---
 
-The UI should feel like a premium B2B SaaS operations product.
+# Form Rules
+
+Forms must:
+- use labels
+- show validation errors
+- handle loading states
+- handle empty states
+- handle error states
+- support keyboard interaction
+- support responsive layouts
+
+Use:
+- React Hook Form
+- Zod validation
+
+where appropriate.
+
+---
+
+# Database Rules
+
+Use:
+- Drizzle ORM
+- PostgreSQL
+
+Do not:
+- write raw SQL unless necessary
+- create duplicate tables
+- create unnecessary abstractions
+- invent future schema prematurely
+
+Database changes must align strictly with:
+- active module PRD
+- active task
+
+---
+
+# Auth Rules
+
+Authentication uses:
+- Auth.js
+- database sessions
+
+Never:
+- store plaintext passwords
+- expose password hashes
+- bypass authorization
+- hardcode auth logic in components
+
+Use:
+- centralized auth helpers
+- centralized authorization checks
+
+---
+
+# UI Quality Rules
+
+The UI must feel like:
+> a premium operational healthcare SaaS platform
 
 Design qualities:
-- clean layout
-- spacious cards
-- clear hierarchy
-- modern operational dashboard feel
-- healthcare blue/teal accents
+- clean
+- spacious
+- operational
+- modern
+- high signal-to-noise ratio
 - readable typography
-- useful empty states
-- clear status badges
-- consistent spacing
+- clear hierarchy
+- clear operational status visibility
 - responsive by default
 
+Preferred style:
+- neutral base
+- healthcare blue/teal accents
+- subtle borders
+- clear tables
+- strong empty states
+- meaningful status badges
+
 Avoid:
-- playful consumer styling
+- consumer-app styling
+- playful gradients
+- excessive animations
 - cluttered admin panels
-- generic HR/job board patterns
-- overly complex animations
+- generic HR/job-board UI patterns
 
-## Domain Language Rules
+---
 
-Use operational healthcare staffing language:
+# Operational Language Rules
 
-Good terms:
+Use healthcare staffing operational language.
+
+Preferred terms:
 - Staffing Request
 - Workforce
 - Healthcare Professional
@@ -126,44 +297,145 @@ Good terms:
 - Assignment
 - Availability
 - Compliance
-- Fulfillment
 - Coordinator
-- Cancellation
+- Fulfillment
 - Operational Alert
+- Cancellation
 
-Avoid terms unless explicitly required:
+Avoid unless explicitly required:
+- Applicant
 - Candidate pipeline
-- Applicant tracking
-- Job post
+- Job board
 - Marketplace listing
-- Payroll run
-- Invoice batch
+- Payroll batch
+- Invoice processing
 
-## File Ownership
+---
 
-You may modify:
+# Responsiveness Rules
+
+Every implementation must support:
+- desktop
+- tablet
+- mobile
+
+Avoid:
+- unintended horizontal scrolling
+- unusable dense tables on mobile
+- inaccessible controls
+
+Responsive behavior is NOT optional.
+
+---
+
+# Accessibility Rules
+
+Ensure:
+- labels exist
+- buttons are understandable
+- keyboard interaction works where practical
+- reasonable color contrast
+- validation messages are readable
+
+---
+
+# Performance Rules
+
+Avoid:
+- unnecessary rerenders
+- huge client components
+- excessive client-side state
+- duplicated fetches
+
+Prefer:
+- server components where practical
+- lean client components
+- reusable utilities
+
+---
+
+# File Ownership Rules
+
+You MAY modify:
 - `app/**`
 - `components/**`
 - `lib/**`
-- `data/**`
+- `db/**`
 - `types/**`
-- `docs/implementation-notes.md` if present
-- `TASKS.md` status/notes only
+- `data/**`
+- active module `tasks.md`
 
-Do not modify:
-- `docs/PRD.md` unless the user explicitly asks
-- `agents/**`
-- test agent instructions
+You MUST NOT modify:
+- active module `prd.md`
+- active module `test.md`
+- `.cursor/rules/**`
+- unrelated module files
+- completed module files
 
-## Handoff To Test Agent
+Unless explicitly instructed by the user.
 
-When done, update the task with:
+---
 
-- `Status: READY_FOR_TEST`
-- Summary of what was built
-- Files changed
-- Commands to run
-- Manual test checklist
-- Known limitations, if any
+# Module Boundary Rules
 
-Then stop. Do not begin the next task.
+You MUST:
+- work only inside the active module
+- avoid future module implementation
+- avoid speculative architecture
+- avoid adding future workflows early
+
+Shared utilities/components are allowed ONLY when:
+- required by the active task
+- reusable immediately
+
+---
+
+# Build Health Rules
+
+Before marking a task:
+
+```text
+READY_FOR_TEST
+```
+
+Ensure relevant checks pass:
+
+```bash
+npm run lint
+npm run typecheck
+npm run build
+```
+
+If a command fails:
+- fix issues before handoff
+- document limitations if unavoidable
+
+---
+
+# Handoff Rules
+
+When implementation is complete:
+
+1. Update active module `tasks.md`
+2. Mark task:
+
+```text
+READY_FOR_TEST
+```
+
+3. Add:
+   - implementation summary
+   - files changed
+   - commands run
+   - manual verification steps
+   - known limitations if any
+
+4. STOP
+
+Do NOT:
+- begin next task
+- expand scope
+- pre-implement future tasks
+
+Wait for Test Agent validation.
+

@@ -3,6 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Icon, Button, Badge, Dot, Eyebrow, Avatar } from "@/components/primitives";
+import { SignOutButton } from "@/components/sign-out-button";
+import { sendTeamInvitesAction } from "@/actions/invites/send-team-invites";
+import { LocationAutocomplete } from "@/components/location-autocomplete";
+import type { AgencyServiceAreaContext } from "@/lib/agency/service-area";
+import type { GeographicLocation } from "@/lib/geographic-location";
 
 type StepId = "welcome" | "team" | "professionals" | "facilities" | "compliance" | "first-request" | "complete";
 const STEPS: { id: StepId; label: string; short: string; icon: string }[] = [
@@ -38,6 +43,7 @@ function Header({ idx, onSkip }: { idx: number; onSkip: () => void }) {
         </a>
         <div className="ml-auto flex items-center gap-3">
           <span className="text-[11px] font-mono text-ink-500 hidden md:inline">Step {idx + 1} of {STEPS.length}</span>
+          <SignOutButton />
           <Avatar initials="LM" tone="teal" size={28} />
           {idx > 0 && idx < STEPS.length - 1 && (
             <button onClick={onSkip} className="text-[12px] font-mono text-ink-500 hover:text-ink-900 px-2 h-7 rounded hover:bg-ink-100">Save & exit</button>
@@ -235,20 +241,105 @@ function Field({ label, sub, children }: any) {
 // ────────────────────────────────────────────────────────────────────────────
 // 2. Team
 // ────────────────────────────────────────────────────────────────────────────
-type TeamRow = { id: number; email: string; role: string };
+type TeamRow = {
+  id: number;
+  email: string;
+  role: string;
+  inviteUrl?: string;
+  inviteStatus?: "sent" | "error";
+  inviteMessage?: string;
+};
 const TEAM_ROLES = ["Staffing Coordinator","Recruiter","Compliance Manager","Operations Manager"];
 
 function TeamStep({ data, set, onBack, onNext, onSkip }: any) {
   const rows: TeamRow[] = data.team.length ? data.team : [{ id: 1, email: "", role: "Staffing Coordinator" }];
+  const [sending, setSending] = useState(false);
+  const [banner, setBanner] = useState<string | null>(null);
 
   function setRows(rs: TeamRow[]) { set({ team: rs }); }
   function update(i: number, patch: Partial<TeamRow>) { setRows(rows.map((r, idx) => idx === i ? { ...r, ...patch } : r)); }
   function add() { setRows([...rows, { id: Date.now(), email: "", role: "Staffing Coordinator" }]); }
   function remove(i: number) { setRows(rows.filter((_, idx) => idx !== i)); }
 
+  const filledRows = rows.filter((r) => r.email.trim().length > 0);
+
+  async function handleContinue() {
+    if (filledRows.length === 0) {
+      onNext();
+      return;
+    }
+
+    setSending(true);
+    setBanner(null);
+
+    const result = await sendTeamInvitesAction({
+      invites: filledRows.map((r) => ({
+        email: r.email.trim(),
+        role: r.role,
+      })),
+    });
+
+    setSending(false);
+
+    if (result.status === "success") {
+      const byEmail = new Map(
+        result.results.map((r) => [r.email.toLowerCase(), r]),
+      );
+      setRows(
+        rows.map((row) => {
+          const match = byEmail.get(row.email.trim().toLowerCase());
+          if (!match) return row;
+          return {
+            ...row,
+            inviteStatus: match.status === "sent" ? "sent" : "error",
+            inviteUrl: match.inviteUrl,
+            inviteMessage: match.message,
+          };
+        }),
+      );
+
+      const sentCount = result.results.filter((r) => r.status === "sent").length;
+      setBanner(
+        `${sentCount} invitation${sentCount === 1 ? "" : "s"} created. Share each invite link with your team (email delivery coming soon).`,
+      );
+      onNext();
+      return;
+    }
+
+    if (result.status === "error") {
+      if (result.results) {
+        const byEmail = new Map(
+          result.results.map((r) => [r.email.toLowerCase(), r]),
+        );
+        setRows(
+          rows.map((row) => {
+            const match = byEmail.get(row.email.trim().toLowerCase());
+            if (!match) return row;
+            return {
+              ...row,
+              inviteStatus: "error" as const,
+              inviteMessage: match.message,
+            };
+          }),
+        );
+      }
+      setBanner(result.message);
+      return;
+    }
+  }
+
   return (
     <StepShell>
       <StepHeader eyebrow="Step 02 · Operations team" heading="Invite your" italic="operations team." sub="Add staffing coordinators, recruiters, compliance staff, and managers. They'll get an email to set up their accounts." />
+
+      {banner && (
+        <div
+          className="mt-6 rounded-lg border border-teal-200 bg-teal-50 px-4 py-3 text-[13px] text-teal-900"
+          role="status"
+        >
+          {banner}
+        </div>
+      )}
 
       <div className="mt-10 grid grid-cols-12 gap-10 items-start">
         <div className="col-span-12 lg:col-span-8">
@@ -260,8 +351,21 @@ function TeamStep({ data, set, onBack, onNext, onSkip }: any) {
             </div>
             {rows.map((r, i) => (
               <div key={r.id} className="grid grid-cols-12 gap-3 items-center px-4 py-3 border-b last:border-0 border-ink-100">
-                <div className="col-span-7">
+                <div className="col-span-7 space-y-1">
                   <Input value={r.email} onChange={(e: any) => update(i, { email: e.target.value })} placeholder="name@apexstaffing.com" type="email" />
+                  {r.inviteStatus === "sent" && r.inviteUrl && (
+                    <a
+                      href={r.inviteUrl}
+                      className="block text-[10px] font-mono text-teal-700 truncate hover:underline"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Invite link ready
+                    </a>
+                  )}
+                  {r.inviteStatus === "error" && r.inviteMessage && (
+                    <p className="text-[10px] font-mono text-rose-600">{r.inviteMessage}</p>
+                  )}
                 </div>
                 <div className="col-span-4">
                   <Select value={r.role} onChange={(e: any) => update(i, { role: e.target.value })}>
@@ -301,7 +405,14 @@ function TeamStep({ data, set, onBack, onNext, onSkip }: any) {
         </aside>
       </div>
 
-      <StepFooter onBack={onBack} onNext={onNext} skipLabel="Skip for now" onSkip={onSkip} />
+      <StepFooter
+        onBack={onBack}
+        onNext={handleContinue}
+        nextLabel={sending ? "Sending invites…" : filledRows.length ? "Send invites & continue" : "Continue"}
+        nextDisabled={sending}
+        skipLabel="Skip for now"
+        onSkip={onSkip}
+      />
     </StepShell>
   );
 }
@@ -320,16 +431,44 @@ function RoleHint({ label, hint }: { label: string; hint: string }) {
 // ────────────────────────────────────────────────────────────────────────────
 // 3. Healthcare professionals
 // ────────────────────────────────────────────────────────────────────────────
-type HcpRow = { id: number; name: string; role: string; phone: string; email: string; location: string };
+type HcpRow = {
+  id: number;
+  name: string;
+  role: string;
+  phone: string;
+  email: string;
+  location: GeographicLocation | null;
+};
 const HCP_ROLES = ["RN · ICU","RN · Med-Surg","RN · ER","CNA","EMT","LPN","Allied health"];
 
-function ProfessionalsStep({ data, set, onBack, onNext, onSkip }: any) {
+function ProfessionalsStep({
+  data,
+  set,
+  onBack,
+  onNext,
+  onSkip,
+  agencyServiceArea,
+}: {
+  data: { hcps: HcpRow[]; hcpMode?: "csv" | "invite" | "manual" };
+  set: (patch: Record<string, unknown>) => void;
+  onBack: () => void;
+  onNext: () => void;
+  onSkip: () => void;
+  agencyServiceArea: AgencyServiceAreaContext | null;
+}) {
   const [mode, setMode] = useState<"csv" | "invite" | "manual">(data.hcpMode ?? "manual");
-  const rows: HcpRow[] = data.hcps.length ? data.hcps : [{ id: 1, name: "", role: "RN · ICU", phone: "", email: "", location: "" }];
+  const rows: HcpRow[] = data.hcps.length
+    ? data.hcps
+    : [{ id: 1, name: "", role: "RN · ICU", phone: "", email: "", location: null }];
 
   function setRows(rs: HcpRow[]) { set({ hcps: rs }); }
   function update(i: number, patch: Partial<HcpRow>) { setRows(rows.map((r, idx) => idx === i ? { ...r, ...patch } : r)); }
-  function add() { setRows([...rows, { id: Date.now(), name: "", role: "RN · ICU", phone: "", email: "", location: "" }]); }
+  function add() {
+    setRows([
+      ...rows,
+      { id: Date.now(), name: "", role: "RN · ICU", phone: "", email: "", location: null },
+    ]);
+  }
   function remove(i: number) { setRows(rows.filter((_, idx) => idx !== i)); }
 
   function setModeAndPersist(m: "csv"|"invite"|"manual") { setMode(m); set({ hcpMode: m }); }
@@ -362,6 +501,15 @@ function ProfessionalsStep({ data, set, onBack, onNext, onSkip }: any) {
           {mode === "invite" && <InvitePanel />}
           {mode === "manual" && (
             <div className="rounded-xl border border-ink-200 bg-white">
+              {agencyServiceArea && (
+                <p className="px-4 pt-3 text-[10px] font-mono text-ink-500 border-b border-ink-100">
+                  Search within your agency&apos;s service area
+                  {agencyServiceArea.displayName
+                    ? ` (${agencyServiceArea.displayName})`
+                    : ""}
+                  .
+                </p>
+              )}
               <div className="grid grid-cols-12 px-4 py-2.5 text-[10px] font-mono uppercase tracking-wider text-ink-500 border-b border-ink-100">
                 <div className="col-span-3">Name</div>
                 <div className="col-span-2">Role</div>
@@ -370,15 +518,34 @@ function ProfessionalsStep({ data, set, onBack, onNext, onSkip }: any) {
                 <div className="col-span-2">Location</div>
               </div>
               {rows.map((r, i) => (
-                <div key={r.id} className="grid grid-cols-12 gap-2 items-center px-3 py-2.5 border-b last:border-0 border-ink-100">
+                <div key={r.id} className="grid grid-cols-12 gap-2 items-start px-3 py-2.5 border-b last:border-0 border-ink-100">
                   <div className="col-span-3"><Input value={r.name} onChange={(e: any) => update(i, { name: e.target.value })} placeholder="A. Martinez" /></div>
                   <div className="col-span-2"><Select value={r.role} onChange={(e: any) => update(i, { role: e.target.value })}>{HCP_ROLES.map(x => <option key={x}>{x}</option>)}</Select></div>
                   <div className="col-span-2"><Input value={r.phone} onChange={(e: any) => update(i, { phone: e.target.value })} placeholder="(555) 010-2841" /></div>
                   <div className="col-span-3"><Input value={r.email} onChange={(e: any) => update(i, { email: e.target.value })} placeholder="rn@email.com" type="email" /></div>
-                  <div className="col-span-2 flex items-center gap-1">
-                    <Input value={r.location} onChange={(e: any) => update(i, { location: e.target.value })} placeholder="Bay Area" />
+                  <div className="col-span-2 flex items-start gap-1 min-w-0">
+                    <div className="flex-1 min-w-0">
+                      <LocationAutocomplete
+                        size="compact"
+                        value={r.location}
+                        onChange={(location) => update(i, { location })}
+                        placeholder="Search city, metro, or ZIP"
+                        restrictedToServiceArea={Boolean(agencyServiceArea)}
+                        serviceAreaCenterLat={agencyServiceArea?.latitude}
+                        serviceAreaCenterLng={agencyServiceArea?.longitude}
+                        serviceAreaRadiusMiles={agencyServiceArea?.radiusMiles}
+                        helperText=""
+                      />
+                    </div>
                     {rows.length > 1 && (
-                      <button onClick={() => remove(i)} className="shrink-0 w-8 h-8 rounded hover:bg-ink-100 inline-flex items-center justify-center text-ink-500"><Icon name="x" className="w-4 h-4" /></button>
+                      <button
+                        type="button"
+                        onClick={() => remove(i)}
+                        className="shrink-0 w-8 h-8 rounded hover:bg-ink-100 inline-flex items-center justify-center text-ink-500 mt-0.5"
+                        aria-label="Remove row"
+                      >
+                        <Icon name="x" className="w-4 h-4" />
+                      </button>
                     )}
                   </div>
                 </div>
@@ -432,7 +599,7 @@ function CsvDrop() {
         <Icon name="upload-cloud" className="w-6 h-6" />
       </span>
       <div className="mt-4 text-[16px] font-medium tracking-tight">Drop a CSV file here</div>
-      <div className="mt-1 text-[12px] font-mono text-ink-500">name · role · phone · email · location</div>
+      <div className="mt-1 text-[12px] font-mono text-ink-500">name · role · phone · email · location (city, metro, or ZIP)</div>
       <div className="mt-4 inline-flex items-center gap-2">
         <button className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-ink-200 bg-white text-[13px] font-medium hover:bg-ink-50">
           <Icon name="file-up" className="w-4 h-4" /> Browse files
@@ -829,7 +996,11 @@ function DashboardBackdrop() {
 // ────────────────────────────────────────────────────────────────────────────
 // Root
 // ────────────────────────────────────────────────────────────────────────────
-export function OnboardingApp() {
+export function OnboardingApp({
+  agencyServiceArea = null,
+}: {
+  agencyServiceArea?: AgencyServiceAreaContext | null;
+}) {
   const router = useRouter();
   const [stepIdx, setStepIdx] = useState(0);
   const [data, setData] = useState<any>({ team: [], hcps: [], hcpMode: "manual", facilities: [], compliance: {}, firstRequest: null });
@@ -846,7 +1017,16 @@ export function OnboardingApp() {
       <main key={id}>
         {id === "welcome"        && <WelcomeStep onNext={next} />}
         {id === "team"           && <TeamStep data={data} set={update} onBack={back} onNext={next} onSkip={skip} />}
-        {id === "professionals"  && <ProfessionalsStep data={data} set={update} onBack={back} onNext={next} onSkip={skip} />}
+        {id === "professionals"  && (
+          <ProfessionalsStep
+            data={data}
+            set={update}
+            onBack={back}
+            onNext={next}
+            onSkip={skip}
+            agencyServiceArea={agencyServiceArea}
+          />
+        )}
         {id === "facilities"     && <FacilitiesStep data={data} set={update} onBack={back} onNext={next} onSkip={skip} />}
         {id === "compliance"     && <ComplianceStep data={data} set={update} onBack={back} onNext={next} onSkip={skip} />}
         {id === "first-request"  && <FirstRequestStep data={data} set={update} onBack={back} onNext={next} />}

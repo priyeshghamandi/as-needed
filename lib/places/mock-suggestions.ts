@@ -1,7 +1,14 @@
-import type { ServiceArea, ServiceAreaSuggestion } from "@/lib/service-area";
+import type {
+  GeographicLocation,
+  GeographicLocationSuggestion,
+} from "@/lib/geographic-location";
+import {
+  isWithinServiceArea,
+  type ServiceAreaSearchBounds,
+} from "@/lib/places/service-area-bounds";
 
 /** Mock suggestions when Google Places API key is not configured. */
-const MOCK_SUGGESTIONS: ServiceAreaSuggestion[] = [
+const MOCK_SUGGESTIONS: GeographicLocationSuggestion[] = [
   { placeId: "mock-sf-bay", label: "San Francisco Bay Area, CA", secondary: "California, United States" },
   { placeId: "mock-sf", label: "San Francisco, CA", secondary: "California, United States" },
   { placeId: "mock-oakland", label: "Oakland, CA", secondary: "California, United States" },
@@ -22,7 +29,7 @@ const MOCK_SUGGESTIONS: ServiceAreaSuggestion[] = [
   { placeId: "mock-tx", label: "Texas", secondary: "United States" },
 ];
 
-const MOCK_DETAILS: Record<string, ServiceArea> = {
+const MOCK_DETAILS: Record<string, GeographicLocation> = {
   "mock-sf-bay": {
     displayName: "San Francisco Bay Area, CA",
     placeId: "mock-sf-bay",
@@ -191,21 +198,54 @@ function normalize(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]/g, " ");
 }
 
-export function searchMockSuggestions(query: string): ServiceAreaSuggestion[] {
-  const q = normalize(query.trim());
-  if (!q) return MOCK_SUGGESTIONS.slice(0, 8);
-  return MOCK_SUGGESTIONS.filter(
-    (s) =>
-      normalize(s.label).includes(q) ||
-      (s.secondary && normalize(s.secondary).includes(q)) ||
-      q.split(" ").every((part) => part.length > 0 && (normalize(s.label).includes(part) || normalize(s.secondary ?? "").includes(part))),
-  ).slice(0, 8);
+function filterByServiceArea(
+  suggestions: GeographicLocationSuggestion[],
+  bounds?: ServiceAreaSearchBounds,
+): GeographicLocationSuggestion[] {
+  if (!bounds) return suggestions;
+  return suggestions.filter((s) => {
+    const loc = MOCK_DETAILS[s.placeId];
+    return (
+      loc &&
+      isWithinServiceArea(loc, bounds, bounds.radiusMiles)
+    );
+  });
 }
 
-export function getMockServiceArea(placeId: string): ServiceArea | null {
+export function searchMockSuggestions(
+  query: string,
+  bounds?: ServiceAreaSearchBounds,
+): GeographicLocationSuggestion[] {
+  const q = normalize(query.trim());
+  const pool = filterByServiceArea(MOCK_SUGGESTIONS, bounds);
+
+  if (!q) return pool.slice(0, 8);
+  return pool
+    .filter(
+      (s) =>
+        normalize(s.label).includes(q) ||
+        (s.secondary && normalize(s.secondary).includes(q)) ||
+        q
+          .split(" ")
+          .every(
+            (part) =>
+              part.length > 0 &&
+              (normalize(s.label).includes(part) ||
+                normalize(s.secondary ?? "").includes(part)),
+          ),
+    )
+    .slice(0, 8);
+}
+
+export function getMockGeographicLocation(placeId: string): GeographicLocation | null {
   return MOCK_DETAILS[placeId] ?? null;
 }
 
 export function isMockPlaceId(placeId: string): boolean {
   return placeId.startsWith("mock-");
+}
+
+/** @deprecated Use `getMockGeographicLocation`. */
+export function getMockServiceArea(placeId: string): GeographicLocation | null {
+  return getMockGeographicLocation(placeId);
 }
