@@ -6,7 +6,7 @@
 |---|---|
 | Module | Matching & Assignments |
 | Branch | `module/matching-assignments` |
-| Status | PENDING |
+| Status | FAILED_TEST |
 | Depends on | Auth (1), Workforce (4), Facilities (5), Staffing Requests (6), Shifts (7) |
 
 ---
@@ -28,49 +28,49 @@
 
 | ID | Task | Status | Owner | Notes |
 |---|---|---|---|---|
-| MATCH-001 | `assertCanManageAssignments` permission helper | PENDING | Code Agent | owner, admin, coordinator |
-| MATCH-002 | `assertProviderOwnsAssignment` helper | PENDING | Code Agent | userId ↔ professional.userId |
-| MATCH-003 | `lib/assignments/status-transitions.ts` | PENDING | Code Agent | AssignmentStatusEnum |
-| MATCH-004 | `lib/assignments/fulfillment-sync.ts` | PENDING | Code Agent | `syncFulfillmentForRequest` |
-| MATCH-005 | `lib/matching/filters.ts` pure filter functions | PENDING | Code Agent | |
-| MATCH-006 | `lib/matching/candidate-query.ts` Drizzle query builder | PENDING | Code Agent | Agency scoped |
-| MATCH-007 | `lib/matching/distance.ts` facility ↔ professional miles | PENDING | Code Agent | Reuse service area utils |
-| MATCH-008 | `lib/matching/credential-match.ts` required vs verified | PENDING | Code Agent | Warning flags |
-| MATCH-009 | `GET /api/staffing-requests/[id]/matches` | PENDING | Code Agent | Query params for filters |
-| MATCH-010 | `GET /api/staffing-requests/[id]/assignments` | PENDING | Code Agent | |
-| MATCH-011 | `POST /api/shifts/[shiftId]/assignments` | PENDING | Code Agent | Single invite |
-| MATCH-012 | `POST /api/shifts/[shiftId]/assignments/bulk` | PENDING | Code Agent | |
-| MATCH-013 | `PATCH /api/shift-assignments/[id]` | PENDING | Code Agent | Status transitions |
-| MATCH-014 | `inviteProfessionalToShiftAction` | PENDING | Code Agent | |
-| MATCH-015 | `bulkInviteProfessionalsAction` | PENDING | Code Agent | |
-| MATCH-016 | `cancelShiftAssignmentAction` | PENDING | Code Agent | |
-| MATCH-017 | `confirmShiftAssignmentAction` | PENDING | Code Agent | |
-| MATCH-018 | `respondToShiftAssignmentAction` | PENDING | Code Agent | Provider accept/decline |
-| MATCH-019 | `getMatchCandidatesAction` | PENDING | Code Agent | Shared by page + embedded |
-| MATCH-020 | `app/(agency)/staffing-requests/[id]/match/page.tsx` | PENDING | Code Agent | |
-| MATCH-021 | Match page header + fulfillment summary | PENDING | Code Agent | |
-| MATCH-022 | Shift selector component (multi-shift requests) | PENDING | Code Agent | `?shiftId=` |
-| MATCH-023 | Match filters toolbar | PENDING | Code Agent | |
-| MATCH-024 | Candidate table component | PENDING | Code Agent | |
-| MATCH-025 | Bulk select + invite bar | PENDING | Code Agent | |
-| MATCH-026 | Existing assignments panel | PENDING | Code Agent | |
-| MATCH-027 | Invite / cancel / confirm row actions | PENDING | Code Agent | |
-| MATCH-028 | Compliance warning tooltip component | PENDING | Code Agent | |
-| MATCH-029 | Embedded `SuggestedMatchesPanel` on request detail | PENDING | Code Agent | limit 5 |
-| MATCH-030 | Wire **Match professionals** CTA from request + shift detail | PENDING | Code Agent | |
-| MATCH-031 | Enforce slot limit before invite | PENDING | Code Agent | required - filled |
-| MATCH-032 | Handle unique constraint duplicate invite | PENDING | Code Agent | 409 friendly message |
-| MATCH-033 | Set `invited_by_user_id`, `invited_at` on create | PENDING | Code Agent | |
-| MATCH-034 | Set `responded_at` on accept/decline | PENDING | Code Agent | |
-| MATCH-035 | Set `confirmed_at` on confirm | PENDING | Code Agent | |
-| MATCH-036 | Auto-confirm on accept config (default true) | PENDING | Code Agent | env or constant |
-| MATCH-037 | Call `recomputeShiftStatus` + request sync after mutations | PENDING | Code Agent | Uses module 7 helper |
-| MATCH-038 | Mark request `at_risk` rule when unfilled <24h | PENDING | Code Agent | |
-| MATCH-039 | Read-only match view for recruiter/compliance | PENDING | Code Agent | |
-| MATCH-040 | Loading, empty, error states | PENDING | Code Agent | |
-| MATCH-041 | Toasts for invite/bulk/cancel | PENDING | Code Agent | |
-| MATCH-042 | lint, typecheck, build | PENDING | Code Agent | |
-| MATCH-043 | READY_FOR_TEST handoff | PENDING | Code Agent | Note provider portal dependency |
+| MATCH-001 | `assertCanManageAssignments` permission helper | PASSED | Code Agent | owner, admin, coordinator |
+| MATCH-002 | `assertProviderOwnsAssignment` helper | PASSED | Code Agent | userId ↔ professional.userId |
+| MATCH-003 | `lib/assignments/status-transitions.ts` | PASSED | Code Agent | AssignmentStatusEnum |
+| MATCH-004 | `lib/assignments/fulfillment-sync.ts` | PASSED | Code Agent | `syncFulfillmentForRequest` |
+| MATCH-005 | `lib/matching/filters.ts` pure filter functions | PASSED | Code Agent | |
+| MATCH-006 | `lib/matching/candidate-query.ts` Drizzle query builder | PASSED | Code Agent | Agency scoped |
+| MATCH-007 | `lib/matching/distance.ts` facility ↔ professional miles | PASSED | Code Agent | Reuse service area utils |
+| MATCH-008 | `lib/matching/credential-match.ts` required vs verified | PASSED | Code Agent | Warning flags |
+| MATCH-009 | `GET /api/staffing-requests/[id]/matches` | PASSED | Code Agent | Query params for filters |
+| MATCH-010 | `GET /api/staffing-requests/[id]/assignments` | PASSED | Code Agent | |
+| MATCH-011 | `POST /api/shifts/[id]/assignments` | PASSED | Code Agent | Single invite |
+| MATCH-012 | `POST /api/shifts/[id]/assignments/bulk` | PASSED | Code Agent | |
+| MATCH-013 | `PATCH /api/shift-assignments/[id]` | PASSED | Code Agent | Status transitions |
+| MATCH-014 | `inviteProfessionalToShiftAction` | PASSED | Code Agent | |
+| MATCH-015 | `bulkInviteProfessionalsAction` | PASSED | Code Agent | |
+| MATCH-016 | `cancelShiftAssignmentAction` | PASSED | Code Agent | |
+| MATCH-017 | `confirmShiftAssignmentAction` | PASSED | Code Agent | |
+| MATCH-018 | `respondToShiftAssignmentAction` | PASSED | Code Agent | Provider accept/decline |
+| MATCH-019 | `getMatchCandidatesAction` | PASSED | Code Agent | Shared by page + embedded |
+| MATCH-020 | `app/staffing-requests/[id]/match/page.tsx` | PASSED | Code Agent | |
+| MATCH-021 | Match page header + fulfillment summary | PASSED | Code Agent | |
+| MATCH-022 | Shift selector component (multi-shift requests) | PASSED | Code Agent | `?shiftId=` |
+| MATCH-023 | Match filters toolbar | PASSED | Code Agent | |
+| MATCH-024 | Candidate table component | PASSED | Code Agent | |
+| MATCH-025 | Bulk select + invite bar | PASSED | Code Agent | |
+| MATCH-026 | Existing assignments panel | PASSED | Code Agent | |
+| MATCH-027 | Invite / cancel / confirm row actions | PASSED | Code Agent | |
+| MATCH-028 | Compliance warning tooltip component | PASSED | Code Agent | |
+| MATCH-029 | Embedded `SuggestedMatchesPanel` on request detail | PASSED | Code Agent | limit 5 |
+| MATCH-030 | Wire **Match professionals** CTA from request + shift detail | PASSED | Code Agent | |
+| MATCH-031 | Enforce slot limit before invite | PASSED | Code Agent | required - filled |
+| MATCH-032 | Handle unique constraint duplicate invite | PASSED | Code Agent | 409 friendly message |
+| MATCH-033 | Set `invited_by_user_id`, `invited_at` on create | PASSED | Code Agent | |
+| MATCH-034 | Set `responded_at` on accept/decline | PASSED | Code Agent | |
+| MATCH-035 | Set `confirmed_at` on confirm | PASSED | Code Agent | |
+| MATCH-036 | Auto-confirm on accept config (default true) | PASSED | Code Agent | env or constant |
+| MATCH-037 | Call `recomputeShiftStatus` + request sync after mutations | PASSED | Code Agent | Uses module 7 helper |
+| MATCH-038 | Mark request `at_risk` rule when unfilled <24h | PASSED | Code Agent | |
+| MATCH-039 | Read-only match view for recruiter/compliance | PASSED | Code Agent | |
+| MATCH-040 | Loading, empty, error states | PASSED | Code Agent | |
+| MATCH-041 | Toasts for invite/bulk/cancel | PASSED | Code Agent | |
+| MATCH-042 | lint, typecheck, build | PASSED | Code Agent | |
+| MATCH-043 | READY_FOR_TEST handoff | PASSED | Code Agent | Note provider portal dependency |
 
 ---
 
@@ -78,20 +78,20 @@
 
 | ID | Task | Status | Owner | Notes |
 |---|---|---|---|---|
-| MATCH-T001 | `lib/matching/filters.test.ts` | PENDING | Test Agent | MATCH-UT-001–004 |
-| MATCH-T002 | `lib/matching/candidate-query.test.ts` | PENDING | Test Agent | MATCH-UT-010–011 |
-| MATCH-T003 | `lib/assignments/status-transitions.test.ts` | PENDING | Test Agent | MATCH-UT-020–024 |
-| MATCH-T004 | `lib/assignments/fulfillment-sync.test.ts` | PENDING | Test Agent | MATCH-UT-030–032 |
-| MATCH-T005 | `lib/auth/assignment-permissions.test.ts` | PENDING | Test Agent | MATCH-UT-040–042 |
-| MATCH-T006 | `app/api/shift-assignments/route.test.ts` | PENDING | Test Agent | MATCH-UT-050–053 |
-| MATCH-T007 | `e2e/matching/matching-access.spec.ts` | PENDING | Test Agent | MATCH-E2E-001–004 |
-| MATCH-T008 | `e2e/matching/matching-invite.spec.ts` | PENDING | Test Agent | MATCH-E2E-010–016 |
-| MATCH-T009 | `e2e/matching/matching-assignment-response.spec.ts` | PENDING | Test Agent | MATCH-E2E-020–023 |
-| MATCH-T010 | `e2e/matching/matching-embedded.spec.ts` | PENDING | Test Agent | MATCH-E2E-030–031 |
-| MATCH-T011 | `e2e/matching/matching-responsive.spec.ts` | PENDING | Test Agent | MATCH-E2E-040–041 |
-| MATCH-T012 | MATCH-AUTH + EDGE tests | PENDING | Test Agent | |
-| MATCH-T013 | axe + build health | PENDING | Test Agent | |
-| MATCH-T014 | PRD acceptance sign-off | PENDING | Test Agent | |
+| MATCH-T001 | `lib/matching/filters.test.ts` | PASSED | Test Agent | MATCH-UT-001–004 |
+| MATCH-T002 | `lib/matching/candidate-query.test.ts` | PASSED | Test Agent | MATCH-UT-010–011 |
+| MATCH-T003 | `lib/assignments/status-transitions.test.ts` | PASSED | Test Agent | MATCH-UT-020–024 |
+| MATCH-T004 | `lib/assignments/fulfillment-sync.test.ts` | PASSED | Test Agent | MATCH-UT-030–032 |
+| MATCH-T005 | `lib/auth/assignment-permissions.test.ts` | PASSED | Test Agent | MATCH-UT-040–042 |
+| MATCH-T006 | `app/api/shift-assignments/route.test.ts` | PASSED | Test Agent | MATCH-UT-050–053 |
+| MATCH-T007 | `e2e/matching/matching-access.spec.ts` | PASSED | Test Agent | MATCH-E2E-001–004 |
+| MATCH-T008 | `e2e/matching/matching-invite.spec.ts` | PASSED | Test Agent | MATCH-E2E-010–016 |
+| MATCH-T009 | `e2e/matching/matching-z-assignment-response.spec.ts` | PASSED | Test Agent | MATCH-E2E-020–023 |
+| MATCH-T010 | `e2e/matching/matching-embedded.spec.ts` | PASSED | Test Agent | MATCH-E2E-030–031 |
+| MATCH-T011 | `e2e/matching/matching-responsive.spec.ts` | PASSED | Test Agent | MATCH-E2E-040–041 |
+| MATCH-T012 | MATCH-AUTH + EDGE tests | PASSED | Test Agent | |
+| MATCH-T013 | axe + build health | FAILED_TEST | Test Agent | MATCH-A11Y not automated |
+| MATCH-T014 | PRD acceptance sign-off | PASSED | Test Agent | |
 
 ---
 
