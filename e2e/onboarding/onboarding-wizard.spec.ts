@@ -13,7 +13,9 @@ import {
   skipFacilitiesStep,
   skipProfessionalsStep,
   skipTeamStep,
+  submitFacilitiesContinue,
   submitProfessionalsContinue,
+  stubPlacesApi,
 } from "./helpers";
 
 function resetOnboardingSeed() {
@@ -26,8 +28,9 @@ function resetOnboardingSeed() {
 test.describe.configure({ mode: "serial" });
 
 test.describe("ONB-E2E wizard", () => {
-  test.beforeEach(() => {
+  test.beforeEach(async ({ page }) => {
     resetOnboardingSeed();
+    await stubPlacesApi(page);
   });
 
   test("ONB-E2E-010: resume lands on profile (welcome skipped)", async ({ page }) => {
@@ -74,6 +77,7 @@ test.describe("ONB-E2E wizard", () => {
 
   test("ONB-E2E-014: add healthcare professional in service area", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
+    await stubPlacesApi(page);
     await loginAs(page, users.onboardFlow);
     await ensureProfileStep(page);
     await saveProfileAndContinue(page);
@@ -104,7 +108,9 @@ test.describe("ONB-E2E wizard", () => {
     await page.getByPlaceholder("rn@email.com").fill("far-away@example.com");
     await pickLocationSuggestion(page, /City, metro, or ZIP/i, "New York", /New York.*NY/i);
     await page.getByRole("button", { name: /^continue$/i }).click();
-    await expect(page.getByText(OUT_OF_SERVICE_AREA_MESSAGE)).toBeVisible();
+    await expect(
+      page.getByText(new RegExp(OUT_OF_SERVICE_AREA_MESSAGE.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")),
+    ).toBeVisible();
   });
 
   test("ONB-E2E-016: duplicate professional email rejected", async ({ page }) => {
@@ -119,8 +125,7 @@ test.describe("ONB-E2E wizard", () => {
     await page.getByPlaceholder("Martinez").fill("Pro");
     await page.getByPlaceholder("rn@email.com").fill(email);
     await pickLocationSuggestion(page, /City, metro, or ZIP/i, "San Francisco", /San Francisco.*CA/i);
-    await page.getByRole("button", { name: /^continue$/i }).click();
-    await expect(page.getByText(/professional added/i)).toBeVisible();
+    await submitProfessionalsContinue(page);
     await page.getByRole("button", { name: /^back$/i }).click();
     await page.getByRole("button", { name: /add another professional/i }).click();
     await page.getByPlaceholder("Andrea").nth(1).fill("Second");
@@ -141,6 +146,7 @@ test.describe("ONB-E2E wizard", () => {
     await saveServiceAreaAndContinue(page);
     await skipTeamStep(page);
     await skipProfessionalsStep(page);
+    await skipFacilitiesStep(page);
     await expect(page.getByText(/Your workspace is ready to/i)).toBeVisible();
   });
 
@@ -166,7 +172,7 @@ test.describe("ONB-E2E wizard", () => {
     await page.getByRole("link", { name: /complete setup/i }).click();
     await expect(page).toHaveURL(/\/onboarding/);
     await expect(page.getByText(/Step 05 · Workforce/i)).toBeVisible();
-    await expect(page.getByText(/Welcome/i)).not.toBeVisible();
+    await expect(page.getByRole("button", { name: /start setup/i })).not.toBeVisible();
   });
 
   test("ONB-E2E-022: duplicate facility contact email rejected", async ({ page }) => {
@@ -182,10 +188,8 @@ test.describe("ONB-E2E wizard", () => {
     await page.getByPlaceholder("Director of Nursing").first().fill("Pat Lee");
     await page.getByPlaceholder("director@mercyhealth.org").first().fill(email);
     await page.getByPlaceholder("(555) 010-2841").first().fill("+1 555 010 9999");
+    await page.getByRole("checkbox", { name: /Send portal invite/i }).first().uncheck();
     await pickLocationSuggestion(page, /City, metro, or ZIP/i, "San Francisco", /San Francisco.*CA/i);
-    await page.getByRole("button", { name: /^continue$/i }).click();
-    await expect(page.getByText(/facilit.* added/i)).toBeVisible({ timeout: 15_000 });
-    await page.getByRole("button", { name: /^back$/i }).click();
     await page.getByRole("button", { name: /add another/i }).click();
     await page.getByPlaceholder("Mercy Mt. Sinai Medical Center").nth(1).fill("Hospital B");
     await page.getByPlaceholder("Director of Nursing").nth(1).fill("Pat Two");

@@ -369,7 +369,7 @@ function RequestsTable({ requests }: { requests: SerializedActiveRequest[] }) {
   return (
     <Panel
       title="Active Staffing Requests"
-      sub="Requests needing coordinator attention"
+      // sub="Requests needing coordinator attention"
       action={
         <>
           <div className="inline-flex items-center gap-1 p-0.5 rounded-md bg-ink-50 border border-ink-200 max-w-full overflow-x-auto">
@@ -542,7 +542,7 @@ function WorkforcePanel({ professionals }: { professionals: SerializedAvailableP
   return (
     <Panel
       title="Available Workforce"
-      sub="Healthcare professionals ready for assignment"
+      // sub="Healthcare professionals ready for assignment"
       action={
         <Link
           href="/workforce/new"
@@ -871,7 +871,7 @@ export function OpsApp({
               <Eyebrow><span suppressHydrationWarning>{dateStr || " "}</span></Eyebrow>
               <h1 className="mt-1 text-[22px] md:text-[28px] leading-tight tracking-[-0.01em] font-medium">
                 Good {greeting}, {firstName}.
-                <span className="font-serif italic text-teal-800"> Operations board.</span>
+                {/* <div className="font-serif italic text-teal-800"> Operations board.</div> */}
               </h1>
             </div>
             <QuickActions primaryRole={primaryRole} />

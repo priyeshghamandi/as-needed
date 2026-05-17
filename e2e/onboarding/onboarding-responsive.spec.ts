@@ -5,6 +5,7 @@ import {
   ensureProfileStep,
   saveProfileAndContinue,
   saveServiceAreaAndContinue,
+  stubPlacesApi,
 } from "./helpers";
 
 function resetOnboardingSeed() {
@@ -15,8 +16,9 @@ function resetOnboardingSeed() {
 }
 
 test.describe("ONB-E2E responsive", () => {
-  test.beforeEach(() => {
+  test.beforeEach(async ({ page }) => {
     resetOnboardingSeed();
+    await stubPlacesApi(page);
   });
 
   test("ONB-E2E-030: mobile layout smoke (375px)", async ({ page }) => {

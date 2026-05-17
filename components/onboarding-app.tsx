@@ -979,31 +979,51 @@ function ProfessionalsStep({
 // ────────────────────────────────────────────────────────────────────────────
 
 function FacilitiesStep({
-  data,
-  set,
+  facData,
+  setFacData,
   onBack,
   onNext,
   onSkip,
   agencyServiceArea,
 }: {
-  data: { facs: FacRow[] };
-  set: (patch: { facs: FacRow[] }) => void;
+  facData: { facs: FacRow[] };
+  setFacData: React.Dispatch<React.SetStateAction<{ facs: FacRow[] }>>;
   onBack: () => void;
   onNext: () => void;
   onSkip: () => void;
   agencyServiceArea: AgencyServiceAreaContext | null;
 }) {
-  const facs = data.facs.length ? data.facs : [emptyFac()];
+  const facs = facData.facs.length ? facData.facs : [emptyFac()];
+  const facsRef = useRef(facs);
+  facsRef.current = facs;
   const [saving, setSaving] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
 
-  function setFacs(fs: FacRow[]) { set({ facs: fs }); }
-  function update(id: number, patch: Partial<FacRow>) { setFacs(facs.map((f) => (f.id === id ? { ...f, ...patch } : f))); }
-  function add() { setFacs([...facs, emptyFac()]); }
-  function remove(id: number) { setFacs(facs.filter((f) => f.id !== id)); }
+  function setFacs(fs: FacRow[]) {
+    setFacData((d) => ({ ...d, facs: fs }));
+  }
+  function update(id: number, patch: Partial<FacRow>) {
+    setFacData((d) => {
+      const prev = d.facs.length ? d.facs : [emptyFac()];
+      return { ...d, facs: prev.map((f) => (f.id === id ? { ...f, ...patch } : f)) };
+    });
+  }
+  function add() {
+    setFacData((d) => {
+      const prev = d.facs.length ? d.facs : [emptyFac()];
+      return { ...d, facs: [...prev, emptyFac()] };
+    });
+  }
+  function remove(id: number) {
+    setFacData((d) => {
+      const prev = d.facs.length ? d.facs : [emptyFac()];
+      return { ...d, facs: prev.filter((f) => f.id !== id) };
+    });
+  }
 
   async function handleContinue() {
-    const toSave = facs.filter((f) => f.name.trim() && !f.savedId);
+    const currentFacs = facsRef.current;
+    const toSave = currentFacs.filter((f) => f.name.trim() && !f.savedId);
 
     if (toSave.length === 0) { onNext(); return; }
 
@@ -1035,7 +1055,7 @@ function FacilitiesStep({
 
     setSaving(false);
 
-    const newFacs = facs.map((f) => (updates[f.id] ? { ...f, ...updates[f.id] } : f));
+    const newFacs = currentFacs.map((f) => (updates[f.id] ? { ...f, ...updates[f.id] } : f));
     setFacs(newFacs);
 
     const savedCount = Object.values(updates).filter((u) => u.savedId).length;
@@ -1367,8 +1387,8 @@ export function OnboardingApp({
 
         {stepId === "professionals" && (
           <ProfessionalsStep
-            data={profData}
-            set={(p) => setProfData((d) => ({ ...d, ...p }))}
+            profData={profData}
+            setProfData={setProfData}
             onBack={back}
             onNext={advanceToFacilities}
             onSkip={advanceToFacilities}
@@ -1378,8 +1398,8 @@ export function OnboardingApp({
 
         {stepId === "facilities" && (
           <FacilitiesStep
-            data={facData}
-            set={(p) => setFacData((d) => ({ ...d, ...p }))}
+            facData={facData}
+            setFacData={setFacData}
             onBack={back}
             onNext={advanceToComplete}
             onSkip={advanceToComplete}
