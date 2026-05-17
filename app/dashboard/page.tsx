@@ -9,8 +9,8 @@ import {
   getDashboardSummary,
   getActiveRequests,
   getAvailableWorkforce,
-  getActivityFeed,
 } from "@/lib/dashboard/queries";
+import { getRecentActivityForDashboard } from "@/lib/activity/queries";
 import {
   getLatestUnreadCritical,
   getUnreadNotificationCount,
@@ -30,7 +30,7 @@ export default async function DashboardPage() {
     summary,
     activeRequests,
     availableWorkforce,
-    activityFeed,
+    activityResult,
     unreadCount,
     criticalRow,
   ] = await Promise.all([
@@ -52,7 +52,7 @@ export default async function DashboardPage() {
       getDashboardSummary(agencyId),
       getActiveRequests(agencyId),
       getAvailableWorkforce(agencyId),
-      getActivityFeed(agencyId),
+      getRecentActivityForDashboard(agencyId),
       getUnreadNotificationCount(userId, agencyId),
       getLatestUnreadCritical(userId, agencyId),
     ]);
@@ -81,11 +81,6 @@ export default async function DashboardPage() {
     lastShiftAt: p.lastShiftAt ? new Date(p.lastShiftAt).toISOString() : null,
   }));
 
-  const serializedActivity = activityFeed.map((a) => ({
-    ...a,
-    createdAt: a.createdAt.toISOString(),
-  }));
-
   return (
     <>
       {showBanner && <OnboardingBanner />}
@@ -107,7 +102,8 @@ export default async function DashboardPage() {
         summary={summary}
         activeRequests={serializedRequests}
         availableWorkforce={serializedWorkforce}
-        activityFeed={serializedActivity}
+        activityItems={activityResult.items}
+        activityCursor={activityResult.nextCursor}
       />
     </>
   );

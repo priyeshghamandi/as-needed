@@ -5,19 +5,9 @@ import { usePathname } from "next/navigation";
 import { Icon, Avatar } from "@/components/primitives";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { canViewCompliance } from "@/lib/auth/compliance-access-rules";
+import { AGENCY_SIDEBAR_NAV } from "@/lib/navigation/agency-sidebar-nav";
 
-const NAV = [
-  { id: "dashboard", href: "/dashboard", label: "Dashboard", icon: "layout-grid" },
-  { id: "requests", href: "/staffing-requests", label: "Staffing Requests", icon: "clipboard-list" },
-  { id: "workforce", href: "/workforce", label: "Workforce", icon: "users" },
-  { id: "facilities", href: "/facilities", label: "Facilities", icon: "building-2" },
-  { id: "shifts", href: "/shifts", label: "Shifts", icon: "calendar-range" },
-  { id: "compliance", href: "/compliance", label: "Compliance", icon: "shield-check" },
-  { id: "notifications", href: "/notifications", label: "Notifications", icon: "bell" },
-  { id: "messages", href: "/messages", label: "Messages", icon: "message-circle" },
-  { id: "reports", href: "/reports", label: "Reports", icon: "bar-chart-3" },
-  { id: "settings", href: "/settings", label: "Settings", icon: "settings-2" },
-];
+const NAV = AGENCY_SIDEBAR_NAV;
 
 function LogoMark() {
   return (

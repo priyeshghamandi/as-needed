@@ -11,6 +11,8 @@ import {
   OUT_OF_SERVICE_AREA_MESSAGE,
   DEFAULT_SERVICE_AREA_RADIUS_MILES,
 } from "@/lib/places/service-area-bounds";
+import { ACTIVITY_ACTIONS } from "@/lib/activity/actions";
+import { logActivity } from "@/lib/activity/log-activity";
 
 export type CreateProfessionalResult =
   | { ok: true; professionalId: string; inviteUrl?: string }
@@ -120,6 +122,17 @@ export async function createProfessionalCore(
         process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "http://localhost:3000";
       inviteUrl = `${base}/invite/${invite.token}`;
     }
+
+    await logActivity({
+      agencyId,
+      actorUserId: userId,
+      action: ACTIVITY_ACTIONS.HEALTHCARE_PROFESSIONAL_CREATED,
+      entityType: "healthcare_professional",
+      entityId: professional.id,
+      metadata: {
+        summary: `${parsed.data.firstName} ${parsed.data.lastName} added to workforce`,
+      },
+    });
 
     return { ok: true, professionalId: professional.id, inviteUrl };
   });

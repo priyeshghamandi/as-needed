@@ -641,13 +641,61 @@ async function main() {
     },
   ]);
 
-  for (let i = 0; i < 5; i++) {
-    await db.insert(ActivityLogTable).values({
+  const E2E_ACTIVITY_SYSTEM = "e2e00000-0000-4000-8000-000000000030";
+  const E2E_ACTIVITY_FACILITY = "e2e00000-0000-4000-8000-000000000031";
+
+  await db.insert(ActivityLogTable).values([
+    {
+      id: E2E_ACTIVITY_SYSTEM,
       agencyId: agencyAId,
+      actorUserId: null,
+      action: "staffing_request.status_changed",
+      entityType: "staffing_request",
+      entityId: requestIds[2],
+      metadata: { fromStatus: "open", toStatus: "partially_filled", summary: "Auto risk scan" },
+    },
+    {
+      id: E2E_ACTIVITY_FACILITY,
+      agencyId: agencyAId,
+      actorUserId: ownerAId,
+      action: "facility.created",
+      entityType: "facility",
+      entityId: facility.id,
+      metadata: { summary: "E2E Memorial Hospital added" },
+    },
+    ...requestIds.slice(0, 3).map((reqId, i) => ({
+      agencyId: agencyAId,
+      actorUserId: coordinatorUserId,
+      action: "staffing_request.created",
+      entityType: "staffing_request" as const,
+      entityId: reqId,
+      metadata: { summary: `Seed request ${i + 1}` },
+    })),
+    {
+      agencyId: agencyAId,
+      actorUserId: ownerAId,
+      action: "shift.created",
+      entityType: "shift",
+      entityId: E2E_AGENCY_A_ER_SHIFT,
+    },
+    {
+      agencyId: agencyBId,
       actorUserId: ownerAId,
       action: "staffing_request.created",
       entityType: "staffing_request",
+      entityId: AGENCY_B_REQUEST_ID,
+      metadata: { summary: "Agency B only" },
+    },
+  ]);
+
+  for (let i = 0; i < 17; i++) {
+    await db.insert(ActivityLogTable).values({
+      agencyId: agencyAId,
+      actorUserId: i % 2 === 0 ? coordinatorUserId : ownerAId,
+      action: "staffing_request.created",
+      entityType: "staffing_request",
       entityId: requestIds[i % requestIds.length],
+      metadata: { summary: `Dashboard feed item ${i + 1}` },
     });
   }
 

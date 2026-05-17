@@ -7,11 +7,13 @@ import { canViewCompliance } from "@/lib/auth/compliance-access-rules";
 import { Icon, Badge, Dot, Avatar, AvatarStack, Eyebrow } from "@/components/primitives";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { CriticalAlertBanner, type CriticalAlert } from "@/components/notifications/critical-alert-banner";
+import { AGENCY_SIDEBAR_NAV } from "@/lib/navigation/agency-sidebar-nav";
+import { RecentActivityFeed } from "@/components/activity/recent-activity-feed";
+import type { ActivityLogItem } from "@/lib/activity/types";
 import type {
   DashboardSummary,
   ActiveRequest,
   AvailableProfessional,
-  ActivityLogEntry,
 } from "@/lib/dashboard/queries";
 
 // Serialized versions (dates as ISO strings across RSC boundary)
@@ -19,7 +21,6 @@ type SerializedActiveRequest = Omit<ActiveRequest, "updatedAt"> & { updatedAt: s
 type SerializedAvailableProfessional = Omit<AvailableProfessional, "lastShiftAt"> & {
   lastShiftAt: string | null;
 };
-type SerializedActivityLogEntry = Omit<ActivityLogEntry, "createdAt"> & { createdAt: string };
 
 interface OpsAppProps {
   agencyName: string;
@@ -31,7 +32,8 @@ interface OpsAppProps {
   summary: DashboardSummary;
   activeRequests: SerializedActiveRequest[];
   availableWorkforce: SerializedAvailableProfessional[];
-  activityFeed: SerializedActivityLogEntry[];
+  activityItems: ActivityLogItem[];
+  activityCursor: string | null;
 }
 
 function formatRelativeTime(isoString: string): string {
@@ -57,18 +59,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 // ───────────── Sidebar ─────────────
 
-const NAV = [
-  { id: "dashboard", href: "/dashboard", label: "Dashboard", icon: "layout-grid" },
-  { id: "requests", href: "/staffing-requests", label: "Staffing Requests", icon: "clipboard-list" },
-  { id: "workforce", href: "/workforce", label: "Workforce", icon: "users" },
-  { id: "facilities", href: "/facilities", label: "Facilities", icon: "building-2" },
-  { id: "shifts", href: "/shifts", label: "Shifts", icon: "calendar-range" },
-  { id: "compliance", href: "/compliance", label: "Compliance", icon: "shield-check" },
-  { id: "notifications", href: "/notifications", label: "Notifications", icon: "bell" },
-  { id: "messages", href: "/messages", label: "Messages", icon: "message-circle" },
-  { id: "reports", href: "/reports", label: "Reports", icon: "bar-chart-3" },
-  { id: "settings", href: "/settings", label: "Settings", icon: "settings-2" },
-];
+const NAV = AGENCY_SIDEBAR_NAV;
 
 function LogoMark() {
   return (
@@ -665,119 +656,6 @@ function WorkforcePanel({ professionals }: { professionals: SerializedAvailableP
   );
 }
 
-// ───────────── Activity feed ─────────────
-
-const ENTITY_ICONS: Record<string, string> = {
-  staffing_request: "clipboard-list",
-  shift: "calendar-range",
-  professional: "user",
-  credential: "shield-check",
-  facility: "building-2",
-  user: "user",
-  agency: "building",
-  invite: "mail",
-};
-
-const ACTION_TONES: Record<string, string> = {
-  created: "teal",
-  updated: "ink",
-  deleted: "rose",
-  completed: "green",
-  cancelled: "rose",
-  submitted: "teal",
-  verified: "green",
-  expired: "amber",
-  invited: "teal",
-  accepted: "green",
-  declined: "rose",
-};
-
-function formatActivityLabel(action: string, entityType: string): string {
-  const entityLabel =
-    entityType.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-  const verb = action.split(".").pop() ?? action;
-  const verbLabel = verb.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-  return `${entityLabel} ${verbLabel}`;
-}
-
-function ActivityFeed({ feed }: { feed: SerializedActivityLogEntry[] }) {
-  return (
-    <Panel
-      title="Recent Activity"
-      sub="Latest operational events for your agency"
-      action={
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-mono text-emerald-700">
-          <Dot tone="green" pulse /> live
-        </span>
-      }
-    >
-      {feed.length === 0 ? (
-        <div className="px-5 py-10 text-center">
-          <Icon name="activity" className="w-8 h-8 text-ink-300 mx-auto mb-3" />
-          <div className="text-[14px] font-medium text-ink-700">No recent activity</div>
-          <div className="mt-1 text-[12px] font-mono text-ink-400">
-            Operational events will appear here as your team works.
-          </div>
-        </div>
-      ) : (
-        <div className="px-5 py-4 max-h-[360px] overflow-y-auto scrollarea">
-          <ol className="relative pl-4 border-l border-ink-200">
-            {feed.map((a) => {
-              const verbKey = (a.action.split(".").pop() ?? a.action).toLowerCase();
-              const tone = ACTION_TONES[verbKey] ?? "ink";
-              const icon = ENTITY_ICONS[a.entityType] ?? "activity";
-              const dotColor =
-                tone === "green"
-                  ? "bg-emerald-500"
-                  : tone === "rose"
-                    ? "bg-rose-500"
-                    : tone === "amber"
-                      ? "bg-amber-500"
-                      : tone === "teal"
-                        ? "bg-teal-500"
-                        : "bg-ink-400";
-
-              return (
-                <li key={a.id} className="relative pl-4 pb-3 last:pb-0">
-                  <span
-                    className={`absolute -left-[7px] top-1 w-2.5 h-2.5 rounded-full ring-2 ring-white ${dotColor}`}
-                  />
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-[10px] font-mono text-ink-500 w-10 shrink-0">
-                      {formatRelativeTime(a.createdAt)}
-                    </span>
-                    <Icon
-                      name={icon}
-                      className={`w-3.5 h-3.5 ${
-                        tone === "green"
-                          ? "text-emerald-600"
-                          : tone === "rose"
-                            ? "text-rose-600"
-                            : tone === "amber"
-                              ? "text-amber-600"
-                              : tone === "teal"
-                                ? "text-teal-600"
-                                : "text-ink-500"
-                      }`}
-                    />
-                    <div className="flex-1 text-[12px] leading-snug">
-                      <span className="font-medium tracking-tight">
-                        {a.actorName ?? "System"}
-                      </span>{" "}
-                      <span className="text-ink-600">
-                        {formatActivityLabel(a.action, a.entityType).toLowerCase()}
-                      </span>
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
-        </div>
-      )}
-    </Panel>
-  );
-}
 
 // ───────────── Quick actions ─────────────
 
@@ -854,7 +732,8 @@ export function OpsApp({
   summary,
   activeRequests,
   availableWorkforce,
-  activityFeed,
+  activityItems,
+  activityCursor,
 }: OpsAppProps) {
   const [dateStr, setDateStr] = useState("");
 
@@ -907,7 +786,10 @@ export function OpsApp({
           </div>
 
           {/* Activity feed */}
-          <ActivityFeed feed={activityFeed} />
+          <RecentActivityFeed
+            initialItems={activityItems}
+            initialCursor={activityCursor}
+          />
 
           <div className="text-center text-[10px] font-mono text-ink-400 py-4">
             AsNeeded · operations · all signals nominal

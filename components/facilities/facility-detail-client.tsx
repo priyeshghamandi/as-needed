@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Icon, Badge } from "@/components/primitives";
 import { AgencyShell } from "@/components/agency-shell";
+import { EntityActivityPanel } from "@/components/activity/entity-activity-panel";
 import { updateFacilityAction } from "@/actions/facilities/update-facility";
 import { getFacilityInviteLinkAction } from "@/actions/facilities/get-facility-invite-link";
 import { sendFacilityInviteAction } from "@/actions/facilities/send-facility-invite";
@@ -273,25 +274,9 @@ export function FacilityDetailClient({
           )}
         </section>
 
-        <section className="rounded-xl border border-ink-200 bg-white p-5 space-y-3 lg:col-span-2">
-          <h2 className="text-[14px] font-medium tracking-tight">Activity</h2>
-          {facility.activityFeed.length === 0 ? (
-            <p className="text-[13px] text-ink-500">No recent activity</p>
-          ) : (
-            <ul className="text-[13px] space-y-2">
-              {facility.activityFeed.map((a) => (
-                <li key={a.id} className="flex gap-3">
-                  <span className="font-mono text-[11px] text-ink-500 shrink-0">
-                    {formatRelativeTime(a.createdAt)}
-                  </span>
-                  <span>
-                    {a.actorName ?? "System"} — {a.action.replace(/_/g, " ")}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+        <div className="lg:col-span-2">
+          <EntityActivityPanel entityType="facility" entityId={facility.id} />
+        </div>
       </div>
 
       {editOpen ? (

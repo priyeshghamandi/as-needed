@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/primitives";
 import { AgencyShell } from "@/components/agency-shell";
+import { EntityActivityPanel } from "@/components/activity/entity-activity-panel";
 import { cancelShiftAction } from "@/actions/shifts/cancel-shift";
 import { createSecondaryShiftAction } from "@/actions/shifts/create-secondary-shift";
 import { updateShiftAction } from "@/actions/shifts/update-shift";
@@ -331,6 +332,8 @@ export function ShiftDetailClient({
           </table>
         )}
       </section>
+
+      <EntityActivityPanel entityType="shift" entityId={shift.id} />
 
       {editOpen ? (
         <div
