@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -118,7 +118,7 @@ function LogoMark() {
 function Header({ idx, onSkip }: { idx: number; onSkip: () => void }) {
   return (
     <header className="sticky top-0 z-40 backdrop-blur bg-paper/85 border-b border-ink-200/60">
-      <div className="max-w-[1240px] mx-auto px-8 h-14 flex items-center gap-6">
+      <div className="max-w-[1240px] mx-auto px-4 sm:px-8 h-14 flex items-center gap-3 sm:gap-6 min-w-0">
         <a className="flex items-center gap-2">
           <LogoMark />
           <span className="font-semibold tracking-tight text-[15px]">AsNeeded</span>
@@ -133,8 +133,8 @@ function Header({ idx, onSkip }: { idx: number; onSkip: () => void }) {
           )}
         </div>
       </div>
-      <div className="max-w-[1240px] mx-auto px-8 pb-4 pt-2">
-        <ol className="grid grid-cols-7 gap-2">
+      <div className="max-w-[1240px] mx-auto px-4 sm:px-8 pb-4 pt-2 overflow-x-hidden">
+        <ol className="grid grid-cols-7 gap-1 sm:gap-2 min-w-0">
           {STEPS.map((s, i) => {
             const done = i < idx;
             const active = i === idx;
@@ -161,7 +161,7 @@ function Header({ idx, onSkip }: { idx: number; onSkip: () => void }) {
 }
 
 function StepShell({ children }: { children: React.ReactNode }) {
-  return <div className="max-w-[1100px] mx-auto px-8 py-12">{children}</div>;
+  return <div className="max-w-[1100px] mx-auto px-4 sm:px-8 py-8 sm:py-12">{children}</div>;
 }
 
 function StepHeader({ eyebrow, heading, italic, sub }: { eyebrow: string; heading: string; italic?: string; sub: string }) {
@@ -305,7 +305,7 @@ function WelcomeStep({ onNext, onExit }: { onNext: () => void; onExit: () => voi
         <div className="grid grid-cols-12 gap-10 items-start">
           <div className="col-span-12 lg:col-span-7">
             <Badge tone="teal"><Dot tone="green" pulse /> Workspace ready</Badge>
-            <h1 className="mt-6 text-[56px] leading-[1.02] tracking-[-0.02em] font-medium">
+            <h1 className="mt-6 text-[36px] sm:text-[56px] leading-[1.02] tracking-[-0.02em] font-medium">
               Welcome to your<br />
               staffing operations<br />
               <span className="font-serif italic text-teal-800">workspace.</span>
@@ -778,31 +778,51 @@ function RoleHint({ label, hint }: { label: string; hint: string }) {
 // ────────────────────────────────────────────────────────────────────────────
 
 function ProfessionalsStep({
-  data,
-  set,
+  profData,
+  setProfData,
   onBack,
   onNext,
   onSkip,
   agencyServiceArea,
 }: {
-  data: { profs: ProfRow[] };
-  set: (patch: { profs: ProfRow[] }) => void;
+  profData: { profs: ProfRow[] };
+  setProfData: React.Dispatch<React.SetStateAction<{ profs: ProfRow[] }>>;
   onBack: () => void;
   onNext: () => void;
   onSkip: () => void;
   agencyServiceArea: AgencyServiceAreaContext | null;
 }) {
-  const rows = data.profs.length ? data.profs : [emptyProf()];
+  const rows = profData.profs.length ? profData.profs : [emptyProf()];
+  const rowsRef = useRef(rows);
+  rowsRef.current = rows;
   const [saving, setSaving] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
 
-  function setRows(rs: ProfRow[]) { set({ profs: rs }); }
-  function update(id: number, patch: Partial<ProfRow>) { setRows(rows.map((r) => (r.id === id ? { ...r, ...patch } : r))); }
-  function add() { setRows([...rows, emptyProf()]); }
-  function remove(id: number) { setRows(rows.filter((r) => r.id !== id)); }
+  function setRows(rs: ProfRow[]) {
+    setProfData((d) => ({ ...d, profs: rs }));
+  }
+  function update(id: number, patch: Partial<ProfRow>) {
+    setProfData((d) => {
+      const prevRows = d.profs.length ? d.profs : [emptyProf()];
+      return { ...d, profs: prevRows.map((r) => (r.id === id ? { ...r, ...patch } : r)) };
+    });
+  }
+  function add() {
+    setProfData((d) => {
+      const prevRows = d.profs.length ? d.profs : [emptyProf()];
+      return { ...d, profs: [...prevRows, emptyProf()] };
+    });
+  }
+  function remove(id: number) {
+    setProfData((d) => {
+      const prevRows = d.profs.length ? d.profs : [emptyProf()];
+      return { ...d, profs: prevRows.filter((r) => r.id !== id) };
+    });
+  }
 
   async function handleContinue() {
-    const toSave = rows.filter((r) => (r.firstName.trim() || r.lastName.trim()) && !r.savedId);
+    const currentRows = rowsRef.current;
+    const toSave = currentRows.filter((r) => (r.firstName.trim() || r.lastName.trim()) && !r.savedId);
 
     if (toSave.length === 0) { onNext(); return; }
 
@@ -834,7 +854,7 @@ function ProfessionalsStep({
 
     setSaving(false);
 
-    const newRows = rows.map((r) => (updates[r.id] ? { ...r, ...updates[r.id] } : r));
+    const newRows = currentRows.map((r) => (updates[r.id] ? { ...r, ...updates[r.id] } : r));
     setRows(newRows);
 
     const savedCount = Object.values(updates).filter((u) => u.savedId).length;
@@ -959,31 +979,51 @@ function ProfessionalsStep({
 // ────────────────────────────────────────────────────────────────────────────
 
 function FacilitiesStep({
-  data,
-  set,
+  facData,
+  setFacData,
   onBack,
   onNext,
   onSkip,
   agencyServiceArea,
 }: {
-  data: { facs: FacRow[] };
-  set: (patch: { facs: FacRow[] }) => void;
+  facData: { facs: FacRow[] };
+  setFacData: React.Dispatch<React.SetStateAction<{ facs: FacRow[] }>>;
   onBack: () => void;
   onNext: () => void;
   onSkip: () => void;
   agencyServiceArea: AgencyServiceAreaContext | null;
 }) {
-  const facs = data.facs.length ? data.facs : [emptyFac()];
+  const facs = facData.facs.length ? facData.facs : [emptyFac()];
+  const facsRef = useRef(facs);
+  facsRef.current = facs;
   const [saving, setSaving] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
 
-  function setFacs(fs: FacRow[]) { set({ facs: fs }); }
-  function update(id: number, patch: Partial<FacRow>) { setFacs(facs.map((f) => (f.id === id ? { ...f, ...patch } : f))); }
-  function add() { setFacs([...facs, emptyFac()]); }
-  function remove(id: number) { setFacs(facs.filter((f) => f.id !== id)); }
+  function setFacs(fs: FacRow[]) {
+    setFacData((d) => ({ ...d, facs: fs }));
+  }
+  function update(id: number, patch: Partial<FacRow>) {
+    setFacData((d) => {
+      const prev = d.facs.length ? d.facs : [emptyFac()];
+      return { ...d, facs: prev.map((f) => (f.id === id ? { ...f, ...patch } : f)) };
+    });
+  }
+  function add() {
+    setFacData((d) => {
+      const prev = d.facs.length ? d.facs : [emptyFac()];
+      return { ...d, facs: [...prev, emptyFac()] };
+    });
+  }
+  function remove(id: number) {
+    setFacData((d) => {
+      const prev = d.facs.length ? d.facs : [emptyFac()];
+      return { ...d, facs: prev.filter((f) => f.id !== id) };
+    });
+  }
 
   async function handleContinue() {
-    const toSave = facs.filter((f) => f.name.trim() && !f.savedId);
+    const currentFacs = facsRef.current;
+    const toSave = currentFacs.filter((f) => f.name.trim() && !f.savedId);
 
     if (toSave.length === 0) { onNext(); return; }
 
@@ -1015,7 +1055,7 @@ function FacilitiesStep({
 
     setSaving(false);
 
-    const newFacs = facs.map((f) => (updates[f.id] ? { ...f, ...updates[f.id] } : f));
+    const newFacs = currentFacs.map((f) => (updates[f.id] ? { ...f, ...updates[f.id] } : f));
     setFacs(newFacs);
 
     const savedCount = Object.values(updates).filter((u) => u.savedId).length;
@@ -1324,7 +1364,7 @@ export function OnboardingApp({
   function advanceToComplete() { trackStep("complete"); next(); }
 
   return (
-    <div className="min-h-screen bg-paper text-ink-900">
+    <div className="min-h-screen bg-paper text-ink-900 overflow-x-hidden">
       <Header idx={stepIdx} onSkip={exit} />
       <main key={stepId}>
         {stepId === "welcome" && <WelcomeStep onNext={next} onExit={exit} />}
@@ -1347,8 +1387,8 @@ export function OnboardingApp({
 
         {stepId === "professionals" && (
           <ProfessionalsStep
-            data={profData}
-            set={(p) => setProfData((d) => ({ ...d, ...p }))}
+            profData={profData}
+            setProfData={setProfData}
             onBack={back}
             onNext={advanceToFacilities}
             onSkip={advanceToFacilities}
@@ -1358,8 +1398,8 @@ export function OnboardingApp({
 
         {stepId === "facilities" && (
           <FacilitiesStep
-            data={facData}
-            set={(p) => setFacData((d) => ({ ...d, ...p }))}
+            facData={facData}
+            setFacData={setFacData}
             onBack={back}
             onNext={advanceToComplete}
             onSkip={advanceToComplete}

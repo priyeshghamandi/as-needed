@@ -20,21 +20,15 @@ import {
   StaffingRequestTable,
   UserTable,
 } from "@/drizzle/schema";
-import { computeFillRate } from "./metrics";
-
-const ACTIVE_REQUEST_STATUSES = [
-  "open",
-  "matching",
-  "partially_filled",
-  "at_risk",
-] as const;
-
-const FILLED_ASSIGNMENT_STATUSES = [
-  "accepted",
-  "confirmed",
-  "checked_in",
-  "completed",
-] as const;
+import { aggregateComplianceStatus } from "./compliance-summary";
+import {
+  ACTIVE_REQUEST_STATUSES,
+  COMPLIANCE_ALERT_STATUSES,
+  FILLED_ASSIGNMENT_STATUSES,
+  FILL_RATE_REQUEST_STATUSES,
+  URGENT_SHIFT_EXCLUDED_STATUSES,
+  computeFillRate,
+} from "./metrics";
 
 export interface DashboardSummary {
   openRequests: number;
@@ -81,9 +75,7 @@ export async function getDashboardSummary(agencyId: string): Promise<DashboardSu
             eq(ShiftTable.agencyId, agencyId),
             gte(ShiftTable.startAt, now),
             lt(ShiftTable.startAt, in24h),
-            not(
-              inArray(ShiftTable.status, ["completed", "cancelled", "confirmed", "active"]),
-            ),
+            not(inArray(ShiftTable.status, [...URGENT_SHIFT_EXCLUDED_STATUSES])),
           ),
         )
         .then(([r]) => r.count),
@@ -94,7 +86,7 @@ export async function getDashboardSummary(agencyId: string): Promise<DashboardSu
         .where(
           and(
             eq(CredentialTable.agencyId, agencyId),
-            inArray(CredentialTable.status, ["expiring_soon", "expired", "pending_review"]),
+            inArray(CredentialTable.status, [...COMPLIANCE_ALERT_STATUSES]),
           ),
         )
         .then(([r]) => r.count),
@@ -109,10 +101,7 @@ export async function getDashboardSummary(agencyId: string): Promise<DashboardSu
           .where(
             and(
               eq(StaffingRequestTable.agencyId, agencyId),
-              inArray(StaffingRequestTable.status, [
-                ...ACTIVE_REQUEST_STATUSES,
-                "confirmed",
-              ]),
+              inArray(StaffingRequestTable.status, [...FILL_RATE_REQUEST_STATUSES]),
             ),
           );
 
@@ -276,25 +265,20 @@ export async function getAvailableWorkforce(agencyId: string): Promise<Available
       .groupBy(ShiftAssignmentTable.professionalId),
   ]);
 
-  const credMap = new Map<string, { blocked: boolean; attention: boolean }>();
+  const credByProf = new Map<string, { status: string }[]>();
   for (const c of credRows) {
-    const cur = credMap.get(c.professionalId) ?? { blocked: false, attention: false };
-    if (c.status === "expired" || c.status === "rejected") cur.blocked = true;
-    else if (c.status === "expiring_soon" || c.status === "pending_review") cur.attention = true;
-    credMap.set(c.professionalId, cur);
+    const list = credByProf.get(c.professionalId) ?? [];
+    list.push({ status: c.status });
+    credByProf.set(c.professionalId, list);
   }
 
   const lastShiftMap = new Map(lastShifts.map((s) => [s.professionalId, s.lastShiftAt]));
 
-  return professionals.map((p) => {
-    const cred = credMap.get(p.id);
-    const complianceStatus: "clear" | "attention" | "blocked" = cred?.blocked
-      ? "blocked"
-      : cred?.attention
-        ? "attention"
-        : "clear";
-    return { ...p, complianceStatus, lastShiftAt: lastShiftMap.get(p.id) ?? null };
-  });
+  return professionals.map((p) => ({
+    ...p,
+    complianceStatus: aggregateComplianceStatus(credByProf.get(p.id) ?? []),
+    lastShiftAt: lastShiftMap.get(p.id) ?? null,
+  }));
 }
 
 export interface ActivityLogEntry {
