@@ -29,6 +29,7 @@ const SEED_EMAILS = [
   "e2e-dash-compliance@example.com",
   "e2e-dash-provider@example.com",
   "e2e-dash-facility@example.com",
+  "e2e-workforce-empty@example.com",
 ];
 
 const AGENCY_NAMES = [
@@ -75,6 +76,14 @@ async function main() {
         completedSteps: ["welcome", "profile", "service-area", "complete"],
         skippedSteps: [],
       },
+      primaryServiceAreaName: "San Francisco, CA",
+      primaryServiceAreaPlaceId: "mock-sf",
+      primaryServiceAreaCity: "San Francisco",
+      primaryServiceAreaState: "CA",
+      primaryServiceAreaCountry: "US",
+      primaryServiceAreaLat: "37.7749",
+      primaryServiceAreaLng: "-122.4194",
+      serviceAreaRadiusMiles: 50,
     })
     .returning({ id: AgencyTable.id });
 
@@ -92,6 +101,17 @@ async function main() {
       name: AGENCY_NAMES[2],
       onboardingCompletedAt: null,
       onboardingProgress: { completedSteps: ["welcome"], skippedSteps: [] },
+    })
+    .returning({ id: AgencyTable.id });
+
+  const [agencyEmpty] = await db
+    .insert(AgencyTable)
+    .values({
+      name: "E2E Workforce Agency Empty",
+      onboardingCompletedAt: new Date(),
+      primaryServiceAreaLat: "37.7749",
+      primaryServiceAreaLng: "-122.4194",
+      serviceAreaRadiusMiles: 50,
     })
     .returning({ id: AgencyTable.id });
 
@@ -154,6 +174,12 @@ async function main() {
     "facility_user",
     agencyAId,
   );
+  await createUser(
+    "e2e-workforce-empty@example.com",
+    "E2E Workforce Empty",
+    "agency_owner",
+    agencyEmpty.id,
+  );
 
   const [facility] = await db
     .insert(FacilityTable)
@@ -161,10 +187,45 @@ async function main() {
       agencyId: agencyAId,
       name: "E2E Memorial Hospital",
       type: "hospital",
-      city: "Austin",
-      state: "TX",
+      contactName: "Pat Rivera",
+      contactEmail: "memorial.contact@example.com",
+      contactPhone: "5559876543",
+      city: "San Francisco",
+      state: "CA",
+      country: "US",
+      placeId: "mock-sf",
+      latitude: "37.7749",
+      longitude: "-122.4194",
     })
     .returning({ id: FacilityTable.id });
+
+  await db.insert(FacilityTable).values({
+    agencyId: agencyAId,
+    name: "SF Community Clinic",
+    type: "clinic",
+    contactName: "Sam Lee",
+    contactEmail: "clinic.contact@example.com",
+    contactPhone: "5551112222",
+    city: "San Francisco",
+    state: "CA",
+    country: "US",
+    placeId: "mock-sf",
+    latitude: "37.7749",
+    longitude: "-122.4194",
+  });
+
+  const AGENCY_B_FACILITY_ID = "e2e00000-0000-4000-8000-0000000000f1";
+  await db.insert(FacilityTable).values({
+    id: AGENCY_B_FACILITY_ID,
+    agencyId: agencyBId,
+    name: "Other Agency Facility",
+    type: "hospital",
+    contactName: "Other Contact",
+    contactEmail: "other.facility@example.com",
+    contactPhone: "5550001111",
+    city: "Austin",
+    state: "TX",
+  });
 
   const requestDefs = [
     { title: "ICU RN — Night", status: "open" as const, priority: "high", required: 5 },
@@ -204,22 +265,43 @@ async function main() {
   });
 
   const pros: string[] = [];
-  for (let i = 0; i < 3; i++) {
+  const proDefs = [
+    { firstName: "Jane", lastName: "Smith", availabilityStatus: "available" as const, email: "jane.smith.e2e@example.com" },
+    { firstName: "Pro2", lastName: "E2E", availabilityStatus: "available" as const, email: "pro2.e2e@example.com" },
+    { firstName: "Pro3", lastName: "E2E", availabilityStatus: "unavailable" as const, email: null },
+  ];
+  for (const def of proDefs) {
     const [p] = await db
       .insert(HealthcareProfessionalTable)
       .values({
         agencyId: agencyAId,
-        firstName: `Pro${i + 1}`,
-        lastName: "E2E",
+        firstName: def.firstName,
+        lastName: def.lastName,
         role: "rn",
-        availabilityStatus: i < 2 ? "available" : "unavailable",
+        email: def.email,
+        availabilityStatus: def.availabilityStatus,
         isActive: true,
-        city: "Austin",
-        state: "TX",
+        city: "San Francisco",
+        state: "CA",
+        latitude: "37.7749",
+        longitude: "-122.4194",
+        placeId: "mock-sf",
       })
       .returning({ id: HealthcareProfessionalTable.id });
     pros.push(p.id);
   }
+
+  const AGENCY_B_PRO_ID = "e2e00000-0000-4000-8000-0000000000b1";
+  await db.insert(HealthcareProfessionalTable).values({
+    id: AGENCY_B_PRO_ID,
+    agencyId: agencyBId,
+    firstName: "Other",
+    lastName: "Agency",
+    role: "rn",
+    isActive: true,
+    city: "Austin",
+    state: "TX",
+  });
 
   for (let i = 0; i < 4; i++) {
     const [shift] = await db
@@ -268,7 +350,9 @@ async function main() {
   }
 
   console.log("Dashboard E2E seed complete.");
-  console.log(`Agency A: ${agencyAId}, Agency B: ${agencyBId}`);
+  console.log(
+    `Agency A: ${agencyAId}, Agency B: ${agencyBId}, Agency B pro: ${AGENCY_B_PRO_ID}, Agency B facility: e2e00000-0000-4000-8000-0000000000f1`,
+  );
 }
 
 main().catch((err) => {

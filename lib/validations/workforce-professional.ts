@@ -64,6 +64,49 @@ export const workforceProfessionalSchema = z
 
 export type WorkforceProfessionalInput = z.infer<typeof workforceProfessionalSchema>;
 
+/** Client form fields (location validated separately). */
+export const workforceAddFormSchema = z
+  .object({
+    firstName: z.string().min(1, "Required").max(120),
+    lastName: z.string().min(1, "Required").max(120),
+    role: z.enum(WORKFORCE_PROFESSIONAL_ROLES, { message: "Select a role" }),
+    specialty: z.string().max(120).optional().or(z.literal("")),
+    yearsExperience: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .max(60)
+      .optional()
+      .or(z.literal("").transform(() => undefined)),
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .pipe(z.email("Enter a valid email"))
+      .optional()
+      .or(z.literal("")),
+    phone: z.string().min(7, "At least 7 digits").max(50).optional().or(z.literal("")),
+    sendInvite: z.boolean().default(false),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.email && !data.phone) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["email"],
+        message: "At least one of email or phone is required",
+      });
+    }
+    if (data.sendInvite && !data.email) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["email"],
+        message: "Email is required to send an invite",
+      });
+    }
+  });
+
+export type WorkforceAddFormValues = z.infer<typeof workforceAddFormSchema>;
+
 export const updateProfessionalSchema = z.object({
   firstName: z.string().min(1, "Required").max(120),
   lastName: z.string().min(1, "Required").max(120),

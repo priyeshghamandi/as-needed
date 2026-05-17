@@ -2,6 +2,7 @@
 
 import { and, eq } from "drizzle-orm";
 import { requireAuthContext } from "@/lib/auth/authorization";
+import { assertCanManageWorkforce } from "@/lib/auth/workforce-access";
 import { db } from "@/drizzle/db";
 import { HealthcareProfessionalTable } from "@/drizzle/schema";
 
@@ -18,10 +19,7 @@ export async function deactivateProfessionalAction(
     const agencyId = context.agencyId;
     if (!agencyId) return { status: "error", message: "Agency context required." };
 
-    const WRITE_ROLES = ["agency_owner", "agency_admin", "recruiter"] as const;
-    if (!WRITE_ROLES.includes(context.primaryRole as never)) {
-      return { status: "error", message: "You do not have permission to deactivate professionals." };
-    }
+    await assertCanManageWorkforce(context.userId, agencyId);
 
     const [updated] = await db
       .update(HealthcareProfessionalTable)
