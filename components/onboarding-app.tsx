@@ -1,28 +1,111 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Icon, Button, Badge, Dot, Eyebrow, Avatar } from "@/components/primitives";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Icon, Badge, Dot, Eyebrow, Avatar } from "@/components/primitives";
 import { SignOutButton } from "@/components/sign-out-button";
-import { sendTeamInvitesAction } from "@/actions/invites/send-team-invites";
 import { LocationAutocomplete } from "@/components/location-autocomplete";
+import { ServiceAreaAutocomplete } from "@/components/service-area-autocomplete";
+import { sendTeamInvitesAction } from "@/actions/invites/send-team-invites";
+import { saveOnboardingProfileAction } from "@/actions/onboarding/save-profile";
+import { saveOnboardingServiceAreaAction } from "@/actions/onboarding/save-service-area";
+import { addOnboardingProfessionalAction } from "@/actions/onboarding/add-professional";
+import { addOnboardingFacilityAction } from "@/actions/onboarding/add-facility";
+import {
+  onboardingProfileSchema,
+  STAFFING_SPECIALTY_OPTIONS,
+  type OnboardingProfileInput,
+} from "@/lib/validations/onboarding-profile";
+import { PROFESSIONAL_ROLE_LABELS, PROFESSIONAL_ROLES } from "@/lib/validations/onboarding-professional";
+import { FACILITY_TYPES, FACILITY_TYPE_LABELS } from "@/lib/validations/onboarding-facility";
+import { DEFAULT_SERVICE_AREA_RADIUS_MILES } from "@/lib/places/service-area-bounds";
 import type { AgencyServiceAreaContext } from "@/lib/agency/service-area";
 import type { GeographicLocation } from "@/lib/geographic-location";
+import type { StepId } from "@/lib/onboarding/progress";
 
-type StepId = "welcome" | "team" | "professionals" | "facilities" | "compliance" | "first-request" | "complete";
+// ────────────────────────────────────────────────────────────────────────────
+// Steps config
+// ────────────────────────────────────────────────────────────────────────────
+
 const STEPS: { id: StepId; label: string; short: string; icon: string }[] = [
-  { id: "welcome",        label: "Welcome",                short: "Welcome",        icon: "sparkles" },
-  { id: "team",           label: "Operations team",        short: "Team",           icon: "users" },
-  { id: "professionals",  label: "Healthcare professionals", short: "Professionals",icon: "stethoscope" },
-  { id: "facilities",     label: "Facilities",             short: "Facilities",     icon: "building-2" },
-  { id: "compliance",     label: "Compliance",             short: "Compliance",     icon: "shield-check" },
-  { id: "first-request",  label: "First staffing request", short: "First request",  icon: "send" },
-  { id: "complete",       label: "All set",                short: "Done",           icon: "check" },
+  { id: "welcome",       label: "Welcome",                  short: "Welcome",       icon: "sparkles" },
+  { id: "profile",       label: "Agency profile",           short: "Profile",       icon: "building-2" },
+  { id: "service-area",  label: "Service area",             short: "Service area",  icon: "map-pin" },
+  { id: "team",          label: "Operations team",          short: "Team",          icon: "users" },
+  { id: "professionals", label: "Healthcare professionals", short: "Professionals", icon: "stethoscope" },
+  { id: "facilities",    label: "Facilities",               short: "Facilities",    icon: "hospital" },
+  { id: "complete",      label: "All set",                  short: "Done",          icon: "check" },
 ];
 
 // ────────────────────────────────────────────────────────────────────────────
-// Header / progress
+// Row types
 // ────────────────────────────────────────────────────────────────────────────
+
+type TeamRow = {
+  id: number;
+  email: string;
+  role: string;
+  inviteUrl?: string;
+  inviteStatus?: "sent" | "error";
+  inviteMessage?: string;
+};
+
+type ProfRole = (typeof PROFESSIONAL_ROLES)[number];
+type ProfRow = {
+  id: number;
+  firstName: string;
+  lastName: string;
+  role: ProfRole;
+  email: string;
+  phone: string;
+  location: GeographicLocation | null;
+  sendInvite: boolean;
+  error?: string;
+  savedId?: string;
+  inviteUrl?: string;
+};
+
+type FacType = (typeof FACILITY_TYPES)[number];
+type FacRow = {
+  id: number;
+  name: string;
+  type: FacType;
+  location: GeographicLocation | null;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  inviteContact: boolean;
+  error?: string;
+  savedId?: string;
+  inviteUrl?: string;
+};
+
+// ────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ────────────────────────────────────────────────────────────────────────────
+
+function emptyProf(id = Date.now()): ProfRow {
+  return { id, firstName: "", lastName: "", role: "rn", email: "", phone: "", location: null, sendInvite: false };
+}
+
+function emptyFac(id = Date.now()): FacRow {
+  return { id, name: "", type: "hospital", location: null, contactName: "", contactEmail: "", contactPhone: "", inviteContact: true };
+}
+
+function trackStep(stepId: StepId) {
+  fetch("/api/onboarding/step", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ stepId, action: "navigate" }),
+  }).catch(() => {});
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Shared UI sub-components
+// ────────────────────────────────────────────────────────────────────────────
+
 function LogoMark() {
   return (
     <span className="relative w-7 h-7 rounded-lg bg-ink-900 inline-flex items-center justify-center">
@@ -44,14 +127,12 @@ function Header({ idx, onSkip }: { idx: number; onSkip: () => void }) {
         <div className="ml-auto flex items-center gap-3">
           <span className="text-[11px] font-mono text-ink-500 hidden md:inline">Step {idx + 1} of {STEPS.length}</span>
           <SignOutButton />
-          <Avatar initials="LM" tone="teal" size={28} />
+          <Avatar initials="AG" tone="teal" size={28} />
           {idx > 0 && idx < STEPS.length - 1 && (
             <button onClick={onSkip} className="text-[12px] font-mono text-ink-500 hover:text-ink-900 px-2 h-7 rounded hover:bg-ink-100">Save & exit</button>
           )}
         </div>
       </div>
-
-      {/* Progress steps */}
       <div className="max-w-[1240px] mx-auto px-8 pb-4 pt-2">
         <ol className="grid grid-cols-7 gap-2">
           {STEPS.map((s, i) => {
@@ -67,7 +148,7 @@ function Header({ idx, onSkip }: { idx: number; onSkip: () => void }) {
                   }`}>
                     {done ? <Icon name="check" className="w-3 h-3" strokeWidth={2.5} /> : (i + 1).toString().padStart(2, "0")}
                   </span>
-                  <span className={`h-px flex-1 ${done ? "bg-teal-700" : "bg-ink-200"}`} />
+                  {i < STEPS.length - 1 && <span className={`h-px flex-1 ${done ? "bg-teal-700" : "bg-ink-200"}`} />}
                 </div>
                 <div className={`text-[11px] tracking-tight truncate ${active ? "text-ink-900 font-medium" : "text-ink-500"}`}>{s.short}</div>
               </li>
@@ -79,11 +160,8 @@ function Header({ idx, onSkip }: { idx: number; onSkip: () => void }) {
   );
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// Step shell
-// ────────────────────────────────────────────────────────────────────────────
-function StepShell({ children }: { children: any }) {
-  return <div className="max-w-[1100px] mx-auto px-8 py-12 rise-in">{children}</div>;
+function StepShell({ children }: { children: React.ReactNode }) {
+  return <div className="max-w-[1100px] mx-auto px-8 py-12">{children}</div>;
 }
 
 function StepHeader({ eyebrow, heading, italic, sub }: { eyebrow: string; heading: string; italic?: string; sub: string }) {
@@ -98,22 +176,41 @@ function StepHeader({ eyebrow, heading, italic, sub }: { eyebrow: string; headin
   );
 }
 
-function StepFooter({ onBack, onNext, nextLabel = "Continue", nextDisabled = false, skipLabel, onSkip, primary = "ink" }: any) {
+function StepFooter({
+  onBack,
+  onNext,
+  nextLabel = "Continue",
+  nextDisabled = false,
+  skipLabel,
+  onSkip,
+  primary = "ink",
+  isSubmit = false,
+}: {
+  onBack?: () => void;
+  onNext?: () => void;
+  nextLabel?: string;
+  nextDisabled?: boolean;
+  skipLabel?: string;
+  onSkip?: () => void;
+  primary?: "ink" | "teal";
+  isSubmit?: boolean;
+}) {
   return (
     <div className="mt-10 flex items-center gap-3 border-t border-ink-200 pt-6">
       {onBack && (
-        <button onClick={onBack} className="inline-flex items-center gap-2 h-11 px-4 rounded-full border border-ink-200 bg-white text-[13px] font-medium hover:bg-ink-50">
+        <button type="button" onClick={onBack} className="inline-flex items-center gap-2 h-11 px-4 rounded-full border border-ink-200 bg-white text-[13px] font-medium hover:bg-ink-50">
           <Icon name="arrow-left" className="w-3.5 h-3.5" /> Back
         </button>
       )}
       {skipLabel && (
-        <button onClick={onSkip} className="text-[12px] font-mono text-ink-500 hover:text-ink-900 px-3 h-11 rounded hover:bg-ink-100">
+        <button type="button" onClick={onSkip} className="text-[12px] font-mono text-ink-500 hover:text-ink-900 px-3 h-11 rounded hover:bg-ink-100">
           {skipLabel}
         </button>
       )}
       <div className="ml-auto" />
       <button
-        onClick={onNext}
+        type={isSubmit ? "submit" : "button"}
+        onClick={!isSubmit ? onNext : undefined}
         disabled={nextDisabled}
         className={`inline-flex items-center gap-2 h-11 px-5 rounded-full font-medium tracking-tight text-[14px] transition ${
           nextDisabled ? "bg-ink-200 text-ink-500 cursor-not-allowed" :
@@ -127,10 +224,79 @@ function StepFooter({ onBack, onNext, nextLabel = "Continue", nextDisabled = fal
   );
 }
 
+function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      {...props}
+      className={`w-full h-11 px-3.5 rounded-lg border border-ink-200 bg-white text-[14px] tracking-tight placeholder:text-ink-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none transition ${props.className ?? ""}`}
+    />
+  );
+}
+
+function Textarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <textarea
+      {...props}
+      className={`w-full px-3.5 py-2.5 rounded-lg border border-ink-200 bg-white text-[14px] tracking-tight placeholder:text-ink-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none transition ${props.className ?? ""}`}
+    />
+  );
+}
+
+function SelectEl({ children, ...rest }: React.SelectHTMLAttributes<HTMLSelectElement> & { children: React.ReactNode }) {
+  return (
+    <div className="relative">
+      <select {...rest} className="w-full h-11 px-3.5 pr-10 rounded-lg border border-ink-200 bg-white text-[14px] tracking-tight focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none appearance-none transition">
+        {children}
+      </select>
+      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-500">
+        <Icon name="chevron-down" className="w-4 h-4" />
+      </span>
+    </div>
+  );
+}
+
+function Field({ label, sub, error, children }: { label: string; sub?: string; error?: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="flex items-baseline justify-between mb-1.5">
+        <div className="text-[12px] font-medium tracking-tight text-ink-800">{label}</div>
+        {sub && <div className="text-[10px] font-mono text-ink-500">{sub}</div>}
+      </div>
+      {children}
+      {error && <p className="mt-1 text-[11px] font-mono text-rose-600">{error}</p>}
+    </div>
+  );
+}
+
+function ErrorBanner({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mt-6 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] text-rose-900" role="alert">
+      {children}
+    </div>
+  );
+}
+
+function SuccessBanner({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mt-6 rounded-lg border border-teal-200 bg-teal-50 px-4 py-3 text-[13px] text-teal-900" role="status">
+      {children}
+    </div>
+  );
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // 1. Welcome
 // ────────────────────────────────────────────────────────────────────────────
-function WelcomeStep({ onNext }: any) {
+
+function WelcomeStep({ onNext, onExit }: { onNext: () => void; onExit: () => void }) {
+  const setupItems = [
+    { id: "profile",       icon: "building-2",  label: "Agency profile",           sub: "Contact info, specialties, description",  time: 2 },
+    { id: "service-area",  icon: "map-pin",      label: "Service area",             sub: "Your operating region and coverage radius", time: 1 },
+    { id: "team",          icon: "users",        label: "Operations team",          sub: "Coordinators, recruiters, compliance",      time: 2 },
+    { id: "professionals", icon: "stethoscope",  label: "Healthcare professionals", sub: "Invite or add RNs, CNAs, EMTs",             time: 2 },
+    { id: "facilities",    icon: "hospital",     label: "Facilities",               sub: "Hospitals, SNFs, clinics",                  time: 2 },
+  ];
+
   return (
     <div className="relative">
       <div className="absolute inset-x-0 top-0 h-[420px] bg-grid opacity-50" aria-hidden />
@@ -140,23 +306,20 @@ function WelcomeStep({ onNext }: any) {
           <div className="col-span-12 lg:col-span-7">
             <Badge tone="teal"><Dot tone="green" pulse /> Workspace ready</Badge>
             <h1 className="mt-6 text-[56px] leading-[1.02] tracking-[-0.02em] font-medium">
-              Welcome to your<br/>
-              staffing operations<br/>
+              Welcome to your<br />
+              staffing operations<br />
               <span className="font-serif italic text-teal-800">workspace.</span>
             </h1>
             <p className="mt-5 text-[17px] text-ink-600 max-w-xl leading-relaxed">
-              Let's set up your agency so you can start coordinating staffing requests and
-              workforce availability. We'll cover six quick steps — invite your team, add your
-              workforce, connect facilities, and create your first request.
+              Let&apos;s set up your agency so you can start coordinating staffing requests and
+              workforce availability. We&apos;ll cover five quick steps — should take under 10 minutes.
             </p>
-
             <div className="mt-7 inline-flex items-center gap-3 px-3 h-9 rounded-full border border-ink-200 bg-white text-[12px] font-mono text-ink-700">
               <Icon name="timer" className="w-3.5 h-3.5 text-teal-700" />
               Estimated setup time · 5–10 minutes
               <span className="text-ink-300">·</span>
-              <span className="text-ink-500">you can save & resume any time</span>
+              <span className="text-ink-500">you can save &amp; resume any time</span>
             </div>
-
             <div className="mt-8 flex items-center gap-3">
               <button
                 onClick={onNext}
@@ -164,15 +327,15 @@ function WelcomeStep({ onNext }: any) {
               >
                 Start setup <Icon name="arrow-right" className="w-4 h-4" />
               </button>
-              <a className="text-[13px] text-ink-700 hover:underline">I'll do this later</a>
+              <button onClick={onExit} className="text-[13px] text-ink-700 hover:underline">I&apos;ll do this later</button>
             </div>
           </div>
 
           <aside className="col-span-12 lg:col-span-5">
             <div className="rounded-2xl border border-ink-200 bg-white shadow-card p-6">
-              <div className="text-[11px] font-mono uppercase tracking-wider text-ink-500">What you'll set up</div>
+              <div className="text-[11px] font-mono uppercase tracking-wider text-ink-500">What you&apos;ll set up</div>
               <ul className="mt-4 divide-y divide-ink-100">
-                {STEPS.slice(1, -1).map((s, i) => (
+                {setupItems.map((s) => (
                   <li key={s.id} className="py-3 flex items-start gap-3">
                     <span className="w-7 h-7 rounded-md bg-teal-50 text-teal-700 inline-flex items-center justify-center shrink-0">
                       <Icon name={s.icon} className="w-3.5 h-3.5" />
@@ -180,17 +343,9 @@ function WelcomeStep({ onNext }: any) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-baseline gap-2">
                         <div className="text-[13px] font-medium tracking-tight">{s.label}</div>
-                        <div className="text-[10px] font-mono text-ink-400">~{[1,2,1,1,1][i]} min</div>
+                        <div className="text-[10px] font-mono text-ink-400">~{s.time} min</div>
                       </div>
-                      <div className="text-[11px] font-mono text-ink-500">
-                        {[
-                          "Coordinators, recruiters, compliance",
-                          "Invite or import RNs, CNAs, EMTs",
-                          "Hospitals, SNFs, clinics",
-                          "Credentials & certifications",
-                          "Coordinate your first shift",
-                        ][i]}
-                      </div>
+                      <div className="text-[11px] font-mono text-ink-500">{s.sub}</div>
                     </div>
                   </li>
                 ))}
@@ -204,142 +359,338 @@ function WelcomeStep({ onNext }: any) {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// Field primitives
+// 2. Agency profile
 // ────────────────────────────────────────────────────────────────────────────
-function Input(props: any) {
+
+function ProfileStep({ onBack, onNext }: { onBack: () => void; onNext: () => void }) {
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<OnboardingProfileInput>({
+    resolver: zodResolver(onboardingProfileSchema),
+    defaultValues: { staffingSpecialties: [], website: "", logoUrl: "", description: "" },
+  });
+
+  const specialties = watch("staffingSpecialties") ?? [];
+
+  function toggleSpecialty(s: string) {
+    if (specialties.includes(s)) {
+      setValue("staffingSpecialties", specialties.filter((x) => x !== s), { shouldValidate: true });
+    } else {
+      setValue("staffingSpecialties", [...specialties, s], { shouldValidate: true });
+    }
+  }
+
+  async function onSubmit(data: OnboardingProfileInput) {
+    setServerError(null);
+    const result = await saveOnboardingProfileAction(data);
+    if (result.status === "error") {
+      setServerError(result.message);
+      return;
+    }
+    onNext();
+  }
+
   return (
-    <input
-      {...props}
-      className={`w-full h-11 px-3.5 rounded-lg border border-ink-200 bg-white text-[14px] tracking-tight placeholder:text-ink-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none transition ${props.className ?? ""}`}
-    />
+    <StepShell>
+      <StepHeader eyebrow="Step 02 · Agency profile" heading="Tell us about your" italic="agency." sub="Contact details and the types of staffing you specialize in. This appears on your facility portals." />
+      {serverError && <ErrorBanner>{serverError}</ErrorBanner>}
+
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-10">
+        <div className="grid grid-cols-12 gap-10 items-start">
+          <div className="col-span-12 lg:col-span-8 space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Agency phone" error={errors.phone?.message}>
+                <Input {...register("phone")} placeholder="+1 (555) 010-2841" type="tel" />
+              </Field>
+              <Field label="Website" sub="optional" error={errors.website?.message}>
+                <Input {...register("website")} placeholder="https://apexstaffing.com" />
+              </Field>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Operational contact name" error={errors.operationalContactName?.message}>
+                <Input {...register("operationalContactName")} placeholder="Jennifer Liu" />
+              </Field>
+              <Field label="Operational contact email" error={errors.operationalContactEmail?.message}>
+                <Input {...register("operationalContactEmail")} placeholder="jliu@apexstaffing.com" type="email" />
+              </Field>
+            </div>
+
+            <Field label="Agency description" sub="optional" error={errors.description?.message}>
+              <Textarea
+                {...register("description")}
+                rows={3}
+                placeholder="Brief description of your agency's specialization and geographic focus…"
+              />
+            </Field>
+
+            <div>
+              <div className="flex items-baseline justify-between mb-3">
+                <div className="text-[12px] font-medium tracking-tight text-ink-800">Staffing specialties</div>
+                <div className="text-[10px] font-mono text-ink-500">Select at least 1</div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {STAFFING_SPECIALTY_OPTIONS.map((s) => {
+                  const on = specialties.includes(s);
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => toggleSpecialty(s)}
+                      className={`inline-flex items-center gap-1.5 px-3 h-8 rounded-full text-[12px] font-medium border transition ${
+                        on
+                          ? "bg-teal-700 border-teal-700 text-white"
+                          : "bg-white border-ink-200 text-ink-700 hover:border-teal-400"
+                      }`}
+                    >
+                      {on && <Icon name="check" className="w-3 h-3" strokeWidth={2.5} />}
+                      {s}
+                    </button>
+                  );
+                })}
+              </div>
+              {errors.staffingSpecialties && (
+                <p className="mt-1.5 text-[11px] font-mono text-rose-600">{errors.staffingSpecialties.message}</p>
+              )}
+            </div>
+          </div>
+
+          <aside className="col-span-12 lg:col-span-4">
+            <div className="rounded-xl border border-ink-200 bg-paper/40 p-5 space-y-4">
+              <div className="text-[11px] font-mono uppercase tracking-wider text-ink-500">Why we ask</div>
+              <ul className="space-y-3 text-[12px] text-ink-700">
+                <li className="flex items-start gap-2">
+                  <Icon name="phone" className="w-3.5 h-3.5 text-teal-700 mt-0.5 shrink-0" />
+                  <span>Contact details appear on facility portals and invoices</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Icon name="tag" className="w-3.5 h-3.5 text-teal-700 mt-0.5 shrink-0" />
+                  <span>Specialties help match professionals to requests faster</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Icon name="file-text" className="w-3.5 h-3.5 text-teal-700 mt-0.5 shrink-0" />
+                  <span>Description shown to facilities when they create an account</span>
+                </li>
+              </ul>
+            </div>
+          </aside>
+        </div>
+
+        <StepFooter
+          onBack={onBack}
+          nextLabel={isSubmitting ? "Saving…" : "Save & continue"}
+          nextDisabled={isSubmitting}
+          isSubmit
+        />
+      </form>
+    </StepShell>
   );
 }
-function Select({ children, ...rest }: any) {
+
+// ────────────────────────────────────────────────────────────────────────────
+// 3. Service area
+// ────────────────────────────────────────────────────────────────────────────
+
+function ServiceAreaStep({
+  onBack,
+  onNext,
+  onSaved,
+}: {
+  onBack: () => void;
+  onNext: () => void;
+  onSaved: (sa: AgencyServiceAreaContext) => void;
+}) {
+  const [location, setLocation] = useState<GeographicLocation | null>(null);
+  const [radius, setRadius] = useState(DEFAULT_SERVICE_AREA_RADIUS_MILES);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleContinue() {
+    if (!location) {
+      setError("Select a service area location to continue.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    const result = await saveOnboardingServiceAreaAction({
+      primaryServiceArea: location,
+      serviceAreaRadiusMiles: radius,
+    });
+    setSaving(false);
+    if (result.status === "error") {
+      setError(result.message);
+      return;
+    }
+    onSaved({
+      agencyId: "",
+      displayName: location.displayName ?? location.city ?? "Service area",
+      placeId: location.placeId ?? null,
+      city: location.city ?? null,
+      state: location.state ?? null,
+      country: location.country ?? null,
+      latitude: location.latitude,
+      longitude: location.longitude,
+      radiusMiles: radius,
+    });
+    onNext();
+  }
+
   return (
-    <div className="relative">
-      <select {...rest} className="w-full h-11 px-3.5 pr-10 rounded-lg border border-ink-200 bg-white text-[14px] tracking-tight focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none appearance-none transition">
-        {children}
-      </select>
-      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-500">
-        <Icon name="chevron-down" className="w-4 h-4" />
-      </span>
-    </div>
-  );
-}
-function Field({ label, sub, children }: any) {
-  return (
-    <label className="block">
-      <div className="flex items-baseline justify-between mb-1.5">
-        <div className="text-[12px] font-medium tracking-tight text-ink-800">{label}</div>
-        {sub && <div className="text-[10px] font-mono text-ink-500">{sub}</div>}
+    <StepShell>
+      <StepHeader
+        eyebrow="Step 03 · Service area"
+        heading="Where does your agency"
+        italic="operate?"
+        sub="Define your primary market. We use this to validate that professionals and facilities are within your coverage zone."
+      />
+      {error && <ErrorBanner>{error}</ErrorBanner>}
+
+      <div className="mt-10 grid grid-cols-12 gap-10 items-start">
+        <div className="col-span-12 lg:col-span-8 space-y-6">
+          <Field label="Primary service area">
+            <ServiceAreaAutocomplete value={location} onChange={setLocation} />
+          </Field>
+
+          <div>
+            <div className="flex items-baseline justify-between mb-2">
+              <div className="text-[12px] font-medium tracking-tight text-ink-800">Coverage radius</div>
+              <div className="text-[13px] font-medium tabular-nums text-ink-900">{radius} miles</div>
+            </div>
+            <input
+              type="range"
+              min={10}
+              max={75}
+              step={5}
+              value={radius}
+              onChange={(e) => setRadius(+e.target.value)}
+              className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-teal-700 bg-ink-200"
+            />
+            <div className="flex items-center justify-between text-[10px] font-mono text-ink-500 mt-1">
+              <span>10 mi · local</span>
+              <span>75 mi · regional</span>
+            </div>
+          </div>
+
+          {location && (
+            <div className="rounded-lg border border-teal-200 bg-teal-50/60 px-4 py-3 flex items-start gap-2.5">
+              <Icon name="map-pin" className="w-4 h-4 text-teal-700 mt-0.5" />
+              <div className="text-[12px] text-teal-900 leading-relaxed">
+                <span className="font-medium">{location.displayName}</span> · {radius}-mile radius. Professionals and facilities must be within this zone.
+              </div>
+            </div>
+          )}
+        </div>
+
+        <aside className="col-span-12 lg:col-span-4">
+          <div className="rounded-xl border border-ink-200 bg-paper/40 p-5 space-y-4">
+            <div className="text-[11px] font-mono uppercase tracking-wider text-ink-500">How this is used</div>
+            <ul className="space-y-3 text-[12px] text-ink-700">
+              <li className="flex items-start gap-2">
+                <Icon name="shield-check" className="w-3.5 h-3.5 text-teal-700 mt-0.5 shrink-0" />
+                <span>Validates professional and facility locations on entry</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Icon name="wand-2" className="w-3.5 h-3.5 text-teal-700 mt-0.5 shrink-0" />
+                <span>Limits auto-match search to nearby, available staff</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <Icon name="settings-2" className="w-3.5 h-3.5 text-teal-700 mt-0.5 shrink-0" />
+                <span>Adjustable any time in agency settings</span>
+              </li>
+            </ul>
+          </div>
+        </aside>
       </div>
-      {children}
-    </label>
+
+      <StepFooter
+        onBack={onBack}
+        onNext={handleContinue}
+        nextLabel={saving ? "Saving…" : "Save & continue"}
+        nextDisabled={saving || !location}
+      />
+    </StepShell>
   );
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// 2. Team
+// 4. Team
 // ────────────────────────────────────────────────────────────────────────────
-type TeamRow = {
-  id: number;
-  email: string;
-  role: string;
-  inviteUrl?: string;
-  inviteStatus?: "sent" | "error";
-  inviteMessage?: string;
-};
-const TEAM_ROLES = ["Staffing Coordinator","Recruiter","Compliance Manager","Operations Manager"];
 
-function TeamStep({ data, set, onBack, onNext, onSkip }: any) {
+const TEAM_ROLES = ["Staffing Coordinator", "Recruiter", "Compliance Manager", "Operations Manager"];
+
+function TeamStep({
+  data,
+  set,
+  onBack,
+  onNext,
+  onSkip,
+}: {
+  data: { team: TeamRow[] };
+  set: (patch: { team: TeamRow[] }) => void;
+  onBack: () => void;
+  onNext: () => void;
+  onSkip: () => void;
+}) {
   const rows: TeamRow[] = data.team.length ? data.team : [{ id: 1, email: "", role: "Staffing Coordinator" }];
   const [sending, setSending] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
 
   function setRows(rs: TeamRow[]) { set({ team: rs }); }
-  function update(i: number, patch: Partial<TeamRow>) { setRows(rows.map((r, idx) => idx === i ? { ...r, ...patch } : r)); }
+  function update(i: number, patch: Partial<TeamRow>) { setRows(rows.map((r, idx) => (idx === i ? { ...r, ...patch } : r))); }
   function add() { setRows([...rows, { id: Date.now(), email: "", role: "Staffing Coordinator" }]); }
   function remove(i: number) { setRows(rows.filter((_, idx) => idx !== i)); }
 
   const filledRows = rows.filter((r) => r.email.trim().length > 0);
 
   async function handleContinue() {
-    if (filledRows.length === 0) {
-      onNext();
-      return;
-    }
+    if (filledRows.length === 0) { onNext(); return; }
 
     setSending(true);
     setBanner(null);
 
     const result = await sendTeamInvitesAction({
-      invites: filledRows.map((r) => ({
-        email: r.email.trim(),
-        role: r.role,
-      })),
+      invites: filledRows.map((r) => ({ email: r.email.trim(), role: r.role })),
     });
 
     setSending(false);
 
     if (result.status === "success") {
-      const byEmail = new Map(
-        result.results.map((r) => [r.email.toLowerCase(), r]),
-      );
-      setRows(
-        rows.map((row) => {
-          const match = byEmail.get(row.email.trim().toLowerCase());
-          if (!match) return row;
-          return {
-            ...row,
-            inviteStatus: match.status === "sent" ? "sent" : "error",
-            inviteUrl: match.inviteUrl,
-            inviteMessage: match.message,
-          };
-        }),
-      );
-
+      const byEmail = new Map(result.results.map((r) => [r.email.toLowerCase(), r]));
+      setRows(rows.map((row) => {
+        const match = byEmail.get(row.email.trim().toLowerCase());
+        if (!match) return row;
+        return { ...row, inviteStatus: match.status === "sent" ? "sent" : "error", inviteUrl: match.inviteUrl, inviteMessage: match.message };
+      }));
       const sentCount = result.results.filter((r) => r.status === "sent").length;
-      setBanner(
-        `${sentCount} invitation${sentCount === 1 ? "" : "s"} created. Share each invite link with your team (email delivery coming soon).`,
-      );
+      setBanner(`${sentCount} invitation${sentCount === 1 ? "" : "s"} created. Share each invite link with your team.`);
       onNext();
       return;
     }
 
     if (result.status === "error") {
       if (result.results) {
-        const byEmail = new Map(
-          result.results.map((r) => [r.email.toLowerCase(), r]),
-        );
-        setRows(
-          rows.map((row) => {
-            const match = byEmail.get(row.email.trim().toLowerCase());
-            if (!match) return row;
-            return {
-              ...row,
-              inviteStatus: "error" as const,
-              inviteMessage: match.message,
-            };
-          }),
-        );
+        const byEmail = new Map(result.results.map((r) => [r.email.toLowerCase(), r]));
+        setRows(rows.map((row) => {
+          const match = byEmail.get(row.email.trim().toLowerCase());
+          if (!match) return row;
+          return { ...row, inviteStatus: "error" as const, inviteMessage: match.message };
+        }));
       }
       setBanner(result.message);
-      return;
     }
   }
 
   return (
     <StepShell>
-      <StepHeader eyebrow="Step 02 · Operations team" heading="Invite your" italic="operations team." sub="Add staffing coordinators, recruiters, compliance staff, and managers. They'll get an email to set up their accounts." />
+      <StepHeader eyebrow="Step 04 · Operations team" heading="Invite your" italic="operations team." sub="Add staffing coordinators, recruiters, compliance staff, and managers. They'll get a link to set up their accounts." />
 
-      {banner && (
-        <div
-          className="mt-6 rounded-lg border border-teal-200 bg-teal-50 px-4 py-3 text-[13px] text-teal-900"
-          role="status"
-        >
-          {banner}
-        </div>
-      )}
+      {banner && <SuccessBanner>{banner}</SuccessBanner>}
 
       <div className="mt-10 grid grid-cols-12 gap-10 items-start">
         <div className="col-span-12 lg:col-span-8">
@@ -347,19 +698,14 @@ function TeamStep({ data, set, onBack, onNext, onSkip }: any) {
             <div className="grid grid-cols-12 px-4 py-2.5 text-[10px] font-mono uppercase tracking-wider text-ink-500 border-b border-ink-100">
               <div className="col-span-7">Work email</div>
               <div className="col-span-4">Role</div>
-              <div className="col-span-1"></div>
+              <div className="col-span-1" />
             </div>
             {rows.map((r, i) => (
               <div key={r.id} className="grid grid-cols-12 gap-3 items-center px-4 py-3 border-b last:border-0 border-ink-100">
                 <div className="col-span-7 space-y-1">
-                  <Input value={r.email} onChange={(e: any) => update(i, { email: e.target.value })} placeholder="name@apexstaffing.com" type="email" />
+                  <Input value={r.email} onChange={(e) => update(i, { email: e.target.value })} placeholder="name@apexstaffing.com" type="email" />
                   {r.inviteStatus === "sent" && r.inviteUrl && (
-                    <a
-                      href={r.inviteUrl}
-                      className="block text-[10px] font-mono text-teal-700 truncate hover:underline"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
+                    <a href={r.inviteUrl} className="block text-[10px] font-mono text-teal-700 truncate hover:underline" target="_blank" rel="noreferrer">
                       Invite link ready
                     </a>
                   )}
@@ -368,9 +714,9 @@ function TeamStep({ data, set, onBack, onNext, onSkip }: any) {
                   )}
                 </div>
                 <div className="col-span-4">
-                  <Select value={r.role} onChange={(e: any) => update(i, { role: e.target.value })}>
-                    {TEAM_ROLES.map(role => <option key={role}>{role}</option>)}
-                  </Select>
+                  <SelectEl value={r.role} onChange={(e) => update(i, { role: e.target.value })}>
+                    {TEAM_ROLES.map((role) => <option key={role}>{role}</option>)}
+                  </SelectEl>
                 </div>
                 <div className="col-span-1 flex justify-end">
                   {rows.length > 1 && (
@@ -399,9 +745,7 @@ function TeamStep({ data, set, onBack, onNext, onSkip }: any) {
               <RoleHint label="Operations Manager"   hint="Cross-team visibility & reports" />
             </ul>
           </div>
-          <div className="mt-3 text-[11px] font-mono text-ink-500 px-1">
-            Invitations expire in 7 days. You can resend or revoke them anytime.
-          </div>
+          <div className="mt-3 text-[11px] font-mono text-ink-500 px-1">Invitations expire in 7 days. You can resend or revoke them anytime.</div>
         </aside>
       </div>
 
@@ -416,6 +760,7 @@ function TeamStep({ data, set, onBack, onNext, onSkip }: any) {
     </StepShell>
   );
 }
+
 function RoleHint({ label, hint }: { label: string; hint: string }) {
   return (
     <li className="flex items-start gap-2">
@@ -429,17 +774,8 @@ function RoleHint({ label, hint }: { label: string; hint: string }) {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// 3. Healthcare professionals
+// 5. Healthcare professionals
 // ────────────────────────────────────────────────────────────────────────────
-type HcpRow = {
-  id: number;
-  name: string;
-  role: string;
-  phone: string;
-  email: string;
-  location: GeographicLocation | null;
-};
-const HCP_ROLES = ["RN · ICU","RN · Med-Surg","RN · ER","CNA","EMT","LPN","Allied health"];
 
 function ProfessionalsStep({
   data,
@@ -449,462 +785,409 @@ function ProfessionalsStep({
   onSkip,
   agencyServiceArea,
 }: {
-  data: { hcps: HcpRow[]; hcpMode?: "csv" | "invite" | "manual" };
-  set: (patch: Record<string, unknown>) => void;
+  data: { profs: ProfRow[] };
+  set: (patch: { profs: ProfRow[] }) => void;
   onBack: () => void;
   onNext: () => void;
   onSkip: () => void;
   agencyServiceArea: AgencyServiceAreaContext | null;
 }) {
-  const [mode, setMode] = useState<"csv" | "invite" | "manual">(data.hcpMode ?? "manual");
-  const rows: HcpRow[] = data.hcps.length
-    ? data.hcps
-    : [{ id: 1, name: "", role: "RN · ICU", phone: "", email: "", location: null }];
+  const rows = data.profs.length ? data.profs : [emptyProf()];
+  const [saving, setSaving] = useState(false);
+  const [banner, setBanner] = useState<string | null>(null);
 
-  function setRows(rs: HcpRow[]) { set({ hcps: rs }); }
-  function update(i: number, patch: Partial<HcpRow>) { setRows(rows.map((r, idx) => idx === i ? { ...r, ...patch } : r)); }
-  function add() {
-    setRows([
-      ...rows,
-      { id: Date.now(), name: "", role: "RN · ICU", phone: "", email: "", location: null },
-    ]);
+  function setRows(rs: ProfRow[]) { set({ profs: rs }); }
+  function update(id: number, patch: Partial<ProfRow>) { setRows(rows.map((r) => (r.id === id ? { ...r, ...patch } : r))); }
+  function add() { setRows([...rows, emptyProf()]); }
+  function remove(id: number) { setRows(rows.filter((r) => r.id !== id)); }
+
+  async function handleContinue() {
+    const toSave = rows.filter((r) => (r.firstName.trim() || r.lastName.trim()) && !r.savedId);
+
+    if (toSave.length === 0) { onNext(); return; }
+
+    setSaving(true);
+    setBanner(null);
+
+    const updates: Record<number, Partial<ProfRow>> = {};
+
+    for (const row of toSave) {
+      if (!row.location) {
+        updates[row.id] = { error: "Location is required." };
+        continue;
+      }
+      const result = await addOnboardingProfessionalAction({
+        firstName: row.firstName.trim(),
+        lastName: row.lastName.trim(),
+        role: row.role,
+        email: row.email || "",
+        phone: row.phone || "",
+        location: row.location,
+        sendInvite: row.sendInvite,
+      });
+      if (result.status === "success") {
+        updates[row.id] = { savedId: result.professionalId, inviteUrl: result.inviteUrl, error: undefined };
+      } else if (result.status === "error") {
+        updates[row.id] = { error: result.message };
+      }
+    }
+
+    setSaving(false);
+
+    const newRows = rows.map((r) => (updates[r.id] ? { ...r, ...updates[r.id] } : r));
+    setRows(newRows);
+
+    const savedCount = Object.values(updates).filter((u) => u.savedId).length;
+    const hasErrors = newRows.some((r) => r.error && (r.firstName.trim() || r.lastName.trim()));
+
+    if (!hasErrors) {
+      if (savedCount > 0) setBanner(`${savedCount} professional${savedCount === 1 ? "" : "s"} added.`);
+      onNext();
+    }
   }
-  function remove(i: number) { setRows(rows.filter((_, idx) => idx !== i)); }
-
-  function setModeAndPersist(m: "csv"|"invite"|"manual") { setMode(m); set({ hcpMode: m }); }
 
   return (
     <StepShell>
-      <StepHeader eyebrow="Step 03 · Workforce" heading="Add your healthcare" italic="professionals." sub="Import or invite RNs and healthcare professionals into your staffing network." />
+      <StepHeader eyebrow="Step 05 · Workforce" heading="Add your healthcare" italic="professionals." sub="Add RNs, CNAs, EMTs, and other professionals to your staffing network. You can import more later." />
+      {banner && <SuccessBanner>{banner}</SuccessBanner>}
 
-      <div className="mt-8 inline-flex items-center gap-1 p-1 rounded-full border border-ink-200 bg-white">
-        {[
-          { id: "csv",     label: "Upload CSV",       icon: "upload" },
-          { id: "invite",  label: "Invite via SMS/email", icon: "send" },
-          { id: "manual",  label: "Add manually",      icon: "user-plus" },
-        ].map((t: any) => (
-          <button
-            key={t.id}
-            onClick={() => setModeAndPersist(t.id)}
-            className={`inline-flex items-center gap-2 px-4 h-10 rounded-full text-[13px] tracking-tight ${
-              mode === t.id ? "bg-ink-900 text-paper" : "text-ink-700 hover:bg-ink-50"
-            }`}
-          >
-            <Icon name={t.icon} className="w-3.5 h-3.5" /> {t.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-6 grid grid-cols-12 gap-10 items-start">
-        <div className="col-span-12 lg:col-span-8">
-          {mode === "csv" && <CsvDrop />}
-          {mode === "invite" && <InvitePanel />}
-          {mode === "manual" && (
-            <div className="rounded-xl border border-ink-200 bg-white">
-              {agencyServiceArea && (
-                <p className="px-4 pt-3 text-[10px] font-mono text-ink-500 border-b border-ink-100">
-                  Search within your agency&apos;s service area
-                  {agencyServiceArea.displayName
-                    ? ` (${agencyServiceArea.displayName})`
-                    : ""}
-                  .
-                </p>
-              )}
-              <div className="grid grid-cols-12 px-4 py-2.5 text-[10px] font-mono uppercase tracking-wider text-ink-500 border-b border-ink-100">
-                <div className="col-span-3">Name</div>
-                <div className="col-span-2">Role</div>
-                <div className="col-span-2">Phone</div>
-                <div className="col-span-3">Email</div>
-                <div className="col-span-2">Location</div>
-              </div>
-              {rows.map((r, i) => (
-                <div key={r.id} className="grid grid-cols-12 gap-2 items-start px-3 py-2.5 border-b last:border-0 border-ink-100">
-                  <div className="col-span-3"><Input value={r.name} onChange={(e: any) => update(i, { name: e.target.value })} placeholder="A. Martinez" /></div>
-                  <div className="col-span-2"><Select value={r.role} onChange={(e: any) => update(i, { role: e.target.value })}>{HCP_ROLES.map(x => <option key={x}>{x}</option>)}</Select></div>
-                  <div className="col-span-2"><Input value={r.phone} onChange={(e: any) => update(i, { phone: e.target.value })} placeholder="(555) 010-2841" /></div>
-                  <div className="col-span-3"><Input value={r.email} onChange={(e: any) => update(i, { email: e.target.value })} placeholder="rn@email.com" type="email" /></div>
-                  <div className="col-span-2 flex items-start gap-1 min-w-0">
-                    <div className="flex-1 min-w-0">
-                      <LocationAutocomplete
-                        size="compact"
-                        value={r.location}
-                        onChange={(location) => update(i, { location })}
-                        placeholder="Search city, metro, or ZIP"
-                        restrictedToServiceArea={Boolean(agencyServiceArea)}
-                        serviceAreaCenterLat={agencyServiceArea?.latitude}
-                        serviceAreaCenterLng={agencyServiceArea?.longitude}
-                        serviceAreaRadiusMiles={agencyServiceArea?.radiusMiles}
-                        helperText=""
-                      />
-                    </div>
-                    {rows.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => remove(i)}
-                        className="shrink-0 w-8 h-8 rounded hover:bg-ink-100 inline-flex items-center justify-center text-ink-500 mt-0.5"
-                        aria-label="Remove row"
-                      >
-                        <Icon name="x" className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-              <div className="px-3 py-2.5">
-                <button onClick={add} className="inline-flex items-center gap-2 h-9 px-3 rounded-full border border-dashed border-ink-300 text-[12px] font-medium text-ink-700 hover:bg-ink-50">
-                  <Icon name="plus" className="w-3.5 h-3.5" /> Add another
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div className="mt-4 rounded-lg bg-teal-50/60 border border-teal-200 px-4 py-3 flex items-start gap-2.5">
-            <Icon name="info" className="w-4 h-4 text-teal-700 mt-0.5" />
-            <div className="text-[12px] text-teal-900 leading-relaxed">
-              Healthcare professionals join through agency invitation. They'll receive a link to
-              set up their account, upload credentials, and start receiving shift offers.
-            </div>
-          </div>
-        </div>
-
-        <aside className="col-span-12 lg:col-span-4">
-          <div className="rounded-xl border border-ink-200 bg-paper/40 p-5">
-            <div className="text-[11px] font-mono uppercase tracking-wider text-ink-500">In your workforce so far</div>
-            <div className="mt-2 text-[36px] font-medium tabular-nums tracking-tight">{rows.filter(r => r.name).length}</div>
-            <div className="text-[11px] font-mono text-ink-500">of an unlimited roster</div>
-            <div className="mt-4 pt-4 border-t border-ink-200 text-[11px] font-mono text-ink-600 space-y-1.5">
-              <div className="flex items-center gap-2"><Icon name="file-spreadsheet" className="w-3.5 h-3.5 text-teal-700" /> CSV template available</div>
-              <div className="flex items-center gap-2"><Icon name="message-circle" className="w-3.5 h-3.5 text-teal-700" /> Bulk invite up to 500 at once</div>
-              <div className="flex items-center gap-2"><Icon name="shield-check" className="w-3.5 h-3.5 text-teal-700" /> Compliance prompts on first sign-in</div>
-            </div>
-          </div>
-        </aside>
-      </div>
-
-      <StepFooter onBack={onBack} onNext={onNext} skipLabel="Skip for now" onSkip={onSkip} />
-    </StepShell>
-  );
-}
-
-function CsvDrop() {
-  const [hover, setHover] = useState(false);
-  return (
-    <div
-      onDragOver={(e: any) => { e.preventDefault(); setHover(true); }}
-      onDragLeave={() => setHover(false)}
-      onDrop={(e: any) => { e.preventDefault(); setHover(false); }}
-      className={`rounded-xl border-2 border-dashed p-10 text-center transition ${hover ? "border-teal-500 bg-teal-50/50" : "border-ink-200 bg-white"}`}
-    >
-      <span className="inline-flex w-12 h-12 rounded-full bg-teal-50 text-teal-700 items-center justify-center">
-        <Icon name="upload-cloud" className="w-6 h-6" />
-      </span>
-      <div className="mt-4 text-[16px] font-medium tracking-tight">Drop a CSV file here</div>
-      <div className="mt-1 text-[12px] font-mono text-ink-500">name · role · phone · email · location (city, metro, or ZIP)</div>
-      <div className="mt-4 inline-flex items-center gap-2">
-        <button className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-ink-200 bg-white text-[13px] font-medium hover:bg-ink-50">
-          <Icon name="file-up" className="w-4 h-4" /> Browse files
-        </button>
-        <a className="text-[12px] font-mono text-teal-700 hover:underline">Download template</a>
-      </div>
-    </div>
-  );
-}
-
-function InvitePanel() {
-  return (
-    <div className="rounded-xl border border-ink-200 bg-white p-5">
-      <Field label="Phone numbers or emails" sub="Comma- or newline-separated">
-        <textarea rows={5} className="w-full px-3.5 py-2.5 rounded-lg border border-ink-200 bg-white text-[14px] font-mono tracking-tight focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none" placeholder={"a.martinez@gmail.com\n+1 555 010 2841\nk.park@gmail.com"} />
-      </Field>
-      <div className="mt-4 grid grid-cols-2 gap-4">
-        <Field label="Default role">
-          <Select defaultValue="RN · ICU">{HCP_ROLES.map(x => <option key={x}>{x}</option>)}</Select>
-        </Field>
-        <Field label="Channel">
-          <Select defaultValue="both"><option value="both">SMS + Email</option><option value="sms">SMS only</option><option value="email">Email only</option></Select>
-        </Field>
-      </div>
-      <div className="mt-3 text-[11px] font-mono text-ink-500">Invitations include credential setup and your agency name.</div>
-    </div>
-  );
-}
-
-// ────────────────────────────────────────────────────────────────────────────
-// 4. Facilities
-// ────────────────────────────────────────────────────────────────────────────
-type FacilityRow = { id: number; name: string; type: string; contact: string; email: string; phone: string; location: string };
-const FAC_TYPES = ["Hospital","Nursing Home","Clinic","Assisted Living","Home Healthcare"];
-
-function FacilitiesStep({ data, set, onBack, onNext, onSkip }: any) {
-  const rows: FacilityRow[] = data.facilities.length ? data.facilities : [{ id: 1, name: "", type: "Hospital", contact: "", email: "", phone: "", location: "" }];
-  function setRows(rs: FacilityRow[]) { set({ facilities: rs }); }
-  function update(i: number, patch: Partial<FacilityRow>) { setRows(rows.map((r, idx) => idx === i ? { ...r, ...patch } : r)); }
-  function add() { setRows([...rows, { id: Date.now(), name: "", type: "Hospital", contact: "", email: "", phone: "", location: "" }]); }
-  function remove(i: number) { setRows(rows.filter((_, idx) => idx !== i)); }
-
-  return (
-    <StepShell>
-      <StepHeader eyebrow="Step 04 · Facilities" heading="Connect your" italic="facilities and customers." sub="Connect hospitals, clinics, nursing homes, and healthcare facilities. Each gets a portal to submit and track requests." />
-
-      <div className="mt-10 space-y-3">
-        {rows.map((r, i) => (
-          <div key={r.id} className="rounded-xl border border-ink-200 bg-white p-5">
+      <div className="mt-10 space-y-4">
+        {rows.map((row, i) => (
+          <div key={row.id} className={`rounded-xl border bg-white p-5 ${row.error ? "border-rose-300" : row.savedId ? "border-teal-300 bg-teal-50/20" : "border-ink-200"}`}>
             <div className="flex items-center gap-3 mb-4">
-              <span className="w-8 h-8 rounded-md bg-teal-50 text-teal-700 inline-flex items-center justify-center"><Icon name="building-2" className="w-4 h-4" /></span>
-              <div className="text-[12px] font-mono text-ink-500">Facility {String(i + 1).padStart(2, "0")}</div>
+              <span className="w-8 h-8 rounded-md bg-teal-50 text-teal-700 inline-flex items-center justify-center">
+                <Icon name="stethoscope" className="w-4 h-4" />
+              </span>
+              <div className="text-[12px] font-mono text-ink-500">Professional {String(i + 1).padStart(2, "0")}</div>
+              {row.savedId && <Badge tone="teal"><Icon name="check" className="w-3 h-3 mr-1" strokeWidth={2.5} />Saved</Badge>}
+              {row.inviteUrl && (
+                <a href={row.inviteUrl} target="_blank" rel="noreferrer" className="text-[10px] font-mono text-teal-700 hover:underline truncate max-w-[200px]">Invite link ready</a>
+              )}
               <div className="ml-auto">
-                {rows.length > 1 && (
-                  <button onClick={() => remove(i)} className="text-[11px] font-mono text-ink-500 hover:text-rose-700 px-2 h-7 rounded hover:bg-rose-50 inline-flex items-center gap-1.5">
+                {rows.length > 1 && !row.savedId && (
+                  <button onClick={() => remove(row.id)} className="text-[11px] font-mono text-ink-500 hover:text-rose-700 px-2 h-7 rounded hover:bg-rose-50 inline-flex items-center gap-1.5">
                     <Icon name="trash-2" className="w-3.5 h-3.5" /> Remove
                   </button>
                 )}
               </div>
             </div>
+
+            {row.error && <p className="mb-4 text-[12px] font-mono text-rose-600">{row.error}</p>}
+
             <div className="grid grid-cols-12 gap-3">
-              <div className="col-span-12 md:col-span-5"><Field label="Facility name"><Input value={r.name} onChange={(e: any) => update(i, { name: e.target.value })} placeholder="Mercy Mt. Sinai" /></Field></div>
-              <div className="col-span-12 md:col-span-4"><Field label="Facility type"><Select value={r.type} onChange={(e: any) => update(i, { type: e.target.value })}>{FAC_TYPES.map(x => <option key={x}>{x}</option>)}</Select></Field></div>
-              <div className="col-span-12 md:col-span-3"><Field label="Location"><Input value={r.location} onChange={(e: any) => update(i, { location: e.target.value })} placeholder="San Francisco, CA" /></Field></div>
-              <div className="col-span-12 md:col-span-4"><Field label="Contact person"><Input value={r.contact} onChange={(e: any) => update(i, { contact: e.target.value })} placeholder="Director of Nursing" /></Field></div>
-              <div className="col-span-12 md:col-span-4"><Field label="Email"><Input value={r.email} onChange={(e: any) => update(i, { email: e.target.value })} placeholder="dir@mercyhealth.org" type="email" /></Field></div>
-              <div className="col-span-12 md:col-span-4"><Field label="Phone"><Input value={r.phone} onChange={(e: any) => update(i, { phone: e.target.value })} placeholder="(555) 010-2841" /></Field></div>
+              <div className="col-span-12 md:col-span-4">
+                <Field label="First name">
+                  <Input value={row.firstName} onChange={(e) => update(row.id, { firstName: e.target.value })} placeholder="Andrea" disabled={!!row.savedId} />
+                </Field>
+              </div>
+              <div className="col-span-12 md:col-span-4">
+                <Field label="Last name">
+                  <Input value={row.lastName} onChange={(e) => update(row.id, { lastName: e.target.value })} placeholder="Martinez" disabled={!!row.savedId} />
+                </Field>
+              </div>
+              <div className="col-span-12 md:col-span-4">
+                <Field label="Role">
+                  <SelectEl value={row.role} onChange={(e) => update(row.id, { role: e.target.value as ProfRole })} disabled={!!row.savedId}>
+                    {PROFESSIONAL_ROLES.map((r) => (
+                      <option key={r} value={r}>{PROFESSIONAL_ROLE_LABELS[r]}</option>
+                    ))}
+                  </SelectEl>
+                </Field>
+              </div>
+              <div className="col-span-12 md:col-span-4">
+                <Field label="Email" sub="optional">
+                  <Input value={row.email} onChange={(e) => update(row.id, { email: e.target.value, sendInvite: row.sendInvite && !!e.target.value })} placeholder="rn@email.com" type="email" disabled={!!row.savedId} />
+                </Field>
+              </div>
+              <div className="col-span-12 md:col-span-4">
+                <Field label="Phone" sub="optional">
+                  <Input value={row.phone} onChange={(e) => update(row.id, { phone: e.target.value })} placeholder="(555) 010-2841" type="tel" disabled={!!row.savedId} />
+                </Field>
+              </div>
+              <div className="col-span-12 md:col-span-4">
+                <Field label="Location">
+                  <LocationAutocomplete
+                    size="default"
+                    value={row.location}
+                    onChange={(loc) => update(row.id, { location: loc })}
+                    placeholder="City, metro, or ZIP"
+                    restrictedToServiceArea={Boolean(agencyServiceArea)}
+                    serviceAreaCenterLat={agencyServiceArea?.latitude}
+                    serviceAreaCenterLng={agencyServiceArea?.longitude}
+                    serviceAreaRadiusMiles={agencyServiceArea?.radiusMiles}
+                    helperText={agencyServiceArea ? `Within ${agencyServiceArea.radiusMiles}-mi of ${agencyServiceArea.displayName}` : ""}
+                    disabled={!!row.savedId}
+                  />
+                </Field>
+              </div>
+              {row.email && !row.savedId && (
+                <div className="col-span-12">
+                  <label className="inline-flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={row.sendInvite}
+                      onChange={(e) => update(row.id, { sendInvite: e.target.checked })}
+                      className="rounded border-ink-300 text-teal-700 focus:ring-teal-500"
+                    />
+                    <span className="text-[12px] text-ink-700">Send invite to {row.email} to set up their provider account</span>
+                  </label>
+                </div>
+              )}
             </div>
           </div>
         ))}
+
+        <button onClick={add} className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl border border-dashed border-ink-300 text-[13px] font-medium text-ink-700 hover:bg-ink-50 hover:border-ink-400">
+          <Icon name="plus" className="w-4 h-4" /> Add another professional
+        </button>
+      </div>
+
+      <StepFooter
+        onBack={onBack}
+        onNext={handleContinue}
+        nextLabel={saving ? "Saving…" : "Continue"}
+        nextDisabled={saving}
+        skipLabel="Skip for now"
+        onSkip={onSkip}
+      />
+    </StepShell>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 6. Facilities
+// ────────────────────────────────────────────────────────────────────────────
+
+function FacilitiesStep({
+  data,
+  set,
+  onBack,
+  onNext,
+  onSkip,
+  agencyServiceArea,
+}: {
+  data: { facs: FacRow[] };
+  set: (patch: { facs: FacRow[] }) => void;
+  onBack: () => void;
+  onNext: () => void;
+  onSkip: () => void;
+  agencyServiceArea: AgencyServiceAreaContext | null;
+}) {
+  const facs = data.facs.length ? data.facs : [emptyFac()];
+  const [saving, setSaving] = useState(false);
+  const [banner, setBanner] = useState<string | null>(null);
+
+  function setFacs(fs: FacRow[]) { set({ facs: fs }); }
+  function update(id: number, patch: Partial<FacRow>) { setFacs(facs.map((f) => (f.id === id ? { ...f, ...patch } : f))); }
+  function add() { setFacs([...facs, emptyFac()]); }
+  function remove(id: number) { setFacs(facs.filter((f) => f.id !== id)); }
+
+  async function handleContinue() {
+    const toSave = facs.filter((f) => f.name.trim() && !f.savedId);
+
+    if (toSave.length === 0) { onNext(); return; }
+
+    setSaving(true);
+    setBanner(null);
+
+    const updates: Record<number, Partial<FacRow>> = {};
+
+    for (const fac of toSave) {
+      if (!fac.location) {
+        updates[fac.id] = { error: "Location is required." };
+        continue;
+      }
+      const result = await addOnboardingFacilityAction({
+        name: fac.name.trim(),
+        type: fac.type,
+        location: fac.location,
+        contactName: fac.contactName.trim(),
+        contactEmail: fac.contactEmail.trim(),
+        contactPhone: fac.contactPhone.trim(),
+        inviteContact: fac.inviteContact,
+      });
+      if (result.status === "success") {
+        updates[fac.id] = { savedId: result.facilityId, inviteUrl: result.inviteUrl, error: undefined };
+      } else if (result.status === "error") {
+        updates[fac.id] = { error: result.message };
+      }
+    }
+
+    setSaving(false);
+
+    const newFacs = facs.map((f) => (updates[f.id] ? { ...f, ...updates[f.id] } : f));
+    setFacs(newFacs);
+
+    const savedCount = Object.values(updates).filter((u) => u.savedId).length;
+    const hasErrors = newFacs.some((f) => f.error && f.name.trim());
+
+    if (!hasErrors) {
+      if (savedCount > 0) setBanner(`${savedCount} facilit${savedCount === 1 ? "y" : "ies"} added.`);
+      onNext();
+    }
+  }
+
+  return (
+    <StepShell>
+      <StepHeader eyebrow="Step 06 · Facilities" heading="Connect your" italic="facilities and customers." sub="Hospitals, clinics, nursing homes, and other healthcare facilities. Each gets a portal to submit and track requests." />
+      {banner && <SuccessBanner>{banner}</SuccessBanner>}
+
+      <div className="mt-10 space-y-4">
+        {facs.map((fac, i) => (
+          <div key={fac.id} className={`rounded-xl border bg-white p-5 ${fac.error ? "border-rose-300" : fac.savedId ? "border-teal-300 bg-teal-50/20" : "border-ink-200"}`}>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="w-8 h-8 rounded-md bg-teal-50 text-teal-700 inline-flex items-center justify-center">
+                <Icon name="building-2" className="w-4 h-4" />
+              </span>
+              <div className="text-[12px] font-mono text-ink-500">Facility {String(i + 1).padStart(2, "0")}</div>
+              {fac.savedId && <Badge tone="teal"><Icon name="check" className="w-3 h-3 mr-1" strokeWidth={2.5} />Saved</Badge>}
+              {fac.inviteUrl && (
+                <a href={fac.inviteUrl} target="_blank" rel="noreferrer" className="text-[10px] font-mono text-teal-700 hover:underline truncate max-w-[200px]">Portal invite ready</a>
+              )}
+              <div className="ml-auto">
+                {facs.length > 1 && !fac.savedId && (
+                  <button onClick={() => remove(fac.id)} className="text-[11px] font-mono text-ink-500 hover:text-rose-700 px-2 h-7 rounded hover:bg-rose-50 inline-flex items-center gap-1.5">
+                    <Icon name="trash-2" className="w-3.5 h-3.5" /> Remove
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {fac.error && <p className="mb-4 text-[12px] font-mono text-rose-600">{fac.error}</p>}
+
+            <div className="grid grid-cols-12 gap-3">
+              <div className="col-span-12 md:col-span-5">
+                <Field label="Facility name">
+                  <Input value={fac.name} onChange={(e) => update(fac.id, { name: e.target.value })} placeholder="Mercy Mt. Sinai Medical Center" disabled={!!fac.savedId} />
+                </Field>
+              </div>
+              <div className="col-span-12 md:col-span-4">
+                <Field label="Facility type">
+                  <SelectEl value={fac.type} onChange={(e) => update(fac.id, { type: e.target.value as FacType })} disabled={!!fac.savedId}>
+                    {FACILITY_TYPES.map((t) => (
+                      <option key={t} value={t}>{FACILITY_TYPE_LABELS[t]}</option>
+                    ))}
+                  </SelectEl>
+                </Field>
+              </div>
+              <div className="col-span-12 md:col-span-3">
+                <Field label="Location">
+                  <LocationAutocomplete
+                    size="default"
+                    value={fac.location}
+                    onChange={(loc) => update(fac.id, { location: loc })}
+                    placeholder="City, metro, or ZIP"
+                    restrictedToServiceArea={Boolean(agencyServiceArea)}
+                    serviceAreaCenterLat={agencyServiceArea?.latitude}
+                    serviceAreaCenterLng={agencyServiceArea?.longitude}
+                    serviceAreaRadiusMiles={agencyServiceArea?.radiusMiles}
+                    helperText=""
+                    disabled={!!fac.savedId}
+                  />
+                </Field>
+              </div>
+              <div className="col-span-12 md:col-span-4">
+                <Field label="Contact name">
+                  <Input value={fac.contactName} onChange={(e) => update(fac.id, { contactName: e.target.value })} placeholder="Director of Nursing" disabled={!!fac.savedId} />
+                </Field>
+              </div>
+              <div className="col-span-12 md:col-span-4">
+                <Field label="Contact email">
+                  <Input value={fac.contactEmail} onChange={(e) => update(fac.id, { contactEmail: e.target.value })} placeholder="director@mercyhealth.org" type="email" disabled={!!fac.savedId} />
+                </Field>
+              </div>
+              <div className="col-span-12 md:col-span-4">
+                <Field label="Contact phone">
+                  <Input value={fac.contactPhone} onChange={(e) => update(fac.id, { contactPhone: e.target.value })} placeholder="(555) 010-2841" type="tel" disabled={!!fac.savedId} />
+                </Field>
+              </div>
+              {!fac.savedId && fac.contactEmail && (
+                <div className="col-span-12">
+                  <label className="inline-flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={fac.inviteContact}
+                      onChange={(e) => update(fac.id, { inviteContact: e.target.checked })}
+                      className="rounded border-ink-300 text-teal-700 focus:ring-teal-500"
+                    />
+                    <span className="text-[12px] text-ink-700">Send portal invite to {fac.contactEmail}</span>
+                  </label>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+
         <button onClick={add} className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl border border-dashed border-ink-300 text-[13px] font-medium text-ink-700 hover:bg-ink-50 hover:border-ink-400">
           <Icon name="plus" className="w-4 h-4" /> Add another facility
         </button>
       </div>
 
-      <StepFooter onBack={onBack} onNext={onNext} skipLabel="Skip for now" onSkip={onSkip} />
+      <StepFooter
+        onBack={onBack}
+        onNext={handleContinue}
+        nextLabel={saving ? "Saving…" : "Continue"}
+        nextDisabled={saving}
+        skipLabel="Skip for now"
+        onSkip={onSkip}
+      />
     </StepShell>
   );
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// 5. Compliance
+// 7. Complete
 // ────────────────────────────────────────────────────────────────────────────
-const COMPLIANCE_ITEMS = [
-  { id: "rn",       icon: "id-card",      title: "RN License",                sub: "Per-state, with expiration tracking",   defaultOn: true },
-  { id: "cpr",      icon: "heart-pulse",  title: "CPR Certification",         sub: "BLS, ACLS, PALS — auto-reminders",      defaultOn: true },
-  { id: "bg",       icon: "user-check",   title: "Background Check",          sub: "Refresh annually, vendor-agnostic",     defaultOn: true },
-  { id: "vax",      icon: "syringe",      title: "Vaccination Records",       sub: "Flu, Hep B, MMR, COVID — by facility",  defaultOn: false },
-  { id: "tb",       icon: "shield-plus",  title: "TB Test",                   sub: "Annual, with reminder cadence",          defaultOn: false },
-  { id: "specialty",icon: "award",        title: "Specialty Certifications",  sub: "Per-role: ICU, ER, OR, L&D…",            defaultOn: false },
-];
 
-function ComplianceStep({ data, set, onBack, onNext, onSkip }: any) {
-  const initial: Record<string, boolean> = useMemo(() => {
-    if (Object.keys(data.compliance).length) return data.compliance;
-    const o: Record<string, boolean> = {};
-    COMPLIANCE_ITEMS.forEach(it => o[it.id] = it.defaultOn);
-    return o;
-  }, []);
-  const [picks, setPicks] = useState<Record<string, boolean>>(initial);
-  function toggle(id: string) {
-    const next = { ...picks, [id]: !picks[id] };
-    setPicks(next);
-    set({ compliance: next });
-  }
-  const enabled = COMPLIANCE_ITEMS.filter(i => picks[i.id]).length;
-
-  return (
-    <StepShell>
-      <StepHeader eyebrow="Step 05 · Compliance" heading="Configure compliance" italic="requirements." sub="Define the credentials and certifications required for staffing assignments. AsNeeded enforces these automatically when matching." />
-
-      <div className="mt-10 grid grid-cols-12 gap-4">
-        {COMPLIANCE_ITEMS.map(it => {
-          const on = !!picks[it.id];
-          return (
-            <button
-              key={it.id}
-              onClick={() => toggle(it.id)}
-              className={`col-span-12 sm:col-span-6 lg:col-span-4 text-left rounded-xl border p-5 transition relative overflow-hidden ${
-                on ? "border-teal-700 bg-teal-50/40 ring-2 ring-teal-100" : "border-ink-200 bg-white hover:border-ink-300"
-              }`}
-            >
-              <div className="flex items-start justify-between">
-                <span className={`w-9 h-9 rounded-md inline-flex items-center justify-center ${on ? "bg-teal-700 text-white" : "bg-ink-100 text-ink-600"}`}>
-                  <Icon name={it.icon} className="w-4 h-4" />
-                </span>
-                <span className={`w-5 h-5 rounded-md border inline-flex items-center justify-center ${on ? "bg-teal-700 border-teal-700 text-white" : "bg-white border-ink-300"}`}>
-                  {on && <Icon name="check" className="w-3 h-3" strokeWidth={3} />}
-                </span>
-              </div>
-              <div className="mt-3 text-[15px] font-medium tracking-tight">{it.title}</div>
-              <div className="mt-1 text-[12px] text-ink-600 leading-relaxed">{it.sub}</div>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="mt-6 rounded-lg bg-paper/60 border border-ink-200 px-4 py-3 flex items-center gap-3">
-        <Badge tone="teal">{enabled} enabled</Badge>
-        <div className="text-[12px] text-ink-700">
-          AsNeeded will only surface professionals with these credentials current when matching shifts.
-        </div>
-      </div>
-
-      <StepFooter onBack={onBack} onNext={onNext} skipLabel="Skip for now" onSkip={onSkip} />
-    </StepShell>
-  );
-}
-
-// ────────────────────────────────────────────────────────────────────────────
-// 6. First request
-// ────────────────────────────────────────────────────────────────────────────
-function FirstRequestStep({ data, set, onBack, onNext }: any) {
-  const facs = data.facilities.filter((f: FacilityRow) => f.name).map((f: FacilityRow) => f.name);
-  const [facility, setFacility] = useState(data.firstRequest?.facility ?? facs[0] ?? "Mercy Mt. Sinai");
-  const [role, setRole]         = useState(data.firstRequest?.role ?? "RN");
-  const [count, setCount]       = useState(data.firstRequest?.count ?? 2);
-  const [date, setDate]         = useState(data.firstRequest?.date ?? "Tomorrow · Wed, Mar 11");
-  const [start, setStart]       = useState(data.firstRequest?.start ?? "19:00");
-  const [end, setEnd]           = useState(data.firstRequest?.end ?? "07:00");
-  const [specialty, setSpecialty] = useState(data.firstRequest?.specialty ?? "ICU");
-  const [notes, setNotes]       = useState(data.firstRequest?.notes ?? "");
-
-  useEffect(() => {
-    set({ firstRequest: { facility, role, count, date, start, end, specialty, notes } });
-  }, [facility, role, count, date, start, end, specialty, notes]);
-
-  const ready = facility && role && count > 0;
-
-  return (
-    <StepShell>
-      <StepHeader eyebrow="Step 06 · First request" heading="Create your first" italic="staffing request." sub="Start coordinating your first staffing assignment. Your team and workforce will see it the moment you publish." />
-
-      <div className="mt-10 grid grid-cols-12 gap-8 items-start">
-        <div className="col-span-12 lg:col-span-7 rounded-xl border border-ink-200 bg-white p-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2"><Field label="Facility">
-              <Select value={facility} onChange={(e: any) => setFacility(e.target.value)}>
-                {[...new Set(["Mercy Mt. Sinai","Bayview Care","Pinegrove SNF", ...facs])].map(f => <option key={f}>{f}</option>)}
-              </Select>
-            </Field></div>
-            <Field label="Role needed">
-              <Select value={role} onChange={(e: any) => setRole(e.target.value)}>
-                {["RN","CNA","EMT","LPN","Allied health"].map(r => <option key={r}>{r}</option>)}
-              </Select>
-            </Field>
-            <Field label="Number of professionals">
-              <div className="flex items-center gap-2">
-                <button onClick={() => setCount(Math.max(1, count - 1))} className="w-11 h-11 rounded-lg border border-ink-200 bg-white hover:bg-ink-50"><Icon name="minus" className="w-4 h-4" /></button>
-                <Input value={count} onChange={(e: any) => setCount(Math.max(1, +e.target.value || 1))} type="number" className="text-center" />
-                <button onClick={() => setCount(count + 1)} className="w-11 h-11 rounded-lg border border-ink-200 bg-white hover:bg-ink-50"><Icon name="plus" className="w-4 h-4" /></button>
-              </div>
-            </Field>
-            <div className="col-span-2"><Field label="Shift date">
-              <Select value={date} onChange={(e: any) => setDate(e.target.value)}>
-                {["Tonight · Tue, Mar 10","Tomorrow · Wed, Mar 11","Thu, Mar 12","Fri, Mar 13","Sat, Mar 14"].map(d => <option key={d}>{d}</option>)}
-              </Select>
-            </Field></div>
-            <Field label="Start time"><Input value={start} onChange={(e: any) => setStart(e.target.value)} type="time" /></Field>
-            <Field label="End time"><Input value={end} onChange={(e: any) => setEnd(e.target.value)} type="time" /></Field>
-            <div className="col-span-2"><Field label="Specialty">
-              <Select value={specialty} onChange={(e: any) => setSpecialty(e.target.value)}>
-                {["ICU","Med-Surg","ER","L&D","OR","Telemetry","Pediatrics"].map(s => <option key={s}>{s}</option>)}
-              </Select>
-            </Field></div>
-            <div className="col-span-2"><Field label="Notes">
-              <textarea value={notes} onChange={(e: any) => setNotes(e.target.value)} rows={3}
-                placeholder="e.g. Need 2 RNs tomorrow from 7 PM to 7 AM."
-                className="w-full px-3.5 py-2.5 rounded-lg border border-ink-200 bg-white text-[14px] tracking-tight focus:border-teal-500 focus:ring-2 focus:ring-teal-100 outline-none"
-              />
-            </Field></div>
-          </div>
-        </div>
-
-        {/* Live preview */}
-        <aside className="col-span-12 lg:col-span-5">
-          <div className="text-[11px] font-mono uppercase tracking-wider text-ink-500 mb-2 px-1">How your team will see it</div>
-          <div className="rounded-xl border border-ink-200 bg-white shadow-card overflow-hidden">
-            <div className="px-4 py-3 border-b border-ink-100 flex items-center gap-2 bg-ink-50/60">
-              <span className="text-[10px] font-mono text-ink-500">REQ-2842</span>
-              <Badge tone="amber"><Dot tone="amber" pulse /> matching</Badge>
-              <span className="ml-auto text-[10px] font-mono text-ink-500">draft preview</span>
-            </div>
-            <div className="p-4">
-              <div className="text-[15px] font-medium tracking-tight">{facility} · {specialty}</div>
-              <div className="text-[12px] font-mono text-ink-600 mt-1">{date} · {start}–{end}</div>
-              <div className="mt-4 grid grid-cols-3 gap-2 text-[11px] font-mono">
-                <Spec label="Role" value={role} />
-                <Spec label="Need" value={`${count} ${role}`} />
-                <Spec label="Shift" value={`${start}–${end}`} />
-              </div>
-              {notes && (
-                <div className="mt-3 rounded-md bg-paper/60 border border-ink-100 p-2.5 text-[12px] text-ink-700 leading-snug">
-                  <span className="font-mono text-[10px] uppercase tracking-wider text-ink-500 block mb-0.5">Notes</span>
-                  {notes}
-                </div>
-              )}
-              <div className="mt-4 pt-4 border-t border-ink-100">
-                <div className="text-[10px] font-mono uppercase tracking-wider text-ink-500 mb-2">When you publish</div>
-                <ul className="text-[12px] space-y-1.5 text-ink-700">
-                  <li className="flex items-center gap-2"><Icon name="wand-2" className="w-3.5 h-3.5 text-teal-700" /> Auto-match against compliant {role}s</li>
-                  <li className="flex items-center gap-2"><Icon name="send" className="w-3.5 h-3.5 text-teal-700" /> Send offers · push + SMS</li>
-                  <li className="flex items-center gap-2"><Icon name="activity" className="w-3.5 h-3.5 text-teal-700" /> Track fulfillment in real time</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </aside>
-      </div>
-
-      <StepFooter onBack={onBack} onNext={onNext} nextLabel="Create staffing request" nextDisabled={!ready} primary="teal" />
-    </StepShell>
-  );
-}
-function Spec({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded border border-ink-100 bg-paper/40 px-2 py-1.5">
-      <div className="text-[9px] uppercase tracking-wider text-ink-500">{label}</div>
-      <div className="text-[12px] text-ink-900 font-sans tracking-tight">{value}</div>
-    </div>
-  );
-}
-
-// ────────────────────────────────────────────────────────────────────────────
-// 7. Complete + dashboard preview
-// ────────────────────────────────────────────────────────────────────────────
-function CompleteStep({ data }: any) {
-  const counts = {
-    team: data.team.filter((r: TeamRow) => r.email).length,
-    hcps: data.hcps.filter((r: HcpRow) => r.name).length || (data.hcpMode === "invite" ? 12 : 0),
-    facilities: data.facilities.filter((r: FacilityRow) => r.name).length,
-    request: data.firstRequest?.facility ? 1 : 0,
-  };
+function CompleteStep({
+  onFinish,
+  finishing,
+  error,
+}: {
+  onFinish: () => void;
+  finishing: boolean;
+  error: string | null;
+}) {
   return (
     <div className="relative">
-      {/* Dashboard backdrop */}
       <DashboardBackdrop />
       <div className="absolute inset-0 bg-paper/60 backdrop-blur-[2px]" aria-hidden />
-
-      <div className="relative max-w-[920px] mx-auto px-8 py-16 pop-in">
+      <div className="relative max-w-[920px] mx-auto px-8 py-16">
         <div className="rounded-2xl bg-white shadow-deep ring-1 ring-ink-900/5 p-10 text-center">
           <span className="inline-flex w-14 h-14 rounded-full bg-teal-50 text-teal-700 items-center justify-center">
             <Icon name="check" className="w-7 h-7" strokeWidth={2.4} />
           </span>
           <h1 className="mt-6 text-[40px] leading-[1.06] tracking-[-0.02em] font-medium">
-            Your staffing operations workspace is
-            <span className="font-serif italic text-teal-800"> ready.</span>
+            Your workspace is ready to
+            <span className="font-serif italic text-teal-800"> go.</span>
           </h1>
           <p className="mt-3 text-[15px] text-ink-600 max-w-md mx-auto">
-            You're set up. Drop into the operations console — your first request is live and
-            matching against your workforce now.
+            Agency profile and service area are configured. Your operations console is waiting — start
+            coordinating staffing requests from day one.
           </p>
 
-          <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
-            <Summary icon="users"        label="Team members"            value={counts.team} sub="invited" />
-            <Summary icon="stethoscope"  label="Healthcare professionals" value={counts.hcps} sub={data.hcpMode === "csv" ? "imported" : data.hcpMode === "invite" ? "invited" : "added"} />
-            <Summary icon="building-2"   label="Facilities"               value={counts.facilities} sub="connected" />
-            <Summary icon="send"         label="First request"            value={counts.request} sub="live · matching" highlight />
+          {error && (
+            <div className="mt-6 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] text-rose-900 max-w-md mx-auto">
+              {error}
+            </div>
+          )}
+
+          <div className="mt-8 grid grid-cols-2 sm:grid-cols-3 gap-3 text-left max-w-lg mx-auto">
+            <CompleteStat icon="building-2"   label="Agency profile" sub="configured" />
+            <CompleteStat icon="map-pin"      label="Service area"   sub="defined" />
+            <CompleteStat icon="wand-2"       label="Auto-matching"  sub="ready" highlight />
           </div>
 
           <div className="mt-8 flex items-center justify-center gap-3">
-            <a href="ops.html" className="inline-flex items-center gap-2 h-12 px-6 rounded-full bg-ink-900 text-paper font-medium tracking-tight text-[14px] hover:bg-ink-800">
-              Go to operations dashboard <Icon name="arrow-right" className="w-4 h-4" />
-            </a>
-            <a className="text-[13px] text-ink-700 hover:underline">Tour the dashboard first</a>
+            <button
+              onClick={onFinish}
+              disabled={finishing}
+              className={`inline-flex items-center gap-2 h-12 px-6 rounded-full font-medium tracking-tight text-[14px] transition ${
+                finishing ? "bg-ink-200 text-ink-500 cursor-not-allowed" : "bg-ink-900 text-paper hover:bg-ink-800"
+              }`}
+            >
+              {finishing ? "Finishing setup…" : "Go to operations dashboard"} <Icon name="arrow-right" className="w-4 h-4" />
+            </button>
           </div>
 
           <div className="mt-6 inline-flex items-center gap-2 text-[11px] font-mono text-ink-500">
@@ -915,28 +1198,27 @@ function CompleteStep({ data }: any) {
     </div>
   );
 }
-function Summary({ icon, label, value, sub, highlight = false }: any) {
+
+function CompleteStat({ icon, label, sub, highlight = false }: { icon: string; label: string; sub: string; highlight?: boolean }) {
   return (
     <div className={`rounded-xl border p-4 ${highlight ? "border-teal-700 bg-teal-50/50" : "border-ink-200 bg-paper/40"}`}>
       <div className={`w-7 h-7 rounded-md inline-flex items-center justify-center ${highlight ? "bg-teal-700 text-white" : "bg-ink-100 text-ink-700"}`}>
         <Icon name={icon} className="w-3.5 h-3.5" />
       </div>
-      <div className="mt-2 text-[24px] font-medium tracking-tight tabular-nums">{value}</div>
-      <div className="text-[11px] tracking-tight text-ink-800">{label}</div>
+      <div className="mt-2 text-[13px] font-medium tracking-tight">{label}</div>
       <div className="text-[10px] font-mono text-ink-500">{sub}</div>
     </div>
   );
 }
 
 function DashboardBackdrop() {
-  // Compact, decorative dashboard preview behind completion card
   return (
     <div className="absolute inset-0 overflow-hidden">
       <div className="max-w-[1240px] mx-auto px-8 pt-8">
         <div className="rounded-2xl bg-white shadow-lifted ring-1 ring-ink-900/5 overflow-hidden">
           <div className="flex items-center gap-2 px-4 h-9 border-b border-ink-100 bg-ink-50/60">
             <div className="flex gap-1.5">
-              {[0,1,2].map(i => <span key={i} className="w-2.5 h-2.5 rounded-full bg-ink-200" />)}
+              {[0, 1, 2].map((i) => <span key={i} className="w-2.5 h-2.5 rounded-full bg-ink-200" />)}
             </div>
             <div className="ml-3 text-[11px] font-mono text-ink-500">app.asneeded.health · operations</div>
             <div className="ml-auto text-[11px] font-mono text-ink-500 inline-flex items-center gap-1.5"><Dot tone="green" pulse /> live</div>
@@ -964,7 +1246,7 @@ function DashboardBackdrop() {
             </div>
             <div className="col-span-7 bg-white p-4">
               <div className="text-[11px] font-mono uppercase tracking-wider text-ink-500 mb-2">Urgent shifts</div>
-              {["Mercy ICU · 2 of 3 filled","Bayview MS · 4 of 4 filled","Pinegrove F2 · 1 of 2 filled"].map((l, i) => (
+              {["Mercy ICU · 2 of 3 filled", "Bayview MS · 4 of 4 filled", "Pinegrove F2 · 1 of 2 filled"].map((l, i) => (
                 <div key={i} className="text-[12px] py-1.5 border-t first:border-0 border-ink-100 flex items-center gap-2">
                   <Dot tone={i === 1 ? "green" : "amber"} pulse={i !== 1} />
                   <span className="flex-1">{l}</span>
@@ -996,41 +1278,98 @@ function DashboardBackdrop() {
 // ────────────────────────────────────────────────────────────────────────────
 // Root
 // ────────────────────────────────────────────────────────────────────────────
+
 export function OnboardingApp({
-  agencyServiceArea = null,
+  initialStep = "welcome",
+  agencyServiceArea: initialServiceArea = null,
 }: {
+  initialStep?: StepId;
   agencyServiceArea?: AgencyServiceAreaContext | null;
 }) {
   const router = useRouter();
-  const [stepIdx, setStepIdx] = useState(0);
-  const [data, setData] = useState<any>({ team: [], hcps: [], hcpMode: "manual", facilities: [], compliance: {}, firstRequest: null });
-  function update(patch: any) { setData((d: any) => ({ ...d, ...patch })); }
-  const next = () => setStepIdx(i => Math.min(STEPS.length - 1, i + 1));
-  const back = () => setStepIdx(i => Math.max(0, i - 1));
-  const skip = () => next();
-  const exit = () => { router.push("/"); };
+  const [stepIdx, setStepIdx] = useState(Math.max(0, STEPS.findIndex((s) => s.id === initialStep)));
+  const [serviceArea, setServiceArea] = useState<AgencyServiceAreaContext | null>(initialServiceArea);
+  const [teamData, setTeamData] = useState<{ team: TeamRow[] }>({ team: [] });
+  const [profData, setProfData] = useState<{ profs: ProfRow[] }>({ profs: [emptyProf()] });
+  const [facData, setFacData] = useState<{ facs: FacRow[] }>({ facs: [emptyFac()] });
+  const [finishing, setFinishing] = useState(false);
+  const [finishError, setFinishError] = useState<string | null>(null);
 
-  const id = STEPS[stepIdx].id;
+  const stepId = STEPS[stepIdx].id;
+  const next = () => setStepIdx((i) => Math.min(STEPS.length - 1, i + 1));
+  const back = () => setStepIdx((i) => Math.max(0, i - 1));
+  const exit = () => router.push("/dashboard");
+
+  async function handleFinish() {
+    setFinishing(true);
+    setFinishError(null);
+    try {
+      const res = await fetch("/api/onboarding/complete", { method: "POST" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setFinishError((body as { error?: string }).error ?? "Unable to complete setup. Try again.");
+        setFinishing(false);
+        return;
+      }
+      router.push("/dashboard");
+    } catch {
+      setFinishError("Network error. Please try again.");
+      setFinishing(false);
+    }
+  }
+
+  function advanceToTeam() { trackStep("team"); next(); }
+  function advanceToProfessionals() { trackStep("professionals"); next(); }
+  function advanceToFacilities() { trackStep("facilities"); next(); }
+  function advanceToComplete() { trackStep("complete"); next(); }
+
   return (
     <div className="min-h-screen bg-paper text-ink-900">
       <Header idx={stepIdx} onSkip={exit} />
-      <main key={id}>
-        {id === "welcome"        && <WelcomeStep onNext={next} />}
-        {id === "team"           && <TeamStep data={data} set={update} onBack={back} onNext={next} onSkip={skip} />}
-        {id === "professionals"  && (
-          <ProfessionalsStep
-            data={data}
-            set={update}
+      <main key={stepId}>
+        {stepId === "welcome" && <WelcomeStep onNext={next} onExit={exit} />}
+
+        {stepId === "profile" && <ProfileStep onBack={back} onNext={next} />}
+
+        {stepId === "service-area" && (
+          <ServiceAreaStep onBack={back} onNext={next} onSaved={setServiceArea} />
+        )}
+
+        {stepId === "team" && (
+          <TeamStep
+            data={teamData}
+            set={(p) => setTeamData((d) => ({ ...d, ...p }))}
             onBack={back}
-            onNext={next}
-            onSkip={skip}
-            agencyServiceArea={agencyServiceArea}
+            onNext={advanceToProfessionals}
+            onSkip={advanceToProfessionals}
           />
         )}
-        {id === "facilities"     && <FacilitiesStep data={data} set={update} onBack={back} onNext={next} onSkip={skip} />}
-        {id === "compliance"     && <ComplianceStep data={data} set={update} onBack={back} onNext={next} onSkip={skip} />}
-        {id === "first-request"  && <FirstRequestStep data={data} set={update} onBack={back} onNext={next} />}
-        {id === "complete"       && <CompleteStep data={data} />}
+
+        {stepId === "professionals" && (
+          <ProfessionalsStep
+            data={profData}
+            set={(p) => setProfData((d) => ({ ...d, ...p }))}
+            onBack={back}
+            onNext={advanceToFacilities}
+            onSkip={advanceToFacilities}
+            agencyServiceArea={serviceArea}
+          />
+        )}
+
+        {stepId === "facilities" && (
+          <FacilitiesStep
+            data={facData}
+            set={(p) => setFacData((d) => ({ ...d, ...p }))}
+            onBack={back}
+            onNext={advanceToComplete}
+            onSkip={advanceToComplete}
+            agencyServiceArea={serviceArea}
+          />
+        )}
+
+        {stepId === "complete" && (
+          <CompleteStep onFinish={handleFinish} finishing={finishing} error={finishError} />
+        )}
       </main>
     </div>
   );

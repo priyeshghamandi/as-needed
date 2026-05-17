@@ -107,11 +107,11 @@ function assertInviteUsable(invite: NonNullable<Awaited<ReturnType<typeof getInv
     throw new InviteError("ALREADY_ACCEPTED", "This invite has already been used.");
   }
 
-  if (invite.status === "revoked" || invite.status === "expired") {
+  if (invite.status === "revoked") {
     throw new InviteError("INVALID", "This invite is no longer valid.");
   }
 
-  if (invite.expiresAt.getTime() < Date.now()) {
+  if (invite.status === "expired" || invite.expiresAt.getTime() < Date.now()) {
     throw new InviteError("EXPIRED", "This invite has expired. Request a new invite.");
   }
 }

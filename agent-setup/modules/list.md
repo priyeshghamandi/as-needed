@@ -51,6 +51,17 @@ A SaaS platform for healthcare staffing agencies to coordinate workforce availab
 2. Agency Onboarding
 3. Operations Dashboard
 
+**Before starting Phase 1:**
+- Verify Auth authorization is correct: role-based redirects, agency-scoped access (403 on cross-agency), invite flows end-to-end. Do not start Onboarding until this passes.
+
+**After each module in Phase 1:**
+- `npm run typecheck` + `npm run build` must pass
+- Walk the golden path for that module manually
+
+**End of Phase 1 checkpoint (before starting Phase 2):**
+- Run full T* test suite: Auth (T001–T026), Onboarding (T001–T020), Ops Dashboard (T*)
+- All must pass before Phase 2 begins
+
 ---
 
 ## Phase 2: Core Operations
@@ -61,12 +72,33 @@ A SaaS platform for healthcare staffing agencies to coordinate workforce availab
 7. Shifts
 8. Matching & Assignments
 
+**Module seam checks (mandatory before starting each):**
+- Before Staffing Requests (6): confirm Facilities (5) CRUD persists and is queryable
+- Before Shifts (7): confirm Staffing Requests (6) creates and status-transitions correctly
+- Before Matching (8): confirm Shifts (7) open/confirmed state and Workforce (4) availability queries work
+
+**After each module in Phase 2:**
+- `npm run typecheck` + `npm run build` must pass
+- Walk the golden path for that module manually
+
+**End of Phase 2 checkpoint (before starting Phase 3):**
+- Run full T* test suite for modules 4–8
+- All must pass before Phase 3 begins
+
 ---
 
 ## Phase 3: User Portals
 
 9. Healthcare Professional Portal
 10. Facility Portal
+
+**After each module in Phase 3:**
+- `npm run typecheck` + `npm run build` must pass
+- Walk the golden path for that module manually
+
+**End of Phase 3 checkpoint (before starting Phase 4):**
+- Run full T* test suite for modules 9–10
+- All must pass before Phase 4 begins
 
 ---
 
@@ -76,6 +108,15 @@ A SaaS platform for healthcare staffing agencies to coordinate workforce availab
 12. Notifications & Alerts
 13. Activity Logs
 14. Settings
+
+**After each module in Phase 4:**
+- `npm run typecheck` + `npm run build` must pass
+- Walk the golden path for that module manually
+
+**End of Phase 4 checkpoint (MVP complete):**
+- Run full T* test suite for modules 11–14
+- Run a full end-to-end pass of the complete user journey (agency signup → onboard → create request → match → shift → complete)
+- Fix all failures before declaring MVP ready
 
 ---
 

@@ -80,6 +80,26 @@ export async function assertAgencyAccess(
   }
 }
 
+export async function assertCanManageOnboarding(
+  userId: string,
+  agencyId: string,
+): Promise<void> {
+  const rows = await db
+    .select({ role: UserRoleTable.role, agencyId: UserRoleTable.agencyId })
+    .from(UserRoleTable)
+    .where(eq(UserRoleTable.userId, userId));
+
+  const allowed = rows.some(
+    (row) =>
+      row.role === "platform_admin" ||
+      ((row.role === "agency_owner" || row.role === "agency_admin") && row.agencyId === agencyId),
+  );
+
+  if (!allowed) {
+    throw new ForbiddenError("Only agency owners and admins can manage onboarding.");
+  }
+}
+
 export async function assertCanCreateInvite(
   userId: string,
   agencyId: string,

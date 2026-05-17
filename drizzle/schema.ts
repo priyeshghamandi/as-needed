@@ -254,6 +254,30 @@ export const AgencyTable = pgTable(
       scale: 7,
     }),
 
+    serviceAreaRadiusMiles: integer("service_area_radius_miles")
+      .notNull()
+      .default(75),
+
+    operationalContactName: varchar("operational_contact_name", { length: 120 }),
+    operationalContactEmail: varchar("operational_contact_email", { length: 255 }),
+    description: text("description"),
+    logoUrl: text("logo_url"),
+    staffingSpecialties: jsonb("staffing_specialties")
+      .$type<string[]>()
+      .notNull()
+      .default([]),
+
+    onboardingCurrentStep: varchar("onboarding_current_step", { length: 32 })
+      .notNull()
+      .default("welcome"),
+    onboardingCompletedAt: timestamp("onboarding_completed_at", {
+      withTimezone: true,
+    }),
+    onboardingProgress: jsonb("onboarding_progress")
+      .$type<{ completedSteps: string[]; skippedSteps: string[] }>()
+      .notNull()
+      .default({ completedSteps: [], skippedSteps: [] }),
+
     createdAt,
     updatedAt,
   },

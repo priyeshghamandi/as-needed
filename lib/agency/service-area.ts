@@ -37,6 +37,7 @@ export async function getAgencyServiceAreaForUser(
       primaryServiceAreaCountry: AgencyTable.primaryServiceAreaCountry,
       primaryServiceAreaLat: AgencyTable.primaryServiceAreaLat,
       primaryServiceAreaLng: AgencyTable.primaryServiceAreaLng,
+      serviceAreaRadiusMiles: AgencyTable.serviceAreaRadiusMiles,
     })
     .from(AgencyTable)
     .where(eq(AgencyTable.id, agencyId))
@@ -62,6 +63,6 @@ export async function getAgencyServiceAreaForUser(
     country: agency.primaryServiceAreaCountry,
     latitude,
     longitude,
-    radiusMiles: DEFAULT_SERVICE_AREA_RADIUS_MILES,
+    radiusMiles: agency.serviceAreaRadiusMiles ?? DEFAULT_SERVICE_AREA_RADIUS_MILES,
   };
 }

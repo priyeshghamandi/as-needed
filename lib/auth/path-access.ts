@@ -48,8 +48,5 @@ export function canAccessPath(pathname: string, roles: ScopedRole[]): boolean {
   if (isProviderPath && !hasProvider) return false;
   if (isFacilityPath && !hasFacility) return false;
 
-  if (hasProvider && isAgencyPath && !hasAgency) return false;
-  if (hasFacility && isAgencyPath && !hasAgency) return false;
-
   return true;
 }

@@ -239,6 +239,56 @@ at a time unless explicitly coordinated.
 
 ---
 
+# Verification Strategy
+
+Formal test sign-off (all T* tasks) is deferred to the end of each phase, not run after every module. This keeps momentum while ensuring correctness at meaningful integration points.
+
+## After every module (mandatory)
+
+Run immediately after marking a module `READY_FOR_TEST`:
+
+```bash
+npm run typecheck
+npm run build
+```
+
+Then manually walk the golden path for that module (the single most common user flow, end-to-end). If it breaks, fix before moving on. This takes ~5 minutes and catches the majority of regressions.
+
+## At module seams (mandatory)
+
+Before starting a module that depends on a prior one, verify the contract between them. Examples:
+
+- Before Staffing Requests (6): confirm Facilities (5) CRUD persists correctly
+- Before Shifts (7): confirm Staffing Requests (6) creates and status-transitions correctly
+- Before Matching (8): confirm Shifts (7) and Workforce (4) data is queryable as expected
+
+A bug in a dependency found at the seam is easy to fix. The same bug found two modules later is not.
+
+## Auth and authorization (never defer)
+
+Before starting any module that sits behind role-based access control, verify:
+
+- role-based redirects work correctly
+- agency-scoped access is enforced (cross-agency requests return 403)
+- invite flows work end-to-end
+
+These bugs propagate silently into every module built on top of them.
+
+## End of each phase (full T* pass)
+
+Run the full test suite for all modules completed in that phase:
+
+| Phase end | Modules to fully test |
+|---|---|
+| Phase 1 | Auth (T001–T026), Onboarding (T001–T020), Ops Dashboard (T*) |
+| Phase 2 | Workforce, Facilities, Staffing Requests, Shifts, Matching (T* for each) |
+| Phase 3 | HP Portal, Facility Portal (T* for each) |
+| Phase 4 | Compliance, Notifications, Activity Logs, Settings (T* for each) |
+
+Defer edge cases, error states, and responsiveness checks to this phase-end pass. They do not block module-to-module progress.
+
+---
+
 # Branch Strategy
 
 Each module should use its own git branch.
@@ -298,28 +348,37 @@ Code Agent:
 
 ## Step 3
 
-Test Agent:
-- validates task
-- marks:
-  - `PASSED`
-  OR
-  - `FAILED_TEST`
+After all implementation tasks in a module are `READY_FOR_TEST`:
+
+1. Run `npm run typecheck` — must pass with no errors
+2. Run `npm run build` — must pass with no errors
+3. Walk the golden path manually (the primary user flow for that module)
+4. If any step fails, fix before proceeding
 
 ---
 
 ## Step 4
 
-If failed:
-- Code Agent fixes only reported issues
-- returns task to `READY_FOR_TEST`
+If typecheck, build, or golden path fail:
+- Code Agent fixes only the reported issues
+- Re-runs verification
 
 ---
 
 ## Step 5
 
-When all tasks in a module pass:
-- mark module `PASSED`
-- activate next module
+Mark module `PASSED` and activate the next module.
+
+Full T* test suite tasks are deferred to the end of the current phase (see Verification Strategy).
+
+---
+
+## Step 6 (end of phase)
+
+When all modules in a phase are `PASSED`:
+- Run the full T* test suite for every module in that phase
+- Fix any failures before starting the next phase
+- Mark failed tasks `FAILED_TEST`, fix, re-verify, mark `PASSED`
 
 ---
 
