@@ -491,6 +491,8 @@ export const CredentialTable = pgTable(
     }),
     verifiedAt: timestamp("verified_at", { withTimezone: true }),
 
+    reviewNotes: text("review_notes"),
+
     createdAt,
     updatedAt,
   },
