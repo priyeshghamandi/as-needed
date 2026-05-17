@@ -22,6 +22,8 @@
     "test:e2e:facilities": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/facilities",
     "test:unit:staffing-requests": "vitest run lib/validations/staffing-request lib/staffing-requests lib/auth/staffing-requests-access-rules lib/auth/staffing-requests-permissions.test.ts app/api/staffing-requests",
     "test:e2e:staffing-requests": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/staffing-requests",
+    "test:unit:shifts": "vitest run lib/validations/shift.test.ts lib/shifts lib/auth/shifts-permissions.test.ts app/api/shifts",
+    "test:e2e:shifts": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/shifts",
     "test:e2e": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/dashboard",
     "test:e2e:onboarding": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/onboarding",
     "test:e2e:ui": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/dashboard --ui",

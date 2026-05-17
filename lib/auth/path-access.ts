@@ -18,6 +18,7 @@ export function canAccessPath(pathname: string, roles: ScopedRole[]): boolean {
     "/dashboard",
     "/workforce",
     "/staffing-requests",
+    "/shifts",
     "/facilities",
     "/compliance",
     "/settings",

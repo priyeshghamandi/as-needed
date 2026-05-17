@@ -266,6 +266,7 @@ async function main() {
     .returning({ id: StaffingRequestTable.id });
 
   const AGENCY_B_REQUEST_ID = "e2e00000-0000-4000-8000-000000000011";
+  const AGENCY_B_SHIFT_ID = "e2e00000-0000-4000-8000-000000000012";
   await db.insert(StaffingRequestTable).values({
     id: AGENCY_B_REQUEST_ID,
     agencyId: agencyBId,
@@ -279,6 +280,16 @@ async function main() {
   });
 
   const shiftBase = Date.now() + 48 * 60 * 60 * 1000;
+
+  await db.insert(ShiftTable).values({
+    id: AGENCY_B_SHIFT_ID,
+    agencyId: agencyBId,
+    staffingRequestId: AGENCY_B_REQUEST_ID,
+    facilityId: AGENCY_B_FACILITY_ID,
+    startAt: new Date(shiftBase),
+    endAt: new Date(shiftBase + 8 * 60 * 60 * 1000),
+    status: "open",
+  });
   for (const reqId of [requestIds[0], requestIds[1]]) {
     await db.insert(ShiftTable).values({
       agencyId: agencyAId,
@@ -390,7 +401,7 @@ async function main() {
 
   console.log("Dashboard E2E seed complete.");
   console.log(
-    `Agency A: ${agencyAId}, Agency B: ${agencyBId}, Agency B pro: ${AGENCY_B_PRO_ID}, Agency B facility: ${AGENCY_B_FACILITY_ID}, Agency B request: e2e00000-0000-4000-8000-000000000011, draft: ${draftRequest.id}`,
+    `Agency A: ${agencyAId}, Agency B: ${agencyBId}, Agency B pro: ${AGENCY_B_PRO_ID}, Agency B facility: ${AGENCY_B_FACILITY_ID}, Agency B request: e2e00000-0000-4000-8000-000000000011, Agency B shift: e2e00000-0000-4000-8000-000000000012, draft: ${draftRequest.id}`,
   );
 }
 

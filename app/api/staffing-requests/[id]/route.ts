@@ -10,6 +10,7 @@ import {
 } from "@/lib/auth/staffing-requests-access";
 import { getStaffingRequestDetail } from "@/lib/staffing-requests/queries";
 import { transitionStaffingRequestCore } from "@/lib/staffing-requests/transition-request";
+import { syncPrimaryShiftRequiredCount } from "@/lib/shifts/sync-request-shift";
 import { updateStaffingRequestSchema } from "@/lib/validations/staffing-request";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/drizzle/db";
@@ -99,6 +100,10 @@ export async function PATCH(request: Request, context: RouteContext) {
 
     if (!updated) {
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
+    }
+
+    if (parsed.data.professionalsRequired != null) {
+      await syncPrimaryShiftRequiredCount(agencyId, id, parsed.data.professionalsRequired);
     }
 
     return NextResponse.json({ id: updated.id });
