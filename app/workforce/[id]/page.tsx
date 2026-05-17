@@ -32,6 +32,7 @@ export default async function WorkforceProfilePage({ params }: PageProps) {
     complianceStatus: profile.complianceStatus,
     shiftReadiness: profile.shiftReadiness,
     pendingInviteEmail: profile.pendingInviteEmail,
+    pendingInviteUrl: profile.pendingInviteUrl,
     credentials: profile.credentials,
     recentShifts: profile.recentShifts.map((s) => ({
       ...s,

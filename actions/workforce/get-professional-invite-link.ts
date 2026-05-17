@@ -1,21 +1,20 @@
 "use server";
 
 import { and, eq } from "drizzle-orm";
-import { requireAuthContext } from "@/lib/auth/authorization";
-import { assertCanManageWorkforce } from "@/lib/auth/workforce-access";
 import { db } from "@/drizzle/db";
 import { HealthcareProfessionalTable } from "@/drizzle/schema";
-import { formatInviteUrl } from "@/lib/invites/invite-url";
+import { requireAuthContext } from "@/lib/auth/authorization";
+import { assertCanManageWorkforce } from "@/lib/auth/workforce-access";
+import { findPendingInviteUrl, formatInviteUrl } from "@/lib/invites/invite-url";
 import { createUserInvite } from "@/lib/services/invites";
 
-export type SendInviteState =
-  | { status: "idle" }
-  | { status: "success"; inviteUrl: string }
+export type GetInviteLinkState =
+  | { status: "success"; inviteUrl: string; created: boolean }
   | { status: "error"; message: string };
 
-export async function sendProfessionalInviteAction(
+export async function getProfessionalInviteLinkAction(
   professionalId: string,
-): Promise<SendInviteState> {
+): Promise<GetInviteLinkState> {
   try {
     const { context } = await requireAuthContext();
     const agencyId = context.agencyId;
@@ -25,7 +24,6 @@ export async function sendProfessionalInviteAction(
 
     const [pro] = await db
       .select({
-        id: HealthcareProfessionalTable.id,
         email: HealthcareProfessionalTable.email,
         userId: HealthcareProfessionalTable.userId,
       })
@@ -39,9 +37,20 @@ export async function sendProfessionalInviteAction(
       .limit(1);
 
     if (!pro) return { status: "error", message: "Professional not found." };
-    if (pro.userId) return { status: "error", message: "This professional already has an account." };
+    if (pro.userId) {
+      return { status: "error", message: "This professional already has an account." };
+    }
     if (!pro.email) {
-      return { status: "error", message: "Add an email address before sending an invite." };
+      return { status: "error", message: "Add an email address before generating an invite link." };
+    }
+
+    const existing = await findPendingInviteUrl({
+      agencyId,
+      email: pro.email,
+      inviteType: "provider",
+    });
+    if (existing) {
+      return { status: "success", inviteUrl: existing, created: false };
     }
 
     const invite = await createUserInvite(
@@ -49,12 +58,17 @@ export async function sendProfessionalInviteAction(
       context.userId,
       agencyId,
     );
-    return { status: "success", inviteUrl: formatInviteUrl(invite.token) };
+
+    return {
+      status: "success",
+      inviteUrl: formatInviteUrl(invite.token),
+      created: true,
+    };
   } catch (error) {
-    console.error("sendProfessionalInviteAction failed", error);
+    console.error("getProfessionalInviteLinkAction failed", error);
     return {
       status: "error",
-      message: error instanceof Error ? error.message : "Unable to send invite. Try again.",
+      message: error instanceof Error ? error.message : "Unable to get invite link.",
     };
   }
 }

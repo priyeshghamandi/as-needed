@@ -8,7 +8,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Icon, Badge } from "@/components/primitives";
 import { AgencyShell } from "@/components/agency-shell";
 import { updateFacilityAction } from "@/actions/facilities/update-facility";
+import { getFacilityInviteLinkAction } from "@/actions/facilities/get-facility-invite-link";
 import { sendFacilityInviteAction } from "@/actions/facilities/send-facility-invite";
+import { InviteLinkCopy } from "@/components/invite-link-copy";
 import {
   updateFacilitySchema,
   FACILITY_TYPES,
@@ -40,6 +42,7 @@ export type SerializedFacilityDetail = {
   confirmedShiftsCount: number;
   portalAccess: PortalAccessStatus;
   pendingInviteEmail: string | null;
+  pendingInviteUrl: string | null;
   recentRequests: { id: string; title: string; status: string; updatedAt: string }[];
   activityFeed: { id: string; action: string; createdAt: string; actorName: string | null }[];
 };
@@ -64,6 +67,8 @@ export function FacilityDetailClient({
   const [invitePending, setInvitePending] = useState(
     facility.portalAccess === "invited" || Boolean(facility.pendingInviteEmail),
   );
+  const [inviteUrl, setInviteUrl] = useState<string | null>(facility.pendingInviteUrl);
+  const [inviteLinkLoading, setInviteLinkLoading] = useState(false);
 
   const form = useForm<UpdateFacilityInput>({
     resolver: zodResolver(updateFacilitySchema) as never,
@@ -92,8 +97,22 @@ export function FacilityDetailClient({
     const result = await sendFacilityInviteAction(facility.id);
     if (result.status === "success") {
       setInvitePending(true);
-      setToast("Invite sent");
+      setInviteUrl(result.inviteUrl);
+      setToast("Invite created — copy the link below to share");
       router.refresh();
+      return;
+    }
+    if (result.status === "error") setToast(result.message);
+  }
+
+  async function handleGetInviteLink() {
+    setInviteLinkLoading(true);
+    const result = await getFacilityInviteLinkAction(facility.id);
+    setInviteLinkLoading(false);
+    if (result.status === "success") {
+      setInvitePending(true);
+      setInviteUrl(result.inviteUrl);
+      setToast(result.created ? "New invite link created" : "Invite link ready to copy");
       return;
     }
     if (result.status === "error") setToast(result.message);
@@ -150,15 +169,29 @@ export function FacilityDetailClient({
             Edit
           </button>
           {facility.portalAccess !== "active" && facility.contactEmail ? (
-            <button
-              type="button"
-              onClick={handleInvite}
-              className="h-9 px-3 rounded-md border border-ink-200 text-[13px] hover:bg-ink-50"
-            >
-              {invitePending ? "Resend invite" : "Invite contact"}
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={handleInvite}
+                className="h-9 px-3 rounded-md border border-ink-200 text-[13px] hover:bg-ink-50"
+              >
+                {invitePending ? "Resend invite" : "Invite contact"}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleGetInviteLink()}
+                disabled={inviteLinkLoading}
+                className="h-9 px-3 rounded-md border border-ink-200 text-[13px] hover:bg-ink-50 disabled:opacity-50"
+              >
+                {inviteLinkLoading ? "Loading…" : "Get invite link"}
+              </button>
+            </>
           ) : null}
         </div>
+      ) : null}
+
+      {facility.portalAccess !== "active" && inviteUrl ? (
+        <InviteLinkCopy url={inviteUrl} label="Facility portal invite" />
       ) : null}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

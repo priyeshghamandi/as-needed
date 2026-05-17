@@ -10,6 +10,7 @@ import {
   UserTable,
 } from "@/drizzle/schema";
 import { buildFacilityWhereConditions } from "@/lib/facilities/list-filters";
+import { formatInviteUrl } from "@/lib/invites/invite-url";
 
 export type PortalAccessStatus = "invited" | "active" | "not_invited";
 
@@ -200,6 +201,7 @@ export interface FacilityDetail {
   confirmedShiftsCount: number;
   portalAccess: PortalAccessStatus;
   pendingInviteEmail: string | null;
+  pendingInviteUrl: string | null;
   recentRequests: RecentRequest[];
   activityFeed: ActivityEntry[];
 }
@@ -279,7 +281,11 @@ export async function getFacilityDetail(
       .limit(5),
 
     db
-      .select({ email: UserInviteTable.email })
+      .select({
+        email: UserInviteTable.email,
+        token: UserInviteTable.token,
+        expiresAt: UserInviteTable.expiresAt,
+      })
       .from(UserInviteTable)
       .where(
         and(
@@ -331,6 +337,10 @@ export async function getFacilityDetail(
     confirmedShiftsCount: Number(confirmedShiftsResult[0]?.count ?? 0),
     portalAccess,
     pendingInviteEmail: pendingInvite[0]?.email ?? null,
+    pendingInviteUrl:
+      pendingInvite[0] && pendingInvite[0].expiresAt.getTime() > Date.now()
+        ? formatInviteUrl(pendingInvite[0].token)
+        : null,
     recentRequests,
     activityFeed: activityRows,
   };
