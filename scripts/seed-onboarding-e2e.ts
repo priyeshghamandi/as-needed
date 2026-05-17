@@ -1,6 +1,7 @@
 /**
  * Additional onboarding E2E agencies/users. Run after seed-dashboard-e2e.ts
  */
+import "./preload-env";
 import { inArray } from "drizzle-orm";
 import { db } from "../drizzle/db";
 import {

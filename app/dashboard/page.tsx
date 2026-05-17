@@ -11,6 +11,10 @@ import {
   getAvailableWorkforce,
   getActivityFeed,
 } from "@/lib/dashboard/queries";
+import {
+  getLatestUnreadCritical,
+  getUnreadNotificationCount,
+} from "@/lib/notifications/unread-count";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -20,8 +24,16 @@ export default async function DashboardPage() {
 
   if (!userId || !agencyId) redirect("/login");
 
-  const [agency, user, summary, activeRequests, availableWorkforce, activityFeed] =
-    await Promise.all([
+  const [
+    agency,
+    user,
+    summary,
+    activeRequests,
+    availableWorkforce,
+    activityFeed,
+    unreadCount,
+    criticalRow,
+  ] = await Promise.all([
       db
         .select({
           name: AgencyTable.name,
@@ -41,6 +53,8 @@ export default async function DashboardPage() {
       getActiveRequests(agencyId),
       getAvailableWorkforce(agencyId),
       getActivityFeed(agencyId),
+      getUnreadNotificationCount(userId, agencyId),
+      getLatestUnreadCritical(userId, agencyId),
     ]);
 
   if (!agency) redirect("/login");
@@ -80,6 +94,16 @@ export default async function DashboardPage() {
         userName={userName}
         userInitials={userInitials}
         primaryRole={primaryRole ?? "staffing_coordinator"}
+        unreadCount={unreadCount}
+        criticalAlert={
+          criticalRow
+            ? {
+                id: criticalRow.id,
+                title: criticalRow.title,
+                message: criticalRow.message,
+              }
+            : null
+        }
         summary={summary}
         activeRequests={serializedRequests}
         availableWorkforce={serializedWorkforce}

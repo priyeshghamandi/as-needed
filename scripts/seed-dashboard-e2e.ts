@@ -1,7 +1,8 @@
 /**
  * Seeds Agencies A/B and dashboard E2E users. Idempotent by email.
- * Run: npx tsx scripts/seed-dashboard-e2e.ts
+ * Run: npm run db:seed:dashboard-e2e
  */
+import "./preload-env";
 import { inArray, like, sql } from "drizzle-orm";
 import { db } from "../drizzle/db";
 import {
@@ -9,6 +10,7 @@ import {
   AgencyTable,
   AvailabilityBlockTable,
   CredentialTable,
+  NotificationTable,
   FacilityTable,
   HealthcareProfessionalTable,
   ShiftAssignmentTable,
@@ -154,13 +156,13 @@ async function main() {
     "agency_owner",
     agencyIncomplete.id,
   );
-  await createUser(
+  const coordinatorUserId = await createUser(
     "e2e-dash-coordinator@example.com",
     "E2E Coordinator",
     "staffing_coordinator",
     agencyAId,
   );
-  await createUser(
+  const recruiterUserId = await createUser(
     "e2e-dash-recruiter@example.com",
     "E2E Recruiter",
     "recruiter",
@@ -322,7 +324,11 @@ async function main() {
   const in12h = new Date(Date.now() + 12 * 60 * 60 * 1000);
   const in12hEnd = new Date(in12h.getTime() + 8 * 60 * 60 * 1000);
 
+  const E2E_AGENCY_A_ER_SHIFT = "e2e00000-0000-4000-8000-000000000020";
+  const E2E_DECLINED_ASSIGNMENT = "e2e00000-0000-4000-8000-000000000103";
+
   await db.insert(ShiftTable).values({
+    id: E2E_AGENCY_A_ER_SHIFT,
     agencyId: agencyAId,
     staffingRequestId: requestIds[2],
     facilityId: facility.id,
@@ -360,6 +366,17 @@ async function main() {
       .returning({ id: HealthcareProfessionalTable.id });
     pros.push(p.id);
   }
+
+  await db.insert(ShiftAssignmentTable).values({
+    id: E2E_DECLINED_ASSIGNMENT,
+    shiftId: E2E_AGENCY_A_ER_SHIFT,
+    professionalId: pros[0],
+    invitedByUserId: ownerAId,
+    status: "declined",
+    declineReason: "Schedule conflict (E2E seed)",
+    invitedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+    respondedAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
+  });
 
   const AGENCY_B_PRO_ID = "e2e00000-0000-4000-8000-0000000000b1";
   await db.insert(HealthcareProfessionalTable).values({
@@ -553,6 +570,74 @@ async function main() {
       type: "license",
       name: "Other Agency License",
       status: "verified",
+    },
+  ]);
+
+  const E2E_NOTIF_COORD_INFO = "e2e00000-0000-4000-8000-000000000010";
+  const E2E_NOTIF_COORD_READ = "e2e00000-0000-4000-8000-000000000011";
+  const E2E_NOTIF_COORD_URGENT = "e2e00000-0000-4000-8000-000000000012";
+  const E2E_NOTIF_COORD_CRITICAL = "e2e00000-0000-4000-8000-000000000013";
+  const E2E_NOTIF_PROVIDER = "e2e00000-0000-4000-8000-000000000014";
+  const E2E_NOTIF_RECRUITER = "e2e00000-0000-4000-8000-000000000015";
+
+  const readAt = new Date();
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  await db.insert(NotificationTable).values([
+    {
+      id: E2E_NOTIF_COORD_INFO,
+      agencyId: agencyAId,
+      userId: coordinatorUserId,
+      title: "New staffing request",
+      message: "ICU RN — Night was submitted for review.",
+      priority: "info",
+      relatedEntityType: "staffing_request",
+      relatedEntityId: requestIds[0],
+    },
+    {
+      id: E2E_NOTIF_COORD_READ,
+      agencyId: agencyAId,
+      userId: coordinatorUserId,
+      title: "Shift confirmed",
+      message: "A professional confirmed their shift assignment.",
+      priority: "important",
+      readAt,
+    },
+    {
+      id: E2E_NOTIF_COORD_URGENT,
+      agencyId: agencyAId,
+      userId: coordinatorUserId,
+      title: "Assignment declined",
+      message: "A professional declined a shift invite — action needed.",
+      priority: "urgent",
+      relatedEntityType: "shift_assignment",
+      relatedEntityId: E2E_DECLINED_ASSIGNMENT,
+      createdAt: yesterday,
+    },
+    {
+      id: E2E_NOTIF_COORD_CRITICAL,
+      agencyId: agencyAId,
+      userId: coordinatorUserId,
+      title: "Critical coverage gap",
+      message: "ER RN weekend shift has no confirmed coverage.",
+      priority: "critical",
+      relatedEntityType: "shift",
+      relatedEntityId: E2E_AGENCY_A_ER_SHIFT,
+    },
+    {
+      id: E2E_NOTIF_PROVIDER,
+      userId: providerUserId,
+      title: "Shift invite",
+      message: "You have a new shift invitation.",
+      priority: "important",
+    },
+    {
+      id: E2E_NOTIF_RECRUITER,
+      agencyId: agencyAId,
+      userId: recruiterUserId,
+      title: "Recruiter-only alert",
+      message: "This notification belongs to another user.",
+      priority: "info",
     },
   ]);
 
