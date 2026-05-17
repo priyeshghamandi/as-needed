@@ -14,6 +14,7 @@ export const users = {
   compliance: "e2e-dash-compliance@example.com",
   provider: "e2e-dash-provider@example.com",
   facility: "e2e-dash-facility@example.com",
+  workforceEmpty: "e2e-workforce-empty@example.com",
 } as const;
 
 export async function loginAs(page: Page, email: string, password = E2E_PASSWORD) {

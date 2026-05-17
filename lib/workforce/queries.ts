@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/drizzle/db";
 import {
   CredentialTable,
@@ -8,9 +8,15 @@ import {
   ShiftTable,
   UserInviteTable,
 } from "@/drizzle/schema";
+import { buildProfessionalWhereConditions } from "@/lib/workforce/list-filters";
+import {
+  computeShiftReadiness,
+  deriveComplianceStatus,
+  type ComplianceStatus,
+  type ShiftReadiness,
+} from "@/lib/workforce/shift-readiness";
 
-export type ComplianceStatus = "clear" | "attention" | "blocked";
-export type ShiftReadiness = "ready" | "not_ready";
+export type { ComplianceStatus, ShiftReadiness };
 
 export interface WorkforceListItem {
   id: string;
@@ -53,33 +59,8 @@ export async function getWorkforceList(
   agencyId: string,
   params: WorkforceListParams = {},
 ): Promise<WorkforceListResult> {
-  const { q, role, availability, compliance, active = true, sort = "name", page = 1 } = params;
-
-  const conditions = [
-    eq(HealthcareProfessionalTable.agencyId, agencyId),
-    eq(HealthcareProfessionalTable.isActive, active),
-  ];
-
-  if (q) {
-    const like = `%${q}%`;
-    conditions.push(
-      or(
-        ilike(HealthcareProfessionalTable.firstName, like),
-        ilike(HealthcareProfessionalTable.lastName, like),
-        ilike(HealthcareProfessionalTable.email, like),
-      )!,
-    );
-  }
-
-  if (role) {
-    conditions.push(eq(HealthcareProfessionalTable.role, role as never));
-  }
-
-  if (availability) {
-    conditions.push(
-      eq(HealthcareProfessionalTable.availabilityStatus, availability as never),
-    );
-  }
+  const { compliance, sort = "name", page = 1 } = params;
+  const conditions = buildProfessionalWhereConditions(agencyId, params);
 
   const orderBy =
     sort === "reliability"
@@ -123,18 +104,15 @@ export async function getWorkforceList(
     .from(CredentialTable)
     .where(inArray(CredentialTable.professionalId, allIds));
 
-  const credMap = new Map<string, { blocked: boolean; attention: boolean }>();
+  const credMap = new Map<string, { status: string }[]>();
   for (const c of credRows) {
-    const cur = credMap.get(c.professionalId) ?? { blocked: false, attention: false };
-    if (c.status === "expired" || c.status === "rejected") cur.blocked = true;
-    else if (c.status === "expiring_soon" || c.status === "pending_review") cur.attention = true;
-    credMap.set(c.professionalId, cur);
+    const list = credMap.get(c.professionalId) ?? [];
+    list.push({ status: c.status });
+    credMap.set(c.professionalId, list);
   }
 
-  const getCompliance = (id: string): ComplianceStatus => {
-    const c = credMap.get(id);
-    return c?.blocked ? "blocked" : c?.attention ? "attention" : "clear";
-  };
+  const getCompliance = (id: string): ComplianceStatus =>
+    deriveComplianceStatus(credMap.get(id) ?? []);
 
   let filtered = allPros;
   if (compliance) {
@@ -196,10 +174,7 @@ export async function getWorkforceList(
 
   const items: WorkforceListItem[] = pageItems.map((p) => {
     const complianceStatus = getCompliance(p.id);
-    const shiftReadiness: ShiftReadiness =
-      p.availabilityStatus === "available" && complianceStatus === "clear"
-        ? "ready"
-        : "not_ready";
+    const shiftReadiness = computeShiftReadiness(p.availabilityStatus, complianceStatus);
     return {
       ...p,
       complianceStatus,
@@ -349,21 +324,8 @@ export async function getProfessionalProfile(
         : Promise.resolve([]),
     ]);
 
-  const credCur = { blocked: false, attention: false };
-  for (const c of credentials) {
-    if (c.status === "expired" || c.status === "rejected") credCur.blocked = true;
-    else if (c.status === "expiring_soon" || c.status === "pending_review")
-      credCur.attention = true;
-  }
-  const complianceStatus: ComplianceStatus = credCur.blocked
-    ? "blocked"
-    : credCur.attention
-      ? "attention"
-      : "clear";
-  const shiftReadiness: ShiftReadiness =
-    pro.availabilityStatus === "available" && complianceStatus === "clear"
-      ? "ready"
-      : "not_ready";
+  const complianceStatus = deriveComplianceStatus(credentials);
+  const shiftReadiness = computeShiftReadiness(pro.availabilityStatus, complianceStatus);
 
   return {
     id: pro.id,

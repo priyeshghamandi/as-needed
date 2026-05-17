@@ -6,7 +6,7 @@
 |---|---|
 | Module | Facilities |
 | Branch | `module/facilities` |
-| Status | PENDING |
+| Status | FAILED_TEST |
 | Depends on | Auth, Agency Onboarding |
 
 ---
@@ -28,32 +28,32 @@
 
 | ID | Task | Status | Owner | Notes |
 |---|---|---|---|---|
-| FAC-001 | Create `lib/validations/facility.ts` Zod schema | PENDING | Code Agent | PRD §8.2 |
-| FAC-002 | Create `lib/facilities/type-labels.ts` enum → label map | PENDING | Code Agent | §8.1.1 |
-| FAC-003 | Create `lib/facilities/queries.ts` list + detail + counts | PENDING | Code Agent | staffing_requests join optional |
-| FAC-004 | Create `lib/facilities/list-filters.ts` | PENDING | Code Agent | q, type, state |
-| FAC-005 | Implement `GET /api/facilities` | PENDING | Code Agent | Pagination 25 |
-| FAC-006 | Implement `POST /api/facilities` | PENDING | Code Agent | Create + invite |
-| FAC-007 | Implement `GET /api/facilities/[id]` | PENDING | Code Agent | Detail payload |
-| FAC-008 | Implement `PATCH /api/facilities/[id]` | PENDING | Code Agent | Write roles |
-| FAC-009 | Implement `POST /api/facilities/[id]/invite` | PENDING | Code Agent | facility_user invite |
-| FAC-010 | Add `assertCanManageFacilities` / `assertCanViewFacilities` | PENDING | Code Agent | PRD §10 |
-| FAC-011 | Create `app/(agency)/facilities/page.tsx` | PENDING | Code Agent | |
-| FAC-012 | Build `FacilitiesTable` with PRD columns | PENDING | Code Agent | |
-| FAC-013 | Build `FacilitiesFilters` | PENDING | Code Agent | |
-| FAC-014 | Create `app/(agency)/facilities/new/page.tsx` | PENDING | Code Agent | |
-| FAC-015 | Implement `createFacilityAction` | PENDING | Code Agent | Service area server |
-| FAC-016 | Create `app/(agency)/facilities/[id]/page.tsx` | PENDING | Code Agent | |
-| FAC-017 | Build detail sections (contact, address, summary, requests, activity) | PENDING | Code Agent | |
-| FAC-018 | Build edit modal (contact + notes + name/type) | PENDING | Code Agent | No location edit |
-| FAC-019 | Wire invite/resend actions | PENDING | Code Agent | Auth pattern |
-| FAC-020 | Route guard `/facilities/new` for read-only roles | PENDING | Code Agent | |
-| FAC-021 | Portal access badge logic (invited/active/not) | PENDING | Code Agent | |
-| FAC-022 | Mobile card layout list `< md` | PENDING | Code Agent | |
-| FAC-023 | Sidebar nav **Facilities** | PENDING | Code Agent | |
-| FAC-024 | Enforce `contact_email` unique per agency | PENDING | Code Agent | Case-insensitive |
-| FAC-025 | Run lint, typecheck, build | PENDING | Code Agent | |
-| FAC-026 | Mark READY_FOR_TEST | PENDING | Code Agent | |
+| FAC-001 | Create `lib/validations/facility.ts` Zod schema | PASSED | Code Agent | `facilityAddFormSchema` separate from full schema |
+| FAC-002 | Create `lib/facilities/type-labels.ts` enum → label map | PASSED | Code Agent | |
+| FAC-003 | Create `lib/facilities/queries.ts` list + detail + counts | PASSED | Code Agent | Portal access + open requests |
+| FAC-004 | Create `lib/facilities/list-filters.ts` | PASSED | Code Agent | q, type, state |
+| FAC-005 | Implement `GET /api/facilities` | PASSED | Code Agent | Pagination 25 |
+| FAC-006 | Implement `POST /api/facilities` | PASSED | Code Agent | Create + invite |
+| FAC-007 | Implement `GET /api/facilities/[id]` | PASSED | Code Agent | Detail payload |
+| FAC-008 | Implement `PATCH /api/facilities/[id]` | PASSED | Code Agent | Write roles |
+| FAC-009 | Implement `POST /api/facilities/[id]/invite` | PASSED | Code Agent | facility_user invite |
+| FAC-010 | Add `assertCanManageFacilities` / `assertCanViewFacilities` | PASSED | Code Agent | `facilities-access.ts` + rules |
+| FAC-011 | Create `app/facilities/page.tsx` | PASSED | Code Agent | |
+| FAC-012 | Build facilities table with PRD columns | PASSED | Code Agent | `facilities-list-client.tsx` |
+| FAC-013 | Build facilities filters | PASSED | Code Agent | URL sync |
+| FAC-014 | Create `app/facilities/new/page.tsx` | PASSED | Code Agent | |
+| FAC-015 | Implement `createFacilityAction` | PASSED | Code Agent | Invite after commit (FK fix) |
+| FAC-016 | Create `app/facilities/[id]/page.tsx` | PASSED | Code Agent | |
+| FAC-017 | Build detail sections (contact, address, summary, requests, activity) | PASSED | Code Agent | |
+| FAC-018 | Build edit modal (contact + notes + name/type) | PASSED | Code Agent | No location edit |
+| FAC-019 | Wire invite/resend actions | PASSED | Code Agent | |
+| FAC-020 | Route guard `/facilities/new` for read-only roles | PASSED | Code Agent | `?error=forbidden` toast |
+| FAC-021 | Portal access badge logic (invited/active/not) | PASSED | Code Agent | |
+| FAC-022 | Mobile card layout list `< md` | PASSED | Code Agent | |
+| FAC-023 | Sidebar nav **Facilities** | PASSED | Code Agent | `agency-shell.tsx` |
+| FAC-024 | Enforce `contact_email` unique per agency | PASSED | Code Agent | Case-insensitive |
+| FAC-025 | Run lint, typecheck, build | PASSED | Code Agent | Build green |
+| FAC-026 | Mark READY_FOR_TEST | PASSED | Code Agent | |
 
 ---
 
@@ -61,20 +61,20 @@
 
 | ID | Task | Status | Owner | Notes |
 |---|---|---|---|---|
-| FAC-T001 | `lib/validations/facility.test.ts` (FAC-UT-001–006) | PENDING | Test Agent | |
-| FAC-T002 | `lib/facilities/type-labels.test.ts` (FAC-UT-010–011) | PENDING | Test Agent | |
-| FAC-T003 | `app/api/facilities/route.test.ts` (FAC-UT-020–024) | PENDING | Test Agent | |
-| FAC-T004 | `e2e/facilities/facilities-access.spec.ts` | PENDING | Test Agent | |
-| FAC-T005 | `e2e/facilities/facilities-list.spec.ts` | PENDING | Test Agent | |
-| FAC-T006 | `e2e/facilities/facilities-add.spec.ts` | PENDING | Test Agent | |
-| FAC-T007 | `e2e/facilities/facilities-detail.spec.ts` | PENDING | Test Agent | |
-| FAC-T008 | `e2e/facilities/facilities-auth-write.spec.ts` | PENDING | Test Agent | |
-| FAC-T009 | `e2e/facilities/facilities-responsive.spec.ts` | PENDING | Test Agent | |
-| FAC-T010 | Authorization FAC-AUTH-01–04 | PENDING | Test Agent | |
-| FAC-T011 | Edge cases FAC-EDGE-01–05 | PENDING | Test Agent | |
-| FAC-T012 | axe list + add | PENDING | Test Agent | |
-| FAC-T013 | lint, typecheck, build, vitest, playwright | PENDING | Test Agent | |
-| FAC-T014 | PRD §14 sign-off | PENDING | Test Agent | |
+| FAC-T001 | `lib/validations/facility.test.ts` (FAC-UT-001–006) | PASSED | Test Agent | 6/6 |
+| FAC-T002 | `lib/facilities/type-labels.test.ts` (FAC-UT-010–011) | PASSED | Test Agent | 2/2 |
+| FAC-T003 | `app/api/facilities/route.test.ts` (FAC-UT-020–024) | PASSED | Test Agent | 4/4 + access 5 |
+| FAC-T004 | `e2e/facilities/facilities-access.spec.ts` | PASSED | Test Agent | 4/4 |
+| FAC-T005 | `e2e/facilities/facilities-list.spec.ts` | PASSED | Test Agent | 4/4 |
+| FAC-T006 | `e2e/facilities/facilities-add.spec.ts` | PASSED | Test Agent | 4/4 |
+| FAC-T007 | `e2e/facilities/facilities-detail.spec.ts` | PASSED | Test Agent | 4/4 |
+| FAC-T008 | `e2e/facilities/facilities-auth-write.spec.ts` | PASSED | Test Agent | 3/3 |
+| FAC-T009 | `e2e/facilities/facilities-responsive.spec.ts` | PASSED | Test Agent | 1/1 |
+| FAC-T010 | Authorization FAC-AUTH-01–04 | PASSED | Test Agent | Via access rules + E2E |
+| FAC-T011 | Edge cases FAC-EDGE-01–05 | PASSED | Test Agent | Covered in E2E/unit |
+| FAC-T012 | axe list + add | FAILED_TEST | Test Agent | Not automated |
+| FAC-T013 | lint, typecheck, build, vitest, playwright | PASSED | Test Agent | 17 unit + 20 E2E |
+| FAC-T014 | PRD §14 sign-off | FAILED_TEST | Test Agent | Blocked on FAC-T012 |
 
 ---
 
@@ -87,6 +87,8 @@
 - Facility user invite with `facility_id` on `user_invites`
 - Agency isolation; provider/facility_user blocked from agency routes
 - All FAC-T* pass; build green
+
+**Gaps:** automated axe (FAC-T012) not run.
 
 ---
 
@@ -104,4 +106,4 @@
 
 - Tests/fixtures only
 - FAILED_TEST with reproduction
-- PASSED after FAC-T001–T014
+- PASSED after FAC-T001–T014 complete

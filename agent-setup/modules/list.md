@@ -29,8 +29,8 @@ A SaaS platform for healthcare staffing agencies to coordinate workforce availab
 | 1 | Auth | Authentication, sessions, roles, invites, access control | READY_FOR_TEST |
 | 2 | Agency Onboarding | Agency setup wizard and operational onboarding | FAILED_TEST |
 | 3 | Operations Dashboard | Real-time staffing operations visibility | FAILED_TEST |
-| 4 | Workforce | Healthcare professional management | PENDING |
-| 5 | Facilities | Facility/customer management | PENDING |
+| 4 | Workforce | Healthcare professional management | FAILED_TEST |
+| 5 | Facilities | Facility/customer management | FAILED_TEST |
 | 6 | Staffing Requests | Staffing request lifecycle management | PENDING |
 | 7 | Shifts | Shift creation, tracking, and fulfillment | PENDING |
 | 8 | Matching & Assignments | Workforce matching and assignment workflows | PENDING |
