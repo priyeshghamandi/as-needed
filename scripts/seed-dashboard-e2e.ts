@@ -7,6 +7,7 @@ import { db } from "../drizzle/db";
 import {
   ActivityLogTable,
   AgencyTable,
+  AvailabilityBlockTable,
   CredentialTable,
   FacilityTable,
   HealthcareProfessionalTable,
@@ -30,6 +31,7 @@ const SEED_EMAILS = [
   "e2e-dash-provider@example.com",
   "e2e-dash-facility@example.com",
   "e2e-workforce-empty@example.com",
+  "e2e-provider-unlinked@example.com",
 ];
 
 const AGENCY_NAMES = [
@@ -170,6 +172,12 @@ async function main() {
   const providerUserId = await createUser(
     "e2e-dash-provider@example.com",
     "E2E Provider",
+    "provider",
+    null,
+  );
+  await createUser(
+    "e2e-provider-unlinked@example.com",
+    "E2E Provider Unlinked",
     "provider",
     null,
   );
@@ -380,6 +388,97 @@ async function main() {
       status: "accepted",
     });
   }
+
+  const HPP_SHIFT_INVITE_1 = "e2e00000-0000-4000-8000-000000000201";
+  const HPP_SHIFT_INVITE_2 = "e2e00000-0000-4000-8000-000000000202";
+  const HPP_INVITE_ASSIGNMENT_1 = "e2e00000-0000-4000-8000-000000000101";
+  const HPP_INVITE_ASSIGNMENT_2 = "e2e00000-0000-4000-8000-000000000102";
+  const HPP_AVAIL_BLOCK_1 = "e2e00000-0000-4000-8000-000000000301";
+  const HPP_AVAIL_BLOCK_2 = "e2e00000-0000-4000-8000-000000000302";
+
+  const [hppRequest] = await db
+    .insert(StaffingRequestTable)
+    .values({
+      agencyId: agencyAId,
+      facilityId: facility.id,
+      createdByUserId: ownerAId,
+      assignedCoordinatorId: ownerAId,
+      title: "Provider Portal ICU RN",
+      roleNeeded: "rn",
+      professionalsRequired: 2,
+      priority: "high",
+      status: "matching",
+      facilityInstructions: "Check in at nurse station 3.",
+    })
+    .returning({ id: StaffingRequestTable.id });
+
+  const inviteStart = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+  inviteStart.setHours(7, 0, 0, 0);
+  const inviteEnd = new Date(inviteStart.getTime() + 8 * 60 * 60 * 1000);
+
+  await db.insert(ShiftTable).values([
+    {
+      id: HPP_SHIFT_INVITE_1,
+      agencyId: agencyAId,
+      staffingRequestId: hppRequest.id,
+      facilityId: facility.id,
+      startAt: inviteStart,
+      endAt: inviteEnd,
+      status: "open",
+    },
+    {
+      id: HPP_SHIFT_INVITE_2,
+      agencyId: agencyAId,
+      staffingRequestId: hppRequest.id,
+      facilityId: facility.id,
+      startAt: inviteStart,
+      endAt: inviteEnd,
+      status: "open",
+    },
+  ]);
+
+  await db.insert(ShiftAssignmentTable).values([
+    {
+      id: HPP_INVITE_ASSIGNMENT_1,
+      shiftId: HPP_SHIFT_INVITE_1,
+      professionalId: E2E_PROVIDER_PRO_ID,
+      invitedByUserId: ownerAId,
+      status: "invited",
+      invitedAt: new Date(),
+    },
+    {
+      id: HPP_INVITE_ASSIGNMENT_2,
+      shiftId: HPP_SHIFT_INVITE_2,
+      professionalId: E2E_PROVIDER_PRO_ID,
+      invitedByUserId: ownerAId,
+      status: "invited",
+      invitedAt: new Date(),
+    },
+  ]);
+
+  const availBase = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  availBase.setHours(8, 0, 0, 0);
+  const availEnd = new Date(availBase.getTime() + 8 * 60 * 60 * 1000);
+  const avail2Start = new Date(availEnd.getTime() + 24 * 60 * 60 * 1000);
+  const avail2End = new Date(avail2Start.getTime() + 4 * 60 * 60 * 1000);
+
+  await db.insert(AvailabilityBlockTable).values([
+    {
+      id: HPP_AVAIL_BLOCK_1,
+      professionalId: E2E_PROVIDER_PRO_ID,
+      startAt: availBase,
+      endAt: availEnd,
+      status: "available",
+      notes: "E2E seeded availability",
+    },
+    {
+      id: HPP_AVAIL_BLOCK_2,
+      professionalId: E2E_PROVIDER_PRO_ID,
+      startAt: avail2Start,
+      endAt: avail2End,
+      status: "unavailable",
+    },
+  ]);
 
   await db.insert(CredentialTable).values([
     {

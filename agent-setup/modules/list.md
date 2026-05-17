@@ -34,7 +34,7 @@ A SaaS platform for healthcare staffing agencies to coordinate workforce availab
 | 6 | Staffing Requests | Staffing request lifecycle management | FAILED_TEST |
 | 7 | Shifts | Shift creation, tracking, and fulfillment | FAILED_TEST |
 | 8 | Matching & Assignments | Workforce matching and assignment workflows | FAILED_TEST |
-| 9 | Healthcare Professional Portal | Shift acceptance and availability management | PENDING |
+| 9 | Healthcare Professional Portal | Shift acceptance and availability management | FAILED_TEST |
 | 10 | Facility Portal | Facility staffing request and tracking portal | PENDING |
 | 11 | Compliance | Credential tracking and compliance workflows | PENDING |
 | 12 | Notifications & Alerts | Operational alerts and staffing notifications | PENDING |
