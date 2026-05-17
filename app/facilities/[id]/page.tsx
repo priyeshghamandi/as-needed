@@ -32,6 +32,7 @@ export default async function FacilityDetailPage({ params }: PageProps) {
     confirmedShiftsCount: detail.confirmedShiftsCount,
     portalAccess: detail.portalAccess,
     pendingInviteEmail: detail.pendingInviteEmail,
+    pendingInviteUrl: detail.pendingInviteUrl,
     recentRequests: detail.recentRequests.map((r) => ({
       ...r,
       updatedAt: r.updatedAt.toISOString(),

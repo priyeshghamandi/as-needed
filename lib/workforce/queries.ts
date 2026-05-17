@@ -8,6 +8,7 @@ import {
   ShiftTable,
   UserInviteTable,
 } from "@/drizzle/schema";
+import { formatInviteUrl } from "@/lib/invites/invite-url";
 import { buildProfessionalWhereConditions } from "@/lib/workforce/list-filters";
 import {
   computeShiftReadiness,
@@ -235,6 +236,7 @@ export interface ProfessionalProfile {
   recentShifts: RecentShift[];
   currentAssignments: CurrentAssignment[];
   pendingInviteEmail: string | null;
+  pendingInviteUrl: string | null;
 }
 
 export async function getProfessionalProfile(
@@ -311,7 +313,12 @@ export async function getProfessionalProfile(
 
       pro.email
         ? db
-            .select({ id: UserInviteTable.id, email: UserInviteTable.email })
+            .select({
+              id: UserInviteTable.id,
+              email: UserInviteTable.email,
+              token: UserInviteTable.token,
+              expiresAt: UserInviteTable.expiresAt,
+            })
             .from(UserInviteTable)
             .where(
               and(
@@ -357,5 +364,9 @@ export async function getProfessionalProfile(
     recentShifts: recentShiftRows,
     currentAssignments: currentAssignmentRows,
     pendingInviteEmail: inviteRows[0]?.email ?? null,
+    pendingInviteUrl:
+      inviteRows[0] && inviteRows[0].expiresAt.getTime() > Date.now()
+        ? formatInviteUrl(inviteRows[0].token)
+        : null,
   };
 }

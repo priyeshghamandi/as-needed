@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Icon, Badge, Dot, Eyebrow, Avatar } from "@/components/primitives";
+import { InviteLinkCopy } from "@/components/invite-link-copy";
 import { SignOutButton } from "@/components/sign-out-button";
 import { LocationAutocomplete } from "@/components/location-autocomplete";
 import { ServiceAreaAutocomplete } from "@/components/service-area-autocomplete";
@@ -704,11 +705,9 @@ function TeamStep({
               <div key={r.id} className="grid grid-cols-12 gap-3 items-center px-4 py-3 border-b last:border-0 border-ink-100">
                 <div className="col-span-7 space-y-1">
                   <Input value={r.email} onChange={(e) => update(i, { email: e.target.value })} placeholder="name@apexstaffing.com" type="email" />
-                  {r.inviteStatus === "sent" && r.inviteUrl && (
-                    <a href={r.inviteUrl} className="block text-[10px] font-mono text-teal-700 truncate hover:underline" target="_blank" rel="noreferrer">
-                      Invite link ready
-                    </a>
-                  )}
+                  {r.inviteStatus === "sent" && r.inviteUrl ? (
+                    <InviteLinkCopy url={r.inviteUrl} compact />
+                  ) : null}
                   {r.inviteStatus === "error" && r.inviteMessage && (
                     <p className="text-[10px] font-mono text-rose-600">{r.inviteMessage}</p>
                   )}
@@ -880,9 +879,7 @@ function ProfessionalsStep({
               </span>
               <div className="text-[12px] font-mono text-ink-500">Professional {String(i + 1).padStart(2, "0")}</div>
               {row.savedId && <Badge tone="teal"><Icon name="check" className="w-3 h-3 mr-1" strokeWidth={2.5} />Saved</Badge>}
-              {row.inviteUrl && (
-                <a href={row.inviteUrl} target="_blank" rel="noreferrer" className="text-[10px] font-mono text-teal-700 hover:underline truncate max-w-[200px]">Invite link ready</a>
-              )}
+              {row.inviteUrl ? <InviteLinkCopy url={row.inviteUrl} compact /> : null}
               <div className="ml-auto">
                 {rows.length > 1 && !row.savedId && (
                   <button onClick={() => remove(row.id)} className="text-[11px] font-mono text-ink-500 hover:text-rose-700 px-2 h-7 rounded hover:bg-rose-50 inline-flex items-center gap-1.5">
@@ -1081,9 +1078,7 @@ function FacilitiesStep({
               </span>
               <div className="text-[12px] font-mono text-ink-500">Facility {String(i + 1).padStart(2, "0")}</div>
               {fac.savedId && <Badge tone="teal"><Icon name="check" className="w-3 h-3 mr-1" strokeWidth={2.5} />Saved</Badge>}
-              {fac.inviteUrl && (
-                <a href={fac.inviteUrl} target="_blank" rel="noreferrer" className="text-[10px] font-mono text-teal-700 hover:underline truncate max-w-[200px]">Portal invite ready</a>
-              )}
+              {fac.inviteUrl ? <InviteLinkCopy url={fac.inviteUrl} compact /> : null}
               <div className="ml-auto">
                 {facs.length > 1 && !fac.savedId && (
                   <button onClick={() => remove(fac.id)} className="text-[11px] font-mono text-ink-500 hover:text-rose-700 px-2 h-7 rounded hover:bg-rose-50 inline-flex items-center gap-1.5">

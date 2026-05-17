@@ -1,21 +1,20 @@
 "use server";
 
 import { and, eq } from "drizzle-orm";
-import { requireAuthContext } from "@/lib/auth/authorization";
-import { assertCanManageFacilities } from "@/lib/auth/facilities-access";
 import { db } from "@/drizzle/db";
 import { FacilityTable } from "@/drizzle/schema";
-import { formatInviteUrl } from "@/lib/invites/invite-url";
+import { requireAuthContext } from "@/lib/auth/authorization";
+import { assertCanManageFacilities } from "@/lib/auth/facilities-access";
+import { findPendingInviteUrl, formatInviteUrl } from "@/lib/invites/invite-url";
 import { createUserInvite } from "@/lib/services/invites";
 
-export type SendFacilityInviteState =
-  | { status: "idle" }
-  | { status: "success"; inviteUrl: string }
+export type GetFacilityInviteLinkState =
+  | { status: "success"; inviteUrl: string; created: boolean }
   | { status: "error"; message: string };
 
-export async function sendFacilityInviteAction(
+export async function getFacilityInviteLinkAction(
   facilityId: string,
-): Promise<SendFacilityInviteState> {
+): Promise<GetFacilityInviteLinkState> {
   try {
     const { context } = await requireAuthContext();
     const agencyId = context.agencyId;
@@ -35,7 +34,20 @@ export async function sendFacilityInviteAction(
 
     if (!facility) return { status: "error", message: "Facility not found." };
     if (!facility.contactEmail) {
-      return { status: "error", message: "Contact email is required to send an invite." };
+      return {
+        status: "error",
+        message: "Add a contact email before generating an invite link.",
+      };
+    }
+
+    const existing = await findPendingInviteUrl({
+      agencyId,
+      email: facility.contactEmail,
+      facilityId,
+      inviteType: "facility_user",
+    });
+    if (existing) {
+      return { status: "success", inviteUrl: existing, created: false };
     }
 
     const invite = await createUserInvite(
@@ -48,12 +60,17 @@ export async function sendFacilityInviteAction(
       context.userId,
       agencyId,
     );
-    return { status: "success", inviteUrl: formatInviteUrl(invite.token) };
+
+    return {
+      status: "success",
+      inviteUrl: formatInviteUrl(invite.token),
+      created: true,
+    };
   } catch (error) {
-    console.error("sendFacilityInviteAction failed", error);
+    console.error("getFacilityInviteLinkAction failed", error);
     return {
       status: "error",
-      message: error instanceof Error ? error.message : "Unable to send invite. Try again.",
+      message: error instanceof Error ? error.message : "Unable to get invite link.",
     };
   }
 }

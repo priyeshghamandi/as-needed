@@ -8,6 +8,7 @@ import {
   UserTable,
 } from "@/drizzle/schema";
 import { hashPassword } from "@/lib/auth/password";
+import { linkProfessionalToUserOnInvite } from "@/lib/workforce/link-professional-on-invite";
 import type { CreateInviteInput } from "@/lib/validations/invite";
 import type { AcceptInviteInput } from "@/lib/validations/auth";
 
@@ -158,6 +159,14 @@ export async function acceptUserInvite(input: AcceptInviteInput) {
       role: invite.role,
       agencyId: invite.agencyId,
     });
+
+    if (invite.role === "provider" && invite.inviteType === "provider") {
+      await linkProfessionalToUserOnInvite(tx, {
+        userId: user.id,
+        email,
+        agencyId: invite.agencyId,
+      });
+    }
 
     await tx
       .update(UserInviteTable)

@@ -9,7 +9,9 @@ import { Icon, Badge } from "@/components/primitives";
 import { AgencyShell } from "@/components/agency-shell";
 import { updateHealthcareProfessionalAction } from "@/actions/workforce/update-professional";
 import { deactivateProfessionalAction } from "@/actions/workforce/deactivate-professional";
+import { getProfessionalInviteLinkAction } from "@/actions/workforce/get-professional-invite-link";
 import { sendProfessionalInviteAction } from "@/actions/workforce/send-professional-invite";
+import { InviteLinkCopy } from "@/components/invite-link-copy";
 import {
   updateProfessionalSchema,
   WORKFORCE_PROFESSIONAL_ROLES,
@@ -44,6 +46,7 @@ export type SerializedProfile = {
   complianceStatus: ComplianceStatus;
   shiftReadiness: ShiftReadiness;
   pendingInviteEmail: string | null;
+  pendingInviteUrl: string | null;
   credentials: { id: string; name: string; status: string; expiresAt: string | null }[];
   recentShifts: {
     id: string;
@@ -80,6 +83,8 @@ export function WorkforceProfileClient({
   const [deactivateOpen, setDeactivateOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [invitePending, setInvitePending] = useState(Boolean(profile.pendingInviteEmail));
+  const [inviteUrl, setInviteUrl] = useState<string | null>(profile.pendingInviteUrl);
+  const [inviteLinkLoading, setInviteLinkLoading] = useState(false);
 
   const form = useForm<UpdateProfessionalInput>({
     resolver: zodResolver(updateProfessionalSchema) as never,
@@ -118,8 +123,22 @@ export function WorkforceProfileClient({
     const result = await sendProfessionalInviteAction(profile.id);
     if (result.status === "success") {
       setInvitePending(true);
-      setToast("Invite sent");
+      setInviteUrl(result.inviteUrl);
+      setToast("Invite created — copy the link below to share");
       router.refresh();
+      return;
+    }
+    if (result.status === "error") setToast(result.message);
+  }
+
+  async function handleGetInviteLink() {
+    setInviteLinkLoading(true);
+    const result = await getProfessionalInviteLinkAction(profile.id);
+    setInviteLinkLoading(false);
+    if (result.status === "success") {
+      setInvitePending(true);
+      setInviteUrl(result.inviteUrl);
+      setToast(result.created ? "New invite link created" : "Invite link ready to copy");
       return;
     }
     if (result.status === "error") setToast(result.message);
@@ -177,13 +196,23 @@ export function WorkforceProfileClient({
             Edit
           </button>
           {!profile.userId && profile.email ? (
-            <button
-              type="button"
-              onClick={handleInvite}
-              className="h-9 px-3 rounded-md border border-ink-200 text-[13px] hover:bg-ink-50"
-            >
-              Send invite
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={handleInvite}
+                className="h-9 px-3 rounded-md border border-ink-200 text-[13px] hover:bg-ink-50"
+              >
+                {invitePending ? "Resend invite" : "Send invite"}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleGetInviteLink()}
+                disabled={inviteLinkLoading}
+                className="h-9 px-3 rounded-md border border-ink-200 text-[13px] hover:bg-ink-50 disabled:opacity-50"
+              >
+                {inviteLinkLoading ? "Loading…" : "Get invite link"}
+              </button>
+            </>
           ) : null}
           {profile.isActive ? (
             <button
@@ -195,6 +224,10 @@ export function WorkforceProfileClient({
             </button>
           ) : null}
         </div>
+      ) : null}
+
+      {!profile.userId && inviteUrl ? (
+        <InviteLinkCopy url={inviteUrl} label="Provider account invite" />
       ) : null}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
