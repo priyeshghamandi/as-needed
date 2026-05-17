@@ -7,6 +7,7 @@ export const AGENCY_SIDEBAR_NAV = [
   { id: "shifts", href: "/shifts", label: "Shifts", icon: "calendar-range" },
   { id: "compliance", href: "/compliance", label: "Compliance", icon: "shield-check" },
   { id: "notifications", href: "/notifications", label: "Notifications", icon: "bell" },
+  { id: "settings", href: "/settings", label: "Settings", icon: "settings-2" },
 ] as const;
 
 export type AgencySidebarNavId = (typeof AGENCY_SIDEBAR_NAV)[number]["id"];

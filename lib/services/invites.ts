@@ -117,6 +117,36 @@ function assertInviteUsable(invite: NonNullable<Awaited<ReturnType<typeof getInv
   }
 }
 
+export async function revokeUserInvite(inviteId: string, agencyId: string) {
+  const [invite] = await db
+    .select({
+      id: UserInviteTable.id,
+      agencyId: UserInviteTable.agencyId,
+      status: UserInviteTable.status,
+      role: UserInviteTable.role,
+    })
+    .from(UserInviteTable)
+    .where(eq(UserInviteTable.id, inviteId))
+    .limit(1);
+
+  if (!invite || invite.agencyId !== agencyId) {
+    throw new InviteError("NOT_FOUND", "Invite not found.");
+  }
+
+  if (invite.status !== "pending") {
+    throw new InviteError("INVALID", "Only pending invites can be revoked.");
+  }
+
+  if (invite.role === "agency_owner") {
+    throw new InviteError("INVALID", "Cannot revoke an agency owner invite.");
+  }
+
+  await db
+    .update(UserInviteTable)
+    .set({ status: "revoked", updatedAt: new Date() })
+    .where(eq(UserInviteTable.id, inviteId));
+}
+
 export async function acceptUserInvite(input: AcceptInviteInput) {
   const invite = await getInviteByToken(input.token.trim());
 
