@@ -251,6 +251,45 @@ async function main() {
     requestIds.push(req.id);
   }
 
+  const [draftRequest] = await db
+    .insert(StaffingRequestTable)
+    .values({
+      agencyId: agencyAId,
+      facilityId: facility.id,
+      createdByUserId: ownerAId,
+      title: "E2E Draft Request",
+      roleNeeded: "rn",
+      professionalsRequired: 2,
+      priority: "normal",
+      status: "draft",
+    })
+    .returning({ id: StaffingRequestTable.id });
+
+  const AGENCY_B_REQUEST_ID = "e2e00000-0000-4000-8000-000000000011";
+  await db.insert(StaffingRequestTable).values({
+    id: AGENCY_B_REQUEST_ID,
+    agencyId: agencyBId,
+    facilityId: AGENCY_B_FACILITY_ID,
+    createdByUserId: ownerAId,
+    title: "Other Agency Request",
+    roleNeeded: "rn",
+    professionalsRequired: 1,
+    priority: "normal",
+    status: "open",
+  });
+
+  const shiftBase = Date.now() + 48 * 60 * 60 * 1000;
+  for (const reqId of [requestIds[0], requestIds[1]]) {
+    await db.insert(ShiftTable).values({
+      agencyId: agencyAId,
+      staffingRequestId: reqId,
+      facilityId: facility.id,
+      startAt: new Date(shiftBase),
+      endAt: new Date(shiftBase + 8 * 60 * 60 * 1000),
+      status: "open",
+    });
+  }
+
   const fillRequestId = requestIds[0];
   const in12h = new Date(Date.now() + 12 * 60 * 60 * 1000);
   const in12hEnd = new Date(in12h.getTime() + 8 * 60 * 60 * 1000);
@@ -351,7 +390,7 @@ async function main() {
 
   console.log("Dashboard E2E seed complete.");
   console.log(
-    `Agency A: ${agencyAId}, Agency B: ${agencyBId}, Agency B pro: ${AGENCY_B_PRO_ID}, Agency B facility: e2e00000-0000-4000-8000-0000000000f1`,
+    `Agency A: ${agencyAId}, Agency B: ${agencyBId}, Agency B pro: ${AGENCY_B_PRO_ID}, Agency B facility: ${AGENCY_B_FACILITY_ID}, Agency B request: e2e00000-0000-4000-8000-000000000011, draft: ${draftRequest.id}`,
   );
 }
 

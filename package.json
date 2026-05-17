@@ -20,6 +20,8 @@
     "test:e2e:workforce": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/workforce",
     "test:unit:facilities": "vitest run lib/validations/facility lib/facilities lib/auth/facilities-access-rules lib/auth/facilities-access.test.ts app/api/facilities",
     "test:e2e:facilities": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/facilities",
+    "test:unit:staffing-requests": "vitest run lib/validations/staffing-request lib/staffing-requests lib/auth/staffing-requests-access-rules lib/auth/staffing-requests-permissions.test.ts app/api/staffing-requests",
+    "test:e2e:staffing-requests": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/staffing-requests",
     "test:e2e": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/dashboard",
     "test:e2e:onboarding": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/onboarding",
     "test:e2e:ui": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/dashboard --ui",
