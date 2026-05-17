@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon, Avatar } from "@/components/primitives";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { canViewCompliance } from "@/lib/auth/compliance-access-rules";
 
 const NAV = [
@@ -12,6 +13,7 @@ const NAV = [
   { id: "facilities", href: "/facilities", label: "Facilities", icon: "building-2" },
   { id: "shifts", href: "/shifts", label: "Shifts", icon: "calendar-range" },
   { id: "compliance", href: "/compliance", label: "Compliance", icon: "shield-check" },
+  { id: "notifications", href: "/notifications", label: "Notifications", icon: "bell" },
   { id: "messages", href: "/messages", label: "Messages", icon: "message-circle" },
   { id: "reports", href: "/reports", label: "Reports", icon: "bar-chart-3" },
   { id: "settings", href: "/settings", label: "Settings", icon: "settings-2" },
@@ -35,6 +37,7 @@ export function AgencyShell({
   children,
   headerAction,
   primaryRole,
+  unreadCount = 0,
 }: {
   agencyName: string;
   userName: string;
@@ -44,6 +47,7 @@ export function AgencyShell({
   children: React.ReactNode;
   headerAction?: React.ReactNode;
   primaryRole?: string | null;
+  unreadCount?: number;
 }) {
   const pathname = usePathname();
   const navItems = NAV.filter(
@@ -109,6 +113,9 @@ export function AgencyShell({
             <div className="flex items-center gap-2 md:hidden shrink-0">
               <LogoMark />
               <span className="font-semibold tracking-tight text-[15px]">AsNeeded</span>
+            </div>
+            <div className="ml-auto flex items-center gap-1.5">
+              <NotificationBell initialCount={unreadCount} />
             </div>
           </div>
         </header>

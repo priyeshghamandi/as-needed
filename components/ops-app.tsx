@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { canViewCompliance } from "@/lib/auth/compliance-access-rules";
 import { Icon, Badge, Dot, Avatar, AvatarStack, Eyebrow } from "@/components/primitives";
+import { NotificationBell } from "@/components/notifications/notification-bell";
+import { CriticalAlertBanner, type CriticalAlert } from "@/components/notifications/critical-alert-banner";
 import type {
   DashboardSummary,
   ActiveRequest,
@@ -24,6 +26,8 @@ interface OpsAppProps {
   userName: string;
   userInitials: string;
   primaryRole: string;
+  unreadCount?: number;
+  criticalAlert?: CriticalAlert | null;
   summary: DashboardSummary;
   activeRequests: SerializedActiveRequest[];
   availableWorkforce: SerializedAvailableProfessional[];
@@ -60,6 +64,7 @@ const NAV = [
   { id: "facilities", href: "/facilities", label: "Facilities", icon: "building-2" },
   { id: "shifts", href: "/shifts", label: "Shifts", icon: "calendar-range" },
   { id: "compliance", href: "/compliance", label: "Compliance", icon: "shield-check" },
+  { id: "notifications", href: "/notifications", label: "Notifications", icon: "bell" },
   { id: "messages", href: "/messages", label: "Messages", icon: "message-circle" },
   { id: "reports", href: "/reports", label: "Reports", icon: "bar-chart-3" },
   { id: "settings", href: "/settings", label: "Settings", icon: "settings-2" },
@@ -161,7 +166,7 @@ function Sidebar({
 
 // ───────────── Topbar ─────────────
 
-function Topbar() {
+function Topbar({ unreadCount = 0 }: { unreadCount?: number }) {
   return (
     <div className="sticky top-0 z-30 h-14 bg-paper/85 backdrop-blur border-b border-ink-200/70">
       <div className="h-full px-4 md:px-6 flex items-center gap-3 min-w-0">
@@ -186,9 +191,7 @@ function Topbar() {
           </span>
         </div>
         <div className="ml-auto flex items-center gap-1.5">
-          <button className="relative w-9 h-9 rounded-md hover:bg-ink-100 inline-flex items-center justify-center text-ink-700">
-            <Icon name="bell" className="w-4 h-4" />
-          </button>
+          <NotificationBell initialCount={unreadCount} />
           <button className="w-9 h-9 rounded-md hover:bg-ink-100 inline-flex items-center justify-center text-ink-700">
             <Icon name="help-circle" className="w-4 h-4" />
           </button>
@@ -846,6 +849,8 @@ export function OpsApp({
   userName,
   userInitials,
   primaryRole,
+  unreadCount = 0,
+  criticalAlert = null,
   summary,
   activeRequests,
   availableWorkforce,
@@ -873,7 +878,8 @@ export function OpsApp({
         primaryRole={primaryRole}
       />
       <div className="flex-1 min-w-0 flex flex-col">
-        <Topbar />
+        <Topbar unreadCount={unreadCount} />
+        <CriticalAlertBanner alert={criticalAlert} />
         <main className="px-4 md:px-6 py-6 space-y-6 rise-in min-w-0 max-w-full">
           {/* Greeting */}
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">

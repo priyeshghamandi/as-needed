@@ -13,7 +13,12 @@ export function canAccessPath(pathname: string, roles: ScopedRole[]): boolean {
     pathname === "/notifications" ||
     pathname.startsWith("/notifications/")
   ) {
-    return roles.some((r) => isAgencyRole(r.role) || isProviderRole(r.role));
+    return roles.some(
+      (r) =>
+        isAgencyRole(r.role) ||
+        isProviderRole(r.role) ||
+        isFacilityRole(r.role),
+    );
   }
 
   const agencyPaths = [
