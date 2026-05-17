@@ -267,6 +267,11 @@ export const AgencyTable = pgTable(
       .notNull()
       .default([]),
 
+    agencyPreferences: jsonb("agency_preferences")
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default({}),
+
     onboardingCurrentStep: varchar("onboarding_current_step", { length: 32 })
       .notNull()
       .default("welcome"),

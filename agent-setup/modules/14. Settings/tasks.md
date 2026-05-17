@@ -6,7 +6,7 @@
 |---|---|
 | Module | Settings |
 | Branch | `module/settings` |
-| Status | PENDING |
+| Status | READY_FOR_TEST |
 | Depends on | Auth (invites); Agency Onboarding (shared agency columns); Activity Logs (`logActivity`) |
 
 ---
@@ -28,31 +28,31 @@
 
 | ID | Task | Status | Owner | Notes |
 |---|---|---|---|---|
-| SET-001 | Add `agency_preferences` jsonb migration on `agencies` | PENDING | Code Agent | If not exists |
-| SET-002 | Create `lib/validations/agency-profile-settings.ts` | PENDING | Code Agent | Align onboarding fields |
-| SET-003 | Create `lib/validations/agency-service-area-settings.ts` | PENDING | Code Agent | Radius 10–75 |
-| SET-004 | Create `lib/validations/agency-preferences.ts` | PENDING | Code Agent | |
-| SET-005 | Create `lib/settings/assert-can-manage-settings.ts` | PENDING | Code Agent | Owner/admin |
-| SET-006 | Create `lib/settings/assert-can-view-settings.ts` | PENDING | Code Agent | All agency roles |
-| SET-007 | Implement `GET /api/settings` aggregated DTO | PENDING | Code Agent | Optional but recommended |
-| SET-008 | Implement `updateAgencyProfileAction` | PENDING | Code Agent | + logActivity |
-| SET-009 | Implement `updateAgencyServiceAreaAction` | PENDING | Code Agent | Places + radius |
-| SET-010 | Implement `updateAgencyPreferencesAction` | PENDING | Code Agent | JSON merge |
-| SET-011 | Create `/settings` page with tab query routing | PENDING | Code Agent | 4 tabs |
-| SET-012 | Build Profile tab form (RHF + Zod) | PENDING | Code Agent | |
-| SET-013 | Build Service area tab with `LocationAutocomplete` | PENDING | Code Agent | |
-| SET-014 | Build Team tab: invite form + `sendTeamInvitesAction` | PENDING | Code Agent | Reuse Auth |
-| SET-015 | Build active members table from `user_roles` | PENDING | Code Agent | |
-| SET-016 | Build pending invites table + `revokeTeamInviteAction` | PENDING | Code Agent | Auth wrapper OK |
-| SET-017 | Build Preferences tab form | PENDING | Code Agent | |
-| SET-018 | Add read-only mode for non-admin agency roles | PENDING | Code Agent | Banner + disabled |
-| SET-019 | Add **Settings** to agency sidebar nav | PENDING | Code Agent | |
-| SET-020 | Middleware: block provider/facility from `/settings` | PENDING | Code Agent | |
-| SET-021 | Wire `logActivity` on each successful save | PENDING | Code Agent | `settings.updated` |
-| SET-022 | Success/error toasts per PRD | PENDING | Code Agent | |
-| SET-023 | Unsaved changes `beforeunload` guard | PENDING | Code Agent | Client only |
-| SET-024 | Run lint, typecheck, build | PENDING | Code Agent | |
-| SET-025 | Mark READY_FOR_TEST | PENDING | Code Agent | |
+| SET-001 | Add `agency_preferences` jsonb migration on `agencies` | READY_FOR_TEST | Code Agent | `0004_agency_preferences.sql` |
+| SET-002 | Create `lib/validations/agency-profile-settings.ts` | READY_FOR_TEST | Code Agent | Align onboarding fields |
+| SET-003 | Create `lib/validations/agency-service-area-settings.ts` | READY_FOR_TEST | Code Agent | Radius 10–75 |
+| SET-004 | Create `lib/validations/agency-preferences.ts` | READY_FOR_TEST | Code Agent | |
+| SET-005 | Create `lib/settings/assert-can-manage-settings.ts` | READY_FOR_TEST | Code Agent | Owner/admin |
+| SET-006 | Create `lib/settings/assert-can-view-settings.ts` | READY_FOR_TEST | Code Agent | All agency roles |
+| SET-007 | Implement `GET /api/settings` aggregated DTO | READY_FOR_TEST | Code Agent | Optional but recommended |
+| SET-008 | Implement `updateAgencyProfileAction` | READY_FOR_TEST | Code Agent | + logActivity |
+| SET-009 | Implement `updateAgencyServiceAreaAction` | READY_FOR_TEST | Code Agent | Places + radius |
+| SET-010 | Implement `updateAgencyPreferencesAction` | READY_FOR_TEST | Code Agent | JSON merge |
+| SET-011 | Create `/settings` page with tab query routing | READY_FOR_TEST | Code Agent | 4 tabs |
+| SET-012 | Build Profile tab form (RHF + Zod) | READY_FOR_TEST | Code Agent | |
+| SET-013 | Build Service area tab with `LocationAutocomplete` | READY_FOR_TEST | Code Agent | |
+| SET-014 | Build Team tab: invite form + `sendTeamInvitesAction` | READY_FOR_TEST | Code Agent | Reuse Auth |
+| SET-015 | Build active members table from `user_roles` | READY_FOR_TEST | Code Agent | |
+| SET-016 | Build pending invites table + `revokeTeamInviteAction` | READY_FOR_TEST | Code Agent | Auth wrapper OK |
+| SET-017 | Build Preferences tab form | READY_FOR_TEST | Code Agent | |
+| SET-018 | Add read-only mode for non-admin agency roles | READY_FOR_TEST | Code Agent | Banner + disabled |
+| SET-019 | Add **Settings** to agency sidebar nav | READY_FOR_TEST | Code Agent | |
+| SET-020 | Middleware: block provider/facility from `/settings` | READY_FOR_TEST | Code Agent | via `path-access` |
+| SET-021 | Wire `logActivity` on each successful save | READY_FOR_TEST | Code Agent | `settings.updated` |
+| SET-022 | Success/error toasts per PRD | READY_FOR_TEST | Code Agent | |
+| SET-023 | Unsaved changes `beforeunload` guard | READY_FOR_TEST | Code Agent | Client only |
+| SET-024 | Run lint, typecheck, build | READY_FOR_TEST | Code Agent | |
+| SET-025 | Mark READY_FOR_TEST | READY_FOR_TEST | Code Agent | |
 
 ---
 
