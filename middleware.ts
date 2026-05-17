@@ -17,7 +17,9 @@ export default auth((req) => {
     if (isLoggedIn && (pathname === "/login" || pathname === "/signup")) {
       const roles = (session?.user?.roles ?? []) as ScopedRole[];
       const redirectUrl = getPostLoginRedirect(roles);
-      return NextResponse.redirect(new URL(redirectUrl, req.url));
+      if (redirectUrl !== "/login" && redirectUrl !== "/signup") {
+        return NextResponse.redirect(new URL(redirectUrl, req.url));
+      }
     }
     return NextResponse.next();
   }
