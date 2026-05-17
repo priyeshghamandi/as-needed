@@ -172,6 +172,7 @@ export function ShiftDetailClient({
       agencyName={agencyName}
       userName={userName}
       userInitials={userInitials}
+      primaryRole={primaryRole}
       title={shift.requestTitle}
       subtitle={`Shift ${shortShiftId(shift.id)} · ${shift.facility.name}`}
       headerAction={

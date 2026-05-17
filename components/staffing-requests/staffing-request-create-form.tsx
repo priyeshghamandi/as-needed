@@ -27,6 +27,7 @@ export function StaffingRequestCreateForm({
   agencyName,
   userName,
   userInitials,
+  primaryRole,
   userId,
   facilities,
   coordinators,
@@ -35,6 +36,7 @@ export function StaffingRequestCreateForm({
   agencyName: string;
   userName: string;
   userInitials: string;
+  primaryRole: string;
   userId: string;
   facilities: { id: string; name: string }[];
   coordinators: { id: string; name: string }[];
@@ -116,6 +118,7 @@ export function StaffingRequestCreateForm({
         agencyName={agencyName}
         userName={userName}
         userInitials={userInitials}
+        primaryRole={primaryRole}
         title="New staffing request"
         subtitle="Add a facility before creating requests"
       >
@@ -134,6 +137,7 @@ export function StaffingRequestCreateForm({
       agencyName={agencyName}
       userName={userName}
       userInitials={userInitials}
+      primaryRole={primaryRole}
       title="New staffing request"
       subtitle="Create a staffing request and primary shift"
       headerAction={

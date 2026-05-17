@@ -32,6 +32,7 @@ export default async function NewStaffingRequestPage({ searchParams }: PageProps
       agencyName={ctx.agencyName}
       userName={ctx.userName}
       userInitials={ctx.userInitials}
+      primaryRole={ctx.primaryRole}
       userId={ctx.userId}
       facilities={facilities.map((f) => ({ id: f.id, name: f.name }))}
       coordinators={coordinators.map((c) => ({ id: c.id, name: c.name ?? "Coordinator" }))}

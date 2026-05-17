@@ -22,11 +22,13 @@ export function FacilityAddForm({
   agencyName,
   userName,
   userInitials,
+  primaryRole,
   serviceArea,
 }: {
   agencyName: string;
   userName: string;
   userInitials: string;
+  primaryRole: string;
   serviceArea: ServiceAreaRestrictionInput;
 }) {
   const router = useRouter();
@@ -86,6 +88,7 @@ export function FacilityAddForm({
       agencyName={agencyName}
       userName={userName}
       userInitials={userInitials}
+      primaryRole={primaryRole}
       title="Add facility"
       subtitle="Create a customer facility and optionally invite the contact"
       headerAction={

@@ -170,6 +170,7 @@ export function MatchPageClient({
       agencyName={agencyName}
       userName={userName}
       userInitials={userInitials}
+      primaryRole={primaryRole}
       title="Match professionals"
       subtitle={data.request.title}
       headerAction={

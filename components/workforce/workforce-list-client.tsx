@@ -115,6 +115,7 @@ export function WorkforceListClient({
       agencyName={agencyName}
       userName={userName}
       userInitials={userInitials}
+      primaryRole={primaryRole}
       title="Workforce"
       subtitle={`${total} healthcare professional${total === 1 ? "" : "s"}`}
       headerAction={headerAction}

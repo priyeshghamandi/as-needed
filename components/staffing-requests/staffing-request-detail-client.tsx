@@ -130,6 +130,7 @@ export function StaffingRequestDetailClient({
       agencyName={agencyName}
       userName={userName}
       userInitials={userInitials}
+      primaryRole={primaryRole}
       title={request.title}
       subtitle={request.facility.name}
       headerAction={

@@ -125,6 +125,7 @@ export function FacilityDetailClient({
       agencyName={agencyName}
       userName={userName}
       userInitials={userInitials}
+      primaryRole={primaryRole}
       title={facility.name}
       subtitle={[facilityTypeLabel(facility.type), locationLine].filter(Boolean).join(" · ")}
       headerAction={

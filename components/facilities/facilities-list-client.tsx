@@ -102,6 +102,7 @@ export function FacilitiesListClient({
       agencyName={agencyName}
       userName={userName}
       userInitials={userInitials}
+      primaryRole={primaryRole}
       title="Facilities"
       subtitle={`${total} facilit${total === 1 ? "y" : "ies"}`}
       headerAction={headerAction}

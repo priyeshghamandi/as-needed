@@ -21,11 +21,13 @@ export function WorkforceAddForm({
   agencyName,
   userName,
   userInitials,
+  primaryRole,
   serviceArea,
 }: {
   agencyName: string;
   userName: string;
   userInitials: string;
+  primaryRole: string;
   serviceArea: ServiceAreaRestrictionInput;
 }) {
   const router = useRouter();
@@ -84,6 +86,7 @@ export function WorkforceAddForm({
       agencyName={agencyName}
       userName={userName}
       userInitials={userInitials}
+      primaryRole={primaryRole}
       title="Add healthcare professional"
       subtitle="Create a roster record and optionally send a platform invite"
       headerAction={

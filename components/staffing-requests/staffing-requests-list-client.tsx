@@ -106,6 +106,7 @@ export function StaffingRequestsListClient({
       agencyName={agencyName}
       userName={userName}
       userInitials={userInitials}
+      primaryRole={primaryRole}
       title="Staffing Requests"
       subtitle={`${total} request${total === 1 ? "" : "s"}`}
       headerAction={headerAction}

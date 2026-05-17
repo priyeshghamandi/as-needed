@@ -157,6 +157,7 @@ export function WorkforceProfileClient({
       agencyName={agencyName}
       userName={userName}
       userInitials={userInitials}
+      primaryRole={primaryRole}
       title={`${profile.firstName} ${profile.lastName}`}
       subtitle={roleLabel(profile.role)}
       headerAction={

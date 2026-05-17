@@ -80,6 +80,7 @@ export function ShiftsListClient({
       agencyName={agencyName}
       userName={userName}
       userInitials={userInitials}
+      primaryRole={primaryRole}
       title="Shifts"
       subtitle={`${total} shift${total === 1 ? "" : "s"}`}
       headerAction={

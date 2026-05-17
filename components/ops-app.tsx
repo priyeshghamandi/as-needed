@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { canViewCompliance } from "@/lib/auth/compliance-access-rules";
 import { Icon, Badge, Dot, Avatar, AvatarStack, Eyebrow } from "@/components/primitives";
 import type {
   DashboardSummary,
@@ -52,15 +54,15 @@ const ROLE_LABELS: Record<string, string> = {
 // ───────────── Sidebar ─────────────
 
 const NAV = [
-  { id: "dashboard",  label: "Dashboard",         icon: "layout-grid" },
-  { id: "requests",   label: "Staffing Requests", icon: "clipboard-list" },
-  { id: "workforce",  label: "Workforce",         icon: "users" },
-  { id: "facilities", label: "Facilities",        icon: "building-2" },
-  { id: "shifts",     label: "Shifts",            icon: "calendar-range" },
-  { id: "compliance", label: "Compliance",        icon: "shield-check" },
-  { id: "messages",   label: "Messages",          icon: "message-circle" },
-  { id: "reports",    label: "Reports",           icon: "bar-chart-3" },
-  { id: "settings",   label: "Settings",          icon: "settings-2" },
+  { id: "dashboard", href: "/dashboard", label: "Dashboard", icon: "layout-grid" },
+  { id: "requests", href: "/staffing-requests", label: "Staffing Requests", icon: "clipboard-list" },
+  { id: "workforce", href: "/workforce", label: "Workforce", icon: "users" },
+  { id: "facilities", href: "/facilities", label: "Facilities", icon: "building-2" },
+  { id: "shifts", href: "/shifts", label: "Shifts", icon: "calendar-range" },
+  { id: "compliance", href: "/compliance", label: "Compliance", icon: "shield-check" },
+  { id: "messages", href: "/messages", label: "Messages", icon: "message-circle" },
+  { id: "reports", href: "/reports", label: "Reports", icon: "bar-chart-3" },
+  { id: "settings", href: "/settings", label: "Settings", icon: "settings-2" },
 ];
 
 function LogoMark() {
@@ -76,15 +78,22 @@ function Sidebar({
   agencyName,
   userName,
   userInitials,
-  active,
-  setActive,
+  primaryRole,
 }: {
   agencyName: string;
   userName: string;
   userInitials: string;
-  active: string;
-  setActive: (id: string) => void;
+  primaryRole: string;
 }) {
+  const pathname = usePathname();
+  const navItems = NAV.filter(
+    (n) => n.id !== "compliance" || canViewCompliance(primaryRole),
+  );
+  const activeNav =
+    NAV.find(
+      (n) => pathname === n.href || (n.href !== "/dashboard" && pathname.startsWith(`${n.href}/`)),
+    )?.id ?? "dashboard";
+
   const initials = agencyName
     .split(/\s+/)
     .slice(0, 2)
@@ -112,21 +121,24 @@ function Sidebar({
       </div>
 
       <nav className="px-2 mt-3 flex flex-col gap-px">
-        {NAV.map((n) => (
-          <button
-            key={n.id}
-            onClick={() => setActive(n.id)}
-            className={`group flex items-center gap-2.5 px-2.5 h-9 rounded-md text-[13px] tracking-tight ${
-              active === n.id ? "bg-ink-900 text-paper" : "text-ink-700 hover:bg-ink-100"
-            }`}
-          >
-            <Icon
-              name={n.icon}
-              className={`w-4 h-4 ${active === n.id ? "text-paper" : "text-ink-500 group-hover:text-ink-800"}`}
-            />
-            <span className="flex-1 text-left">{n.label}</span>
-          </button>
-        ))}
+        {navItems.map((n) => {
+          const active = activeNav === n.id;
+          return (
+            <Link
+              key={n.id}
+              href={n.href}
+              className={`group flex items-center gap-2.5 px-2.5 h-9 rounded-md text-[13px] tracking-tight ${
+                active ? "bg-ink-900 text-paper" : "text-ink-700 hover:bg-ink-100"
+              }`}
+            >
+              <Icon
+                name={n.icon}
+                className={`w-4 h-4 ${active ? "text-paper" : "text-ink-500 group-hover:text-ink-800"}`}
+              />
+              <span className="flex-1 text-left">{n.label}</span>
+            </Link>
+          );
+        })}
       </nav>
 
       <div className="mt-auto p-3">
@@ -839,7 +851,6 @@ export function OpsApp({
   availableWorkforce,
   activityFeed,
 }: OpsAppProps) {
-  const [active, setActive] = useState("dashboard");
   const [dateStr, setDateStr] = useState("");
 
   useEffect(() => {
@@ -859,8 +870,7 @@ export function OpsApp({
         agencyName={agencyName}
         userName={userName}
         userInitials={userInitials}
-        active={active}
-        setActive={setActive}
+        primaryRole={primaryRole}
       />
       <div className="flex-1 min-w-0 flex flex-col">
         <Topbar />

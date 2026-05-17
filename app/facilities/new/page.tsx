@@ -15,6 +15,7 @@ export default async function FacilitiesNewPage() {
       agencyName={ctx.agencyName}
       userName={ctx.userName}
       userInitials={ctx.userInitials}
+      primaryRole={ctx.primaryRole}
       serviceArea={ctx.serviceArea}
     />
   );
