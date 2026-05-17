@@ -430,6 +430,7 @@ export const HealthcareProfessionalTable = pgTable(
     state: varchar("state", { length: 120 }),
     country: varchar("country", { length: 120 }),
     postalCode: varchar("postal_code", { length: 40 }),
+    placeId: varchar("place_id", { length: 255 }),
 
     latitude: decimal("latitude", { precision: 10, scale: 7 }),
     longitude: decimal("longitude", { precision: 10, scale: 7 }),
