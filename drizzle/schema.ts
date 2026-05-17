@@ -124,6 +124,19 @@ export const NotificationPriorityEnum = pgEnum("notification_priority", [
   "critical",
 ]);
 
+export const InviteStatusEnum = pgEnum("invite_status", [
+  "pending",
+  "accepted",
+  "expired",
+  "revoked",
+]);
+
+export const InviteTypeEnum = pgEnum("invite_type", [
+  "agency_staff",
+  "provider",
+  "facility_user",
+]);
+
 /* ---------------- AUTH TABLES ---------------- */
 
 export const UserTable = pgTable("users", {
@@ -214,6 +227,9 @@ export const AgencyTable = pgTable(
 
     name: text("name").notNull(),
     status: AgencyStatusEnum("status").notNull().default("active"),
+
+    agencyType: varchar("agency_type", { length: 32 }),
+    workforceSize: varchar("workforce_size", { length: 32 }),
 
     phone: varchar("phone", { length: 50 }),
     website: text(),
@@ -315,6 +331,48 @@ export const FacilityTable = pgTable(
   (table) => ({
     agencyIdx: index("idx_facilities_agency").on(table.agencyId),
     typeIdx: index("idx_facilities_type").on(table.type),
+  })
+);
+
+export const UserInviteTable = pgTable(
+  "user_invites",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+
+    token: varchar("token", { length: 64 }).notNull().unique(),
+
+    email: varchar("email", { length: 255 }).notNull(),
+
+    role: UserRoleEnum("role").notNull(),
+
+    inviteType: InviteTypeEnum("invite_type").notNull(),
+
+    agencyId: uuid("agency_id")
+      .notNull()
+      .references(() => AgencyTable.id, { onDelete: "cascade" }),
+
+    facilityId: uuid("facility_id").references(() => FacilityTable.id, {
+      onDelete: "set null",
+    }),
+
+    invitedByUserId: uuid("invited_by_user_id")
+      .notNull()
+      .references(() => UserTable.id, { onDelete: "cascade" }),
+
+    status: InviteStatusEnum("status").notNull().default("pending"),
+
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+
+    createdAt,
+    updatedAt,
+  },
+  (table) => ({
+    emailIdx: index("idx_user_invites_email").on(table.email),
+    agencyIdx: index("idx_user_invites_agency").on(table.agencyId),
+    statusIdx: index("idx_user_invites_status").on(table.status),
+    tokenIdx: uniqueIndex("ux_user_invites_token").on(table.token),
   })
 );
 

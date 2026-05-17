@@ -158,7 +158,7 @@ Files Changed:
 ---
 
 ### T006 - Build Signup Page
-Status: PENDING
+Status: READY_FOR_TEST
 Owner: Code Agent
 
 Goal:
@@ -176,13 +176,31 @@ Acceptance Criteria:
 - Responsive design works
 
 Implementation Notes:
--
+- Existing `/signup` UI preserved; agency form wired to backend via React Hook Form + Zod.
+- Server action `registerAgencyAction` runs a Drizzle transaction: user (argon2 hash) → agency → `user_roles` (`agency_owner`).
+- Auth.js v5 credentials provider signs in with JWT session and redirects to `/onboarding`.
+- Google Places autocomplete on primary service area with mock fallback when `GOOGLE_PLACES_API_KEY` is unset.
+- Schema: `agencies.agency_type`, `agencies.workforce_size` (+ migration `drizzle/migrations/0001_agency_signup_fields.sql`).
+- Requires `.env`: `DATABASE_URL`, `AUTH_SECRET` (32+ chars). Optional: `GOOGLE_PLACES_API_KEY`.
 
 Test Notes:
--
+- [ ] Run migration against Postgres before signup test
+- [ ] `npm run build` and `npm run lint`
+- [ ] Agency signup at `/signup` → creates records → redirects to `/onboarding`
+- [ ] Duplicate email shows field error
+- [ ] Service area requires selection from autocomplete (not free text)
+- [ ] Password strength bars + show/hide toggle
+- [ ] Places mock suggestions when API key missing
 
 Files Changed:
--
+- `auth.ts`, `app/api/auth/[...nextauth]/route.ts`, `types/next-auth.d.ts`
+- `actions/signup/register-agency.ts`
+- `lib/auth/password.ts`, `lib/services/agency-signup.ts`, `lib/validations/agency-signup.ts`
+- `components/agency-signup-form.tsx`, `components/signup-app.tsx`
+- `components/service-area-autocomplete.tsx`, `lib/service-area.ts`, `lib/places/*`
+- `app/api/places/autocomplete/route.ts`, `app/api/places/details/route.ts`
+- `drizzle/schema.ts`, `drizzle/migrations/0001_agency_signup_fields.sql`
+- `data/env/server.ts`, `.env.example`
 
 ---
 

@@ -1,16 +1,12 @@
-/** Geographic service area selected from Places (or mock) autocomplete. */
-export type ServiceArea = {
-  displayName: string;
-  placeId: string;
-  city: string;
-  state: string;
-  country: string;
-  latitude: number;
-  longitude: number;
-};
+import type {
+  GeographicLocation,
+  GeographicLocationSuggestion,
+} from "@/lib/geographic-location";
 
-export type ServiceAreaSuggestion = {
-  placeId: string;
-  label: string;
-  secondary?: string;
-};
+export type { GeographicLocation, GeographicLocationSuggestion };
+
+/** @deprecated Use `GeographicLocation`. */
+export type ServiceArea = GeographicLocation;
+
+/** @deprecated Use `GeographicLocationSuggestion`. */
+export type ServiceAreaSuggestion = GeographicLocationSuggestion;
