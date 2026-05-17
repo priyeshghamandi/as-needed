@@ -10,6 +10,7 @@ import {
   confirmShiftAssignmentCore,
   respondToShiftAssignmentCore,
 } from "@/lib/assignments/assignment-operations";
+import { acceptShiftAssignmentForProvider } from "@/lib/provider/accept-shift-assignment";
 import { isProviderRole, type AppRole } from "@/lib/auth/roles";
 import { respondToAssignmentSchema } from "@/lib/validations/assignment";
 
@@ -33,9 +34,12 @@ export async function PATCH(request: Request, context: RouteContext) {
         );
       }
 
-      await assertProviderOwnsAssignment(authCtx.userId, id);
+      const { professionalId } = await assertProviderOwnsAssignment(authCtx.userId, id);
 
-      const result = await respondToShiftAssignmentCore(id, parsed.data);
+      const result =
+        parsed.data.status === "accepted"
+          ? await acceptShiftAssignmentForProvider(id, professionalId)
+          : await respondToShiftAssignmentCore(id, parsed.data);
       if (!result.ok) {
         return NextResponse.json({ error: result.message }, { status: result.status });
       }
