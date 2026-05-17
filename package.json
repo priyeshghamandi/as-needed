@@ -12,9 +12,12 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:seed:dashboard-e2e": "tsx scripts/seed-dashboard-e2e.ts",
+    "db:seed:onboarding-e2e": "tsx scripts/seed-onboarding-e2e.ts",
     "test": "vitest run",
-    "test:unit": "vitest run lib/dashboard lib/auth/dashboard-access.test.ts",
+    "test:unit": "vitest run lib/dashboard lib/auth/dashboard-access.test.ts lib/validations/onboarding lib/onboarding lib/places/service-area-bounds.test.ts",
+    "test:unit:onboarding": "vitest run lib/validations/onboarding lib/onboarding lib/places/service-area-bounds.test.ts lib/onboarding/onboarding-api-auth.test.ts",
     "test:e2e": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/dashboard",
+    "test:e2e:onboarding": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/onboarding",
     "test:e2e:ui": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/dashboard --ui",
     "postinstall": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright install chromium || true"
   },

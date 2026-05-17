@@ -23,5 +23,9 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
+    env: {
+      ...process.env,
+      GOOGLE_PLACES_API_KEY: process.env.PLAYWRIGHT_FORCE_MOCK_PLACES === "1" ? "" : process.env.GOOGLE_PLACES_API_KEY,
+    },
   },
 });

@@ -93,7 +93,7 @@ function Sidebar({
     .toUpperCase();
 
   return (
-    <aside className="w-[232px] shrink-0 h-screen sticky top-0 border-r border-ink-200/70 bg-paper flex flex-col">
+    <aside className="hidden md:flex w-[232px] shrink-0 h-screen sticky top-0 border-r border-ink-200/70 bg-paper flex-col">
       <div className="px-4 h-14 flex items-center gap-2 border-b border-ink-200/70">
         <LogoMark />
         <span className="font-semibold tracking-tight text-[15px]">AsNeeded</span>
@@ -152,12 +152,16 @@ function Sidebar({
 function Topbar() {
   return (
     <div className="sticky top-0 z-30 h-14 bg-paper/85 backdrop-blur border-b border-ink-200/70">
-      <div className="h-full px-6 flex items-center gap-3">
-        <div>
+      <div className="h-full px-4 md:px-6 flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-2 md:hidden shrink-0">
+          <LogoMark />
+          <span className="font-semibold tracking-tight text-[15px]">AsNeeded</span>
+        </div>
+        <div className="hidden md:block shrink-0">
           <div className="text-[10px] font-mono uppercase tracking-wider text-ink-500">Operations</div>
           <div className="text-[14px] font-medium tracking-tight leading-none mt-0.5">Live console</div>
         </div>
-        <div className="ml-6 relative w-[420px] max-w-[40vw]">
+        <div className="hidden md:block ml-3 relative flex-1 max-w-[420px]">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400">
             <Icon name="search" className="w-4 h-4" />
           </span>
@@ -207,7 +211,7 @@ function KpiCard({
             : "text-ink-600";
 
   return (
-    <div className="col-span-12 sm:col-span-6 xl:col-span-2 rounded-xl border border-ink-200 bg-white p-5">
+    <div className="col-span-6 md:col-span-4 xl:col-span-2 rounded-xl border border-ink-200 bg-white p-5">
       <div className="text-[11px] font-mono uppercase tracking-wider text-ink-500">{label}</div>
       <div className="mt-2 text-[32px] font-medium tracking-tight tabular-nums leading-none">
         {value}
@@ -271,12 +275,16 @@ function Panel({
 }) {
   return (
     <section className={`rounded-xl border border-ink-200 bg-white ${className}`}>
-      <div className="px-5 py-3.5 border-b border-ink-100 flex items-center gap-3">
-        <div>
+      <div className="px-4 md:px-5 py-3.5 border-b border-ink-100 flex flex-col gap-3 md:flex-row md:items-center">
+        <div className="min-w-0">
           <div className="text-[14px] font-medium tracking-tight">{title}</div>
           {sub && <div className="text-[11px] font-mono text-ink-500 mt-0.5">{sub}</div>}
         </div>
-        {action && <div className="ml-auto flex items-center gap-2">{action}</div>}
+        {action && (
+          <div className="md:ml-auto flex flex-wrap items-center gap-2 w-full md:w-auto min-w-0">
+            {action}
+          </div>
+        )}
       </div>
       {children}
     </section>
@@ -364,7 +372,7 @@ function RequestsTable({ requests }: { requests: SerializedActiveRequest[] }) {
       sub="Requests needing coordinator attention"
       action={
         <>
-          <div className="inline-flex items-center gap-1 p-0.5 rounded-md bg-ink-50 border border-ink-200">
+          <div className="inline-flex items-center gap-1 p-0.5 rounded-md bg-ink-50 border border-ink-200 max-w-full overflow-x-auto">
             {filters.map((f) => (
               <button
                 key={f}
@@ -401,8 +409,43 @@ function RequestsTable({ requests }: { requests: SerializedActiveRequest[] }) {
           </Link>
         </div>
       ) : (
-        <div className="overflow-x-auto scrollarea">
-          <table className="w-full text-[13px]">
+        <>
+          <div className="md:hidden divide-y divide-ink-100">
+            {rows.map((r) => (
+              <div key={r.id} className="px-4 py-4 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="w-8 h-8 rounded-md bg-paper/60 border border-ink-200 inline-flex items-center justify-center text-ink-600 shrink-0">
+                      <Icon name="building-2" className="w-4 h-4" />
+                    </span>
+                    <div className="min-w-0">
+                      <div className="font-medium tracking-tight truncate">{r.title}</div>
+                      <div className="text-[10px] font-mono text-ink-500 truncate">{r.facilityName}</div>
+                    </div>
+                  </div>
+                  <StatusBadge status={r.status} />
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 text-[12px] text-ink-700">
+                    <Icon name="stethoscope" className="w-3.5 h-3.5 text-ink-400" />
+                    {ROLE_LABELS[r.roleNeeded] ?? r.roleNeeded.toUpperCase()}
+                  </span>
+                  <PriorityBadge priority={r.priority} />
+                </div>
+                <FillBar filled={r.filledCount} need={r.professionalsRequired} status={r.status} />
+                <div className="flex items-center justify-between text-[11px] font-mono text-ink-500">
+                  <span>
+                    {r.coordinatorName ?? (
+                      <span className="text-ink-400">Unassigned</span>
+                    )}
+                  </span>
+                  <span>{formatRelativeTime(r.updatedAt)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="hidden md:block overflow-x-auto scrollarea">
+            <table className="w-full text-[13px]">
             <thead>
               <tr className="text-left text-[10px] font-mono uppercase tracking-wider text-ink-500 border-b border-ink-100">
                 <th className="px-5 py-2 font-medium">Request · Facility</th>
@@ -466,7 +509,8 @@ function RequestsTable({ requests }: { requests: SerializedActiveRequest[] }) {
               ))}
             </tbody>
           </table>
-        </div>
+          </div>
+        </>
       )}
     </Panel>
   );
@@ -523,8 +567,35 @@ function WorkforcePanel({ professionals }: { professionals: SerializedAvailableP
           </Link>
         </div>
       ) : (
-        <div className="max-h-[420px] overflow-y-auto scrollarea">
-          <table className="w-full text-[13px]">
+        <>
+          <div className="md:hidden divide-y divide-ink-100 max-h-[420px] overflow-y-auto scrollarea">
+            {professionals.map((p, i) => (
+              <div key={p.id} className="px-4 py-3.5 space-y-2">
+                <div className="flex items-center gap-2.5">
+                  <Avatar
+                    initials={`${p.firstName[0] ?? ""}${p.lastName[0] ?? ""}`}
+                    tone={(["teal", "violet", "amber", "rose", "ink"] as const)[i % 5]}
+                    size={26}
+                  />
+                  <Link
+                    href={`/workforce/${p.id}`}
+                    className="font-medium tracking-tight hover:text-teal-700 min-h-11 inline-flex items-center"
+                  >
+                    {p.firstName} {p.lastName}
+                  </Link>
+                </div>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px]">
+                  <span className="text-ink-700">{ROLE_LABELS[p.role] ?? p.role.toUpperCase()}</span>
+                  <ComplianceBadge status={p.complianceStatus} />
+                  <span className="font-mono text-ink-500">
+                    {p.lastShiftAt ? formatRelativeTime(p.lastShiftAt) : "No shifts yet"}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="hidden md:block max-h-[420px] overflow-y-auto scrollarea">
+            <table className="w-full text-[13px]">
             <thead className="sticky top-0 bg-white z-10">
               <tr className="text-left text-[10px] font-mono uppercase tracking-wider text-ink-500 border-b border-ink-100">
                 <th className="px-5 py-2 font-medium">Professional</th>
@@ -572,7 +643,8 @@ function WorkforcePanel({ professionals }: { professionals: SerializedAvailableP
               ))}
             </tbody>
           </table>
-        </div>
+          </div>
+        </>
       )}
     </Panel>
   );
@@ -741,7 +813,7 @@ function QuickActions({ primaryRole }: { primaryRole: string }) {
         <Link
           key={a.href}
           href={a.href}
-          className={`inline-flex items-center gap-2 h-9 px-4 rounded-full text-[13px] font-medium ${
+          className={`inline-flex items-center gap-2 min-h-11 h-11 px-4 rounded-full text-[13px] font-medium ${
             a.primary
               ? "bg-ink-900 text-paper hover:bg-ink-800"
               : "border border-ink-200 bg-white text-ink-800 hover:bg-ink-50"
@@ -782,7 +854,7 @@ export function OpsApp({
   const greeting = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
 
   return (
-    <div className="min-h-screen bg-paper text-ink-900 flex">
+    <div className="min-h-screen bg-paper text-ink-900 flex overflow-x-hidden">
       <Sidebar
         agencyName={agencyName}
         userName={userName}
@@ -792,12 +864,12 @@ export function OpsApp({
       />
       <div className="flex-1 min-w-0 flex flex-col">
         <Topbar />
-        <main className="px-6 py-6 space-y-6 rise-in">
+        <main className="px-4 md:px-6 py-6 space-y-6 rise-in min-w-0 max-w-full">
           {/* Greeting */}
-          <div className="flex items-end justify-between">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <Eyebrow><span suppressHydrationWarning>{dateStr || " "}</span></Eyebrow>
-              <h1 className="mt-1 text-[28px] leading-tight tracking-[-0.01em] font-medium">
+              <h1 className="mt-1 text-[22px] md:text-[28px] leading-tight tracking-[-0.01em] font-medium">
                 Good {greeting}, {firstName}.
                 <span className="font-serif italic text-teal-800"> Operations board.</span>
               </h1>

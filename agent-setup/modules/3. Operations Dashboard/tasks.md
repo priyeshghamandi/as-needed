@@ -8,7 +8,7 @@
 | Branch | `module/operations-dashboard` (merged via PR #3) |
 | Status | **FAILED_TEST** |
 | Depends on | Auth, Agency Onboarding |
-| Test run | 2026-05-17 |
+| Test run | 2026-05-17 (updated after OPS-023 fix) |
 
 ### Test summary (2026-05-17)
 
@@ -18,20 +18,16 @@
 | `npm run typecheck` | Pass |
 | `npm run build` | Pass |
 | `npm run test:unit` | **18/18 passed** |
-| `npm run test:e2e` | **20/21 passed** (OPS-E2E-050 failed) |
+| `npm run test:e2e` | **21/21 passed** |
 | OPS-AUTH via `dashboard-access.test.ts` | Pass |
 | OPS-A11Y-05 (axe) | Not run |
 
-### Failure reproduction
+### Remaining failures (non-mobile)
 
-**OPS-E2E-050 (OPS-T009 / OPS-RESP-01)** — Mobile layout 375px horizontal overflow
-
-1. `npm run db:seed:dashboard-e2e` (or `npm run test:e2e` runs seed via global setup)
-2. Log in as `e2e-dash-owner-a@example.com` / `E2eTestPassword1!`
-3. Open `/dashboard` at viewport 375×812
-4. Observe `document.documentElement.scrollWidth` (738px) > `clientWidth` (375px)
-5. **Expected (PRD §13):** no page horizontal overflow
-6. **Actual:** sidebar + tables cause horizontal scroll; mobile card layout not implemented (OPS-023)
+- OPS-015: Onboarding banner copy/progress vs Agency Onboarding PRD
+- OPS-010, OPS-016, OPS-019, OPS-024, OPS-025: KPI skeletons, click-through, request links, error UI, sidebar routes
+- OPS-T012: axe not run
+- OPS-T017: PRD §14 not fully satisfied
 
 ---
 
@@ -74,7 +70,7 @@
 | OPS-020 | Add relative time formatting utility for Updated/Activity | **PASSED** | Code Agent | `formatRelativeTime` in `ops-app.tsx` |
 | OPS-021 | Map `staffing_request_status` and `priority` to badge variants | **PASSED** | Code Agent | |
 | OPS-022 | Hide reliability column below `md` breakpoint | **PASSED** | Code Agent | |
-| OPS-023 | Mobile card layout for tables `< md` | **FAILED_TEST** | Code Agent | OPS-E2E-050; tables stay wide |
+| OPS-023 | Mobile card layout for tables `< md` | **PASSED** | Code Agent | Card lists + hidden sidebar on `< md`; OPS-E2E-050 passes |
 | OPS-024 | Handle API partial failure UI (per-section errors) | **PENDING** | Code Agent | |
 | OPS-025 | Register dashboard in agency sidebar nav as active route | **FAILED_TEST** | Code Agent | Sidebar uses client state, not `Link` routes |
 | OPS-026 | Run `npm run lint`, `typecheck`, `build` | **PASSED** | Code Agent | |
@@ -94,14 +90,14 @@
 | OPS-T006 | Create `e2e/dashboard/dashboard-tables.spec.ts` (OPS-E2E-020–023) | **PASSED** | Test Agent | 4/4 |
 | OPS-T007 | Create `e2e/dashboard/dashboard-banner.spec.ts` (OPS-E2E-030–032) | **PASSED** | Test Agent | 3/3 |
 | OPS-T008 | Create `e2e/dashboard/dashboard-quick-actions.spec.ts` (OPS-E2E-040–042) | **PASSED** | Test Agent | 3/3 |
-| OPS-T009 | Create `e2e/dashboard/dashboard-responsive.spec.ts` (OPS-E2E-050–051) | **FAILED_TEST** | Test Agent | OPS-E2E-050 fails (horizontal overflow) |
+| OPS-T009 | Create `e2e/dashboard/dashboard-responsive.spec.ts` (OPS-E2E-050–051) | **PASSED** | Test Agent | 2/2 |
 | OPS-T010 | Run authorization tests OPS-AUTH-01–04 | **PASSED** | Test Agent | Via unit + E2E access tests |
 | OPS-T011 | Run edge cases OPS-EDGE-01–05 | **FAILED_TEST** | Test Agent | OPS-EDGE-01/02/03/04 not automated; OPS-EDGE-05 in metrics.test |
 | OPS-T012 | Run axe on `/dashboard` (OPS-A11Y-05) | **PENDING** | Test Agent | `@axe-core/playwright` installed; not executed |
 | OPS-T013 | Run `npm run lint` | **PASSED** | Test Agent | |
 | OPS-T014 | Run `npm run typecheck` | **PASSED** | Test Agent | |
 | OPS-T015 | Run `npm run build` | **PASSED** | Test Agent | |
-| OPS-T016 | Run `vitest run lib/dashboard` + `playwright test e2e/dashboard` | **FAILED_TEST** | Test Agent | Unit pass; E2E 20/21 |
+| OPS-T016 | Run `vitest run lib/dashboard` + `playwright test e2e/dashboard` | **PASSED** | Test Agent | Unit 18/18; E2E 21/21 |
 | OPS-T017 | Verify PRD acceptance criteria §14 | **FAILED_TEST** | Test Agent | See gaps: page title, mobile layout, banner copy |
 
 ---
@@ -116,7 +112,7 @@ Module is complete only when:
 - [x] Activity feed shows ≤20 events, newest first
 - [x] Quick actions respect role matrix; no entity CRUD on dashboard
 - [ ] Onboarding banner integration matches Agency Onboarding PRD
-- [ ] Responsive behavior at 375/768/1280
+- [x] Responsive behavior at 375/768/1280 (E2E smokes OPS-E2E-050–051 pass)
 - [x] Cross-agency API access returns 403 (path-access unit tests)
 - [ ] All OPS-T* tests pass; lint, typecheck, build pass
 

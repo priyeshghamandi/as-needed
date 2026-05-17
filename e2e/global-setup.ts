@@ -6,4 +6,8 @@ export default async function globalSetup() {
     stdio: "inherit",
     cwd: process.cwd(),
   });
+  execSync("npx tsx --env-file=.env scripts/seed-onboarding-e2e.ts", {
+    stdio: "inherit",
+    cwd: process.cwd(),
+  });
 }
