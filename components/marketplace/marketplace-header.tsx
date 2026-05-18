@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button, Icon } from "@/components/primitives";
 import { MarketplaceLogo } from "@/components/marketplace/marketplace-logo";
 import { LocationChip } from "@/components/marketplace/location-chip";
+import { SignOutButton } from "@/components/sign-out-button";
 
 const NAV_LINKS = [
   { href: "/marketplace/categories", label: "Categories" },
@@ -50,9 +51,13 @@ export function MarketplaceHeader({
               My staffing requests
             </Link>
           ) : null}
-          <Link href="/login" className="hidden sm:inline text-[13px] text-ink-700 hover:underline px-2">
-            Log in
-          </Link>
+          {facilityUserName ? (
+            <SignOutButton className="hidden sm:inline-flex px-2" />
+          ) : (
+            <Link href="/login" className="hidden sm:inline text-[13px] text-ink-700 hover:underline px-2">
+              Log in
+            </Link>
+          )}
           <Button as={Link} href="/signup" size="sm" variant="primary" className="hidden sm:inline-flex">
             For agencies <Icon name="arrow-right" className="w-3.5 h-3.5" />
           </Button>
@@ -93,13 +98,19 @@ export function MarketplaceHeader({
               My staffing requests
             </Link>
           ) : null}
-          <Link
-            href="/login"
-            className="block rounded-lg px-3 py-2 text-[14px] text-ink-800 hover:bg-ink-100"
-            onClick={() => setMobileOpen(false)}
-          >
-            Log in
-          </Link>
+          {facilityUserName ? (
+            <div className="px-3 py-2" onClick={() => setMobileOpen(false)}>
+              <SignOutButton />
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="block rounded-lg px-3 py-2 text-[14px] text-ink-800 hover:bg-ink-100"
+              onClick={() => setMobileOpen(false)}
+            >
+              Log in
+            </Link>
+          )}
           <Link
             href="/signup"
             className="block rounded-lg px-3 py-2 text-[14px] font-medium text-teal-800 hover:bg-teal-50"

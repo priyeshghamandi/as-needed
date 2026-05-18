@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Avatar, Button } from "@/components/primitives";
 import { MarketplaceLogo } from "@/components/marketplace/marketplace-logo";
+import { SignOutButton } from "@/components/sign-out-button";
 
 const NAV = [
   { href: "/customer/requests", label: "My staffing requests" },
@@ -62,6 +63,7 @@ export function CustomerShell({
             </div>
             <Avatar initials={userInitials} />
             <span className="hidden lg:inline text-[13px] text-ink-600">{userName}</span>
+            <SignOutButton />
           </div>
         </div>
       </header>

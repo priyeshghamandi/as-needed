@@ -8,6 +8,7 @@ import { Icon, Badge, Dot, Avatar, AvatarStack, Eyebrow } from "@/components/pri
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { CriticalAlertBanner, type CriticalAlert } from "@/components/notifications/critical-alert-banner";
 import { AGENCY_SIDEBAR_NAV } from "@/lib/navigation/agency-sidebar-nav";
+import { SignOutButton } from "@/components/sign-out-button";
 import { RecentActivityFeed } from "@/components/activity/recent-activity-feed";
 import type { ActivityLogItem } from "@/lib/activity/types";
 import type {
@@ -148,8 +149,8 @@ function Sidebar({
         <div className="mt-3 w-full flex items-center gap-2 px-2 h-9 rounded-md text-[13px] text-ink-800">
           <Avatar initials={userInitials} tone="teal" size={20} />
           <div className="flex-1 text-left text-[12px] tracking-tight truncate">{userName}</div>
-          <Icon name="more-horizontal" className="w-3.5 h-3.5 text-ink-400" />
         </div>
+        <SignOutButton variant="sidebar" className="mt-1" />
       </div>
     </aside>
   );
@@ -181,7 +182,10 @@ function Topbar({ unreadCount = 0 }: { unreadCount?: number }) {
             ⌘K
           </span>
         </div>
-        <div className="ml-auto flex items-center gap-1.5">
+        <div className="ml-auto flex items-center gap-2">
+          <div className="md:hidden">
+            <SignOutButton />
+          </div>
           <NotificationBell initialCount={unreadCount} />
           <button className="w-9 h-9 rounded-md hover:bg-ink-100 inline-flex items-center justify-center text-ink-700">
             <Icon name="help-circle" className="w-4 h-4" />

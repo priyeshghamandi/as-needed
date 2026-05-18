@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Icon, Avatar } from "@/components/primitives";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { SignOutButton } from "@/components/sign-out-button";
 import { canViewCompliance } from "@/lib/auth/compliance-access-rules";
 import { canViewStaffingRequests } from "@/lib/auth/staffing-requests-access-rules";
 import { AGENCY_SIDEBAR_NAV } from "@/lib/navigation/agency-sidebar-nav";
@@ -118,11 +119,12 @@ export function AgencyShell({
             );
           })}
         </nav>
-        <div className="mt-auto p-3">
+        <div className="mt-auto shrink-0 p-3 border-t border-ink-200/70 space-y-1">
           <div className="w-full flex items-center gap-2 px-2 h-9 rounded-md text-[13px] text-ink-800">
             <Avatar initials={userInitials} tone="teal" size={20} />
             <div className="flex-1 text-left text-[12px] tracking-tight truncate">{userName}</div>
           </div>
+          <SignOutButton variant="sidebar" />
         </div>
       </aside>
       <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
@@ -132,7 +134,10 @@ export function AgencyShell({
               <LogoMark />
               <span className="font-semibold tracking-tight text-[15px]">AsNeeded</span>
             </div>
-            <div className="ml-auto flex items-center gap-1.5">
+            <div className="ml-auto flex items-center gap-2">
+              <div className="md:hidden">
+                <SignOutButton />
+              </div>
               <NotificationBell initialCount={unreadCount} />
             </div>
           </div>

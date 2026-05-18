@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Icon } from "@/components/primitives";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { SignOutButton } from "@/components/sign-out-button";
 
 const NAV = [
   { href: "/my-shifts", label: "My Shifts", icon: "calendar-range" },
@@ -33,6 +34,7 @@ export function ProviderShell({
           <div className="text-[10px] font-mono uppercase tracking-[0.14em] text-teal-700">
             Healthcare professional
           </div>
+          <SignOutButton />
           <NotificationBell initialCount={unreadCount} />
         </div>
         <h1 className="text-[22px] font-medium tracking-tight text-ink-900 mt-1">{title}</h1>
