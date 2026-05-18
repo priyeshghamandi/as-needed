@@ -22,6 +22,7 @@ import {
   yearsExperienceBucket,
   yearsExperienceBucketLabel,
 } from "@/lib/marketplace/public-profile-format";
+import { isPublicProfileHeadlineConfigured } from "@/lib/marketplace/public-profile-format";
 import type { CustomerLocationContext } from "@/lib/marketplace/types";
 
 export type PublicProfessionalProfile = {
@@ -109,6 +110,7 @@ export async function resolvePublicProfessionalProfile(
   if (hasLocation) {
     const eligible = await isProfessionalPublicEligible(row.id, customerLocation);
     if (!eligible) return null;
+    if (!isPublicProfileHeadlineConfigured(row.profileHeadline)) return null;
   }
 
   const credentials = await db

@@ -13,7 +13,9 @@ export function MarketplaceProfessionalCard({
 }) {
   const locationLine = [result.city, result.state].filter(Boolean).join(", ");
   const profileHref = `/marketplace/professionals/${result.publicSlug}`;
-  const requestHref = `/login?callbackUrl=${encodeURIComponent(profileHref)}`;
+  const requestHref = `/login?callbackUrl=${encodeURIComponent(
+    `${profileHref}?professionalId=${result.id}`,
+  )}`;
 
   return (
     <article className="rounded-xl border border-ink-200 bg-white p-5 flex flex-col sm:flex-row gap-4">

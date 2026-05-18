@@ -154,6 +154,13 @@ export function WorkforceMarketplaceTab({
           <code className="font-mono text-[11px] bg-ink-50 px-1 py-0.5 rounded">
             /marketplace/professionals/{visibility.publicSlug}
           </code>
+          {" · "}
+          <a
+            href={`/workforce/${professionalId}?tab=public-profile`}
+            className="text-teal-800 hover:underline"
+          >
+            Edit public profile
+          </a>
         </p>
       ) : null}
     </section>

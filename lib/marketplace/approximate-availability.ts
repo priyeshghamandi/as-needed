@@ -1,11 +1,13 @@
 import { and, eq, gte, lte } from "drizzle-orm";
 import { db } from "@/drizzle/db";
 import { AvailabilityBlockTable } from "@/drizzle/schema";
+import {
+  APPROXIMATE_AVAILABILITY_LABELS,
+  type ApproximateAvailability,
+} from "@/lib/marketplace/approximate-availability-labels";
 
-export type ApproximateAvailability =
-  | "likely_available"
-  | "available_this_week"
-  | "recently_active";
+export type { ApproximateAvailability } from "@/lib/marketplace/approximate-availability-labels";
+export { APPROXIMATE_AVAILABILITY_LABELS };
 
 const MS_DAY = 86_400_000;
 
@@ -59,9 +61,3 @@ export async function computeApproximateAvailability(
 
   return null;
 }
-
-export const APPROXIMATE_AVAILABILITY_LABELS: Record<ApproximateAvailability, string> = {
-  likely_available: "Likely available soon",
-  available_this_week: "Available this week",
-  recently_active: "Recently active",
-};

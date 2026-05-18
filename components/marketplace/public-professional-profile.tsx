@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ProfileFulfillmentNotice } from "@/components/marketplace/profile-fulfillment-notice";
 import type { PublicProfessionalProfile } from "@/lib/marketplace/public-profile-queries";
 import { Icon } from "@/components/primitives";
 
@@ -40,12 +41,11 @@ export function PublicProfessionalProfileView({
   profile: PublicProfessionalProfile;
 }) {
   const locationLine = [profile.city, profile.state].filter(Boolean).join(", ");
-  const requestHref = `/login?callbackUrl=${encodeURIComponent(
-    `/marketplace/professionals/${profile.publicSlug}`,
-  )}`;
+  const requestCallback = `/marketplace/professionals/${profile.publicSlug}?professionalId=${profile.id}`;
+  const requestHref = `/login?callbackUrl=${encodeURIComponent(requestCallback)}`;
 
   return (
-    <div className="max-w-[800px] mx-auto px-4 sm:px-8 py-10 pb-28 sm:pb-10">
+    <div className="max-w-[800px] mx-auto px-4 sm:px-8 py-10 pb-28 sm:pb-10 print:pb-10">
       <Link
         href="/marketplace/categories"
         className="text-[13px] text-ink-600 hover:underline"
@@ -83,11 +83,9 @@ export function PublicProfessionalProfileView({
         </div>
       </header>
 
-      <section className="mt-8 rounded-xl border border-ink-200 bg-ink-50 px-4 py-4 text-[14px] text-ink-700 leading-relaxed">
-        Staffing fulfilled by <span className="font-medium">{profile.agencyName}</span>{" "}
-        coordinators. Submit a staffing request to request this professional — not a direct
-        hire.
-      </section>
+      <div className="mt-8">
+        <ProfileFulfillmentNotice agencyName={profile.agencyName} />
+      </div>
 
       {profile.bio ? (
         <section className="mt-8">
@@ -167,7 +165,7 @@ export function PublicProfessionalProfileView({
         )}
       </div>
 
-      <div className="fixed bottom-0 inset-x-0 sm:hidden border-t border-ink-200 bg-paper/95 backdrop-blur p-4 z-30">
+      <div className="fixed bottom-0 inset-x-0 sm:hidden border-t border-ink-200 bg-paper/95 backdrop-blur p-4 z-30 print:hidden">
         {profile.canRequest ? (
           <Link href={requestHref} className={`${PRIMARY_LINK_CLASS} w-full`}>
             Request professional

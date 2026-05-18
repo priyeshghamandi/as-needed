@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { WorkforceProfileClient } from "@/components/workforce/workforce-profile-client";
+import { getAgencyPublicProfileEditState } from "@/lib/marketplace/public-profile";
 import { getMarketplaceVisibilityState } from "@/lib/marketplace/visibility-queries";
 import { loadWorkforcePageContext } from "@/lib/workforce/load-page-context";
 import { getProfessionalProfile } from "@/lib/workforce/queries";
@@ -18,7 +19,8 @@ export default async function WorkforceProfilePage({ params, searchParams }: Pag
   if (!profile) notFound();
 
   const marketplaceVisibility = await getMarketplaceVisibilityState(ctx.agencyId, id);
-  if (!marketplaceVisibility) notFound();
+  const publicProfileEdit = await getAgencyPublicProfileEditState(ctx.agencyId, id);
+  if (!marketplaceVisibility || !publicProfileEdit) notFound();
 
   const serialized = {
     id: profile.id,
@@ -62,15 +64,28 @@ export default async function WorkforceProfilePage({ params, searchParams }: Pag
     checklist: marketplaceVisibility.checklist,
   };
 
+  const serializedPublicProfile = {
+    ...publicProfileEdit,
+    approximateAvailability: publicProfileEdit.approximateAvailability,
+  };
+
+  const activeTab =
+    tab === "marketplace"
+      ? "marketplace"
+      : tab === "public-profile"
+        ? "public-profile"
+        : "overview";
+
   return (
     <WorkforceProfileClient
       agencyName={ctx.agencyName}
       userName={ctx.userName}
       userInitials={ctx.userInitials}
       primaryRole={ctx.primaryRole}
-      activeTab={tab === "marketplace" ? "marketplace" : "overview"}
+      activeTab={activeTab}
       profile={serialized}
       marketplaceVisibility={serializedMarketplace}
+      publicProfileEdit={serializedPublicProfile}
       serviceArea={ctx.serviceArea}
     />
   );

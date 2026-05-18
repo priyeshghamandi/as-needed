@@ -48,6 +48,29 @@ export function resolveHeadline(params: {
   return roleDisplayLabel(params.role);
 }
 
+export function isPublicProfileHeadlineConfigured(
+  headline: string | null | undefined,
+): boolean {
+  return Boolean(headline?.trim());
+}
+
+export function buildPublicProfileWarnings(params: {
+  isMarketplaceVisible: boolean;
+  profileHeadline: string | null;
+  publicSlug: string | null;
+}): string[] {
+  const warnings: string[] = [];
+  if (params.isMarketplaceVisible && !isPublicProfileHeadlineConfigured(params.profileHeadline)) {
+    warnings.push(
+      "Add a public headline before customers with location set can view this profile.",
+    );
+  }
+  if (params.isMarketplaceVisible && !params.publicSlug) {
+    warnings.push("Public slug is missing — re-save marketplace visibility.");
+  }
+  return warnings;
+}
+
 export function isStoredApproximateAvailability(
   value: string | null | undefined,
 ): value is ApproximateAvailability {

@@ -25,6 +25,15 @@ export {
   type PublicProfessionalProfile,
 } from "@/lib/marketplace/public-profile-queries";
 export {
+  getAgencyPublicProfileEditState,
+  upsertAgencyPublicProfile,
+  type AgencyPublicProfileEditState,
+} from "@/lib/marketplace/public-profile";
+export {
+  buildPublicProfileWarnings,
+  isPublicProfileHeadlineConfigured,
+} from "@/lib/marketplace/public-profile-format";
+export {
   enrichEligibleProfessionals,
   runMarketplaceSearch,
   type MarketplaceSearchResult,
