@@ -5,6 +5,15 @@ import { isCustomerLocationValid } from "@/lib/marketplace/geo-eligibility";
 
 export const MARKETPLACE_URGENCY_VALUES = ["asap", "this_week", "flexible"] as const;
 export const MARKETPLACE_SORT_VALUES = ["relevance", "recently_active"] as const;
+export const MARKETPLACE_SHIFT_TYPES = ["day", "night", "weekend", "on_call"] as const;
+
+function todayIsoDateLocal(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 
 const roleEnum = z.enum(WORKFORCE_PROFESSIONAL_ROLES);
 
@@ -46,6 +55,7 @@ export const marketplaceSearchQuerySchema = z
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD")
       .optional(),
     urgency: z.enum(MARKETPLACE_URGENCY_VALUES).optional(),
+    shiftType: z.enum(MARKETPLACE_SHIFT_TYPES).optional(),
     sort: z.enum(MARKETPLACE_SORT_VALUES).default("relevance"),
     page: z.coerce.number().int().min(1).default(1),
   })
@@ -82,6 +92,14 @@ export const marketplaceSearchQuerySchema = z
     }
 
     if (data.needStart && data.needEnd) {
+      const today = todayIsoDateLocal();
+      if (data.needStart < today) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["needStart"],
+          message: "Start date cannot be in the past",
+        });
+      }
       const start = new Date(`${data.needStart}T00:00:00`);
       const end = new Date(`${data.needEnd}T00:00:00`);
       if (end < start) {
@@ -110,6 +128,7 @@ export type ParsedMarketplaceSearch = {
   needStart: string | null;
   needEnd: string | null;
   urgency: (typeof MARKETPLACE_URGENCY_VALUES)[number] | null;
+  shiftType: (typeof MARKETPLACE_SHIFT_TYPES)[number] | null;
   sort: (typeof MARKETPLACE_SORT_VALUES)[number];
   page: number;
 };
@@ -147,6 +166,7 @@ export function parseMarketplaceSearchInput(
       needStart: parsed.data.needStart ?? null,
       needEnd: parsed.data.needEnd ?? null,
       urgency: parsed.data.urgency ?? null,
+      shiftType: parsed.data.shiftType ?? null,
       sort: parsed.data.sort,
       page: parsed.data.page,
     },
@@ -164,6 +184,9 @@ export function marketplaceSearchQueryFromUrl(
     needEnd: searchParams.get("needEnd") ?? undefined,
     urgency:
       (searchParams.get("urgency") as (typeof MARKETPLACE_URGENCY_VALUES)[number] | null) ??
+      undefined,
+    shiftType:
+      (searchParams.get("shiftType") as (typeof MARKETPLACE_SHIFT_TYPES)[number] | null) ??
       undefined,
     sort:
       (searchParams.get("sort") as (typeof MARKETPLACE_SORT_VALUES)[number] | null) ??

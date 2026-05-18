@@ -20,6 +20,8 @@
     "test:unit:marketplace-eligibility": "vitest run lib/marketplace lib/auth/marketplace-visibility-permissions.test.ts app/api/workforce/marketplace-visibility 'app/api/workforce/[id]/marketplace-visibility'",
     "test:unit:category-directory": "vitest run lib/marketplace/categories.test.ts lib/marketplace/category-listings.ts app/api/marketplace/categories",
     "test:unit:public-profiles": "vitest run lib/marketplace/public-profile.test.ts lib/marketplace/approximate-availability.test.ts lib/validations/public-marketplace-profile.ts app/api/marketplace/professionals app/api/workforce/[id]/public-profile",
+    "test:unit:marketplace-search": "vitest run lib/marketplace/search-params.test.ts lib/marketplace/search-ranking.test.ts app/api/marketplace/search",
+    "test:e2e:marketplace-search": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/marketplace/marketplace-search e2e/marketplace/marketplace-search-cart",
     "test:e2e:marketplace-eligibility": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/marketplace-eligibility",
     "test:e2e:category-directory": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/marketplace/category-directory",
     "test:e2e:workforce": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/workforce",

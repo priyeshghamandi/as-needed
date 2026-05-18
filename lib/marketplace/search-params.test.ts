@@ -38,4 +38,43 @@ describe("marketplace search-params", () => {
     );
     expect(parsed.ok).toBe(true);
   });
+
+  it("MPS-004: rejects needStart in the past", () => {
+    const parsed = parseMarketplaceSearchInput(
+      {
+        role: "rn",
+        needStart: "2020-01-01",
+        needEnd: "2020-01-07",
+        lat: 37.77,
+        lng: -122.42,
+        sort: "relevance",
+        page: 1,
+      },
+      null,
+    );
+    expect(parsed.ok).toBe(false);
+    if (!parsed.ok) {
+      expect(parsed.error).toMatch(/past/i);
+    }
+  });
+
+  it("MPS-005: accepts optional shiftType", () => {
+    const parsed = parseMarketplaceSearchInput(
+      {
+        role: "rn",
+        urgency: "asap",
+        shiftType: "night",
+        lat: 37.77,
+        lng: -122.42,
+        sort: "recently_active",
+        page: 1,
+      },
+      null,
+    );
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) {
+      expect(parsed.data.shiftType).toBe("night");
+      expect(parsed.data.sort).toBe("recently_active");
+    }
+  });
 });
