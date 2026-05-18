@@ -71,6 +71,7 @@ export default async function WorkforceProfilePage({ params, searchParams }: Pag
       activeTab={tab === "marketplace" ? "marketplace" : "overview"}
       profile={serialized}
       marketplaceVisibility={serializedMarketplace}
+      serviceArea={ctx.serviceArea}
     />
   );
 }

@@ -501,6 +501,52 @@ export const ProfessionalMarketplaceVisibilityTable = pgTable(
   }),
 );
 
+export const ProfessionalMarketplaceProfileTable = pgTable(
+  "professional_marketplace_profiles",
+  {
+    healthcareProfessionalId: uuid("healthcare_professional_id")
+      .primaryKey()
+      .references(() => HealthcareProfessionalTable.id, { onDelete: "cascade" }),
+
+    headline: varchar("headline", { length: 80 }),
+    bio: text("bio"),
+    specialties: text("specialties").array(),
+    photoUrl: text("photo_url"),
+
+    approximateAvailability: varchar("approximate_availability", { length: 32 }),
+
+    yearsExperienceBucket: varchar("years_experience_bucket", { length: 8 }),
+
+    credentialsSummary: text("credentials_summary"),
+
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+);
+
+export const MarketplaceCategoryTable = pgTable(
+  "marketplace_categories",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    slug: varchar("slug", { length: 80 }).notNull(),
+    name: varchar("name", { length: 160 }).notNull(),
+    description: text("description"),
+    roleFilter: varchar("role_filter", { length: 32 }).notNull(),
+    sortOrder: integer("sort_order").notNull().default(0),
+    isActive: boolean("is_active").notNull().default(true),
+    seoTitle: varchar("seo_title", { length: 160 }),
+    seoDescription: text("seo_description"),
+    createdAt,
+    updatedAt,
+  },
+  (table) => ({
+    slugIdx: uniqueIndex("ux_marketplace_categories_slug").on(table.slug),
+    activeSortIdx: index("idx_marketplace_categories_active_sort").on(
+      table.isActive,
+      table.sortOrder,
+    ),
+  }),
+);
+
 /* ---------------- CREDENTIALS ---------------- */
 
 export const CredentialTable = pgTable(

@@ -1,5 +1,6 @@
-import { MarketingPage } from "@/components/marketing-page";
+import { redirect } from "next/navigation";
 
+/** Public home routes to the healthcare staffing marketplace. */
 export default function Home() {
-  return <MarketingPage />;
+  redirect("/marketplace");
 }

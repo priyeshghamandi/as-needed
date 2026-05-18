@@ -4,8 +4,10 @@ import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/primitives";
 import { MarketplaceVisibilityChecklist } from "@/components/workforce/marketplace-visibility-checklist";
+import { MarketplaceLocationFix } from "@/components/workforce/marketplace-location-fix";
 import { canManageMarketplaceVisibility } from "@/lib/auth/marketplace-visibility-permissions";
 import type { VisibilityChecklistResult } from "@/lib/marketplace/visibility-checklist";
+import type { ServiceAreaRestrictionInput } from "@/lib/places/query-params";
 
 export type SerializedMarketplaceVisibility = {
   isMarketplaceVisible: boolean;
@@ -21,10 +23,12 @@ export function WorkforceMarketplaceTab({
   professionalId,
   primaryRole,
   visibility: initial,
+  serviceArea,
 }: {
   professionalId: string;
   primaryRole: string;
   visibility: SerializedMarketplaceVisibility;
+  serviceArea: ServiceAreaRestrictionInput;
 }) {
   const router = useRouter();
   const canWrite = canManageMarketplaceVisibility(primaryRole);
@@ -103,6 +107,20 @@ export function WorkforceMarketplaceTab({
         items={visibility.checklist.items}
         blockReason={visibility.checklist.blockReason}
       />
+
+      {canWrite && !visibility.checklist.items.find((i) => i.id === "location")?.passed ? (
+        <MarketplaceLocationFix
+          professionalId={professionalId}
+          serviceArea={serviceArea}
+          reason={
+            visibility.checklist.items.find((i) => i.id === "location")?.detail?.includes(
+              "outside",
+            )
+              ? "out_of_area"
+              : "missing_place"
+          }
+        />
+      ) : null}
 
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-2 border-t border-ink-100">
         <label className="inline-flex items-center gap-2 text-[13px]">

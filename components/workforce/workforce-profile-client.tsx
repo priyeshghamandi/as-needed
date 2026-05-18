@@ -32,6 +32,7 @@ import {
   ShiftReadinessBadge,
 } from "@/lib/workforce/workforce-ui";
 import type { ComplianceStatus, ShiftReadiness } from "@/lib/workforce/shift-readiness";
+import type { ServiceAreaRestrictionInput } from "@/lib/places/query-params";
 
 export type SerializedProfile = {
   id: string;
@@ -77,6 +78,7 @@ export function WorkforceProfileClient({
   activeTab,
   profile,
   marketplaceVisibility,
+  serviceArea,
 }: {
   agencyName: string;
   userName: string;
@@ -85,6 +87,7 @@ export function WorkforceProfileClient({
   activeTab: "overview" | "marketplace";
   profile: SerializedProfile;
   marketplaceVisibility: SerializedMarketplaceVisibility;
+  serviceArea: ServiceAreaRestrictionInput;
 }) {
   const router = useRouter();
   const canWrite = canManageWorkforce(primaryRole);
@@ -227,6 +230,7 @@ export function WorkforceProfileClient({
           professionalId={profile.id}
           primaryRole={primaryRole}
           visibility={marketplaceVisibility}
+          serviceArea={serviceArea}
         />
       ) : null}
 
