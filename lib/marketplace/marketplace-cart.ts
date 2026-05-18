@@ -7,8 +7,14 @@ export type MarketplaceRequestCart = {
   needStart: string | null;
   needEnd: string | null;
   urgency: string | null;
+  shiftType: string | null;
   locationDisplayName: string | null;
 };
+
+/** Post-login destination until Customer Requests module ships. Cart stays in sessionStorage. */
+export function buildMarketplaceContinueRequestUrl(): string {
+  return `/login?callbackUrl=${encodeURIComponent("/facility/requests")}`;
+}
 
 export function readMarketplaceCart(): MarketplaceRequestCart | null {
   if (typeof window === "undefined") return null;
