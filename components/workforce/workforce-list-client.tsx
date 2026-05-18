@@ -14,6 +14,7 @@ import {
   ShiftReadinessBadge,
 } from "@/lib/workforce/workforce-ui";
 import { canManageWorkforce } from "@/lib/auth/workforce-access-rules";
+import { WorkforceBulkMarketplaceModal } from "@/components/workforce/workforce-bulk-marketplace-modal";
 import type { ComplianceStatus, ShiftReadiness } from "@/lib/workforce/shift-readiness";
 
 export type SerializedWorkforceListItem = {
@@ -67,7 +68,15 @@ export function WorkforceListClient({
   const searchParams = useSearchParams();
   const [pending, startTransition] = useTransition();
   const [forbiddenToast, setForbiddenToast] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [bulkModal, setBulkModal] = useState<"show" | "hide" | null>(null);
   const canWrite = canManageWorkforce(primaryRole);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 50 ? [...prev, id] : prev,
+    );
+  };
 
   useEffect(() => {
     if (searchParams.get("error") === "forbidden") {
@@ -216,6 +225,32 @@ export function WorkforceListClient({
           </div>
         ) : (
           <>
+            {canWrite && selectedIds.length > 0 ? (
+              <div className="px-4 py-3 border-b border-ink-100 flex flex-wrap items-center gap-2 bg-ink-50/50">
+                <span className="text-[13px] text-ink-700">{selectedIds.length} selected</span>
+                <button
+                  type="button"
+                  className="h-8 px-3 rounded-md border border-ink-200 text-[12px] hover:bg-white"
+                  onClick={() => setBulkModal("show")}
+                >
+                  Show on marketplace
+                </button>
+                <button
+                  type="button"
+                  className="h-8 px-3 rounded-md border border-ink-200 text-[12px] hover:bg-white"
+                  onClick={() => setBulkModal("hide")}
+                >
+                  Hide from marketplace
+                </button>
+                <button
+                  type="button"
+                  className="h-8 px-3 text-[12px] text-ink-500"
+                  onClick={() => setSelectedIds([])}
+                >
+                  Clear
+                </button>
+              </div>
+            ) : null}
             <div className="md:hidden divide-y divide-ink-100">
               {items.map((p, i) => (
                 <Link
@@ -245,6 +280,11 @@ export function WorkforceListClient({
               <table className="w-full text-[13px]">
                 <thead>
                   <tr className="text-left text-[10px] font-mono uppercase tracking-wider text-ink-500 border-b border-ink-100">
+                    {canWrite ? (
+                      <th scope="col" className="px-3 py-2 font-medium w-10">
+                        <span className="sr-only">Select</span>
+                      </th>
+                    ) : null}
                     <th scope="col" className="px-5 py-2 font-medium">
                       Name
                     </th>
@@ -280,6 +320,16 @@ export function WorkforceListClient({
                 <tbody>
                   {items.map((p, i) => (
                     <tr key={p.id} className="border-b border-ink-100 hover:bg-ink-50/40">
+                      {canWrite ? (
+                        <td className="px-3 py-2.5">
+                          <input
+                            type="checkbox"
+                            aria-label={`Select ${p.firstName} ${p.lastName}`}
+                            checked={selectedIds.includes(p.id)}
+                            onChange={() => toggleSelect(p.id)}
+                          />
+                        </td>
+                      ) : null}
                       <td className="px-5 py-2.5">
                         <div className="flex items-center gap-2.5">
                           <Avatar
@@ -353,6 +403,17 @@ export function WorkforceListClient({
           </>
         )}
       </div>
+
+      {bulkModal && selectedIds.length > 0 ? (
+        <WorkforceBulkMarketplaceModal
+          professionalIds={selectedIds}
+          isMarketplaceVisible={bulkModal === "show"}
+          onClose={() => {
+            setBulkModal(null);
+            setSelectedIds([]);
+          }}
+        />
+      ) : null}
     </AgencyShell>
   );
 }

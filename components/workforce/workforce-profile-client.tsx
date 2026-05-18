@@ -14,6 +14,10 @@ import { getProfessionalInviteLinkAction } from "@/actions/workforce/get-profess
 import { sendProfessionalInviteAction } from "@/actions/workforce/send-professional-invite";
 import { InviteLinkCopy } from "@/components/invite-link-copy";
 import {
+  WorkforceMarketplaceTab,
+  type SerializedMarketplaceVisibility,
+} from "@/components/workforce/workforce-marketplace-tab";
+import {
   updateProfessionalSchema,
   WORKFORCE_PROFESSIONAL_ROLES,
   WORKFORCE_ROLE_LABELS,
@@ -70,13 +74,17 @@ export function WorkforceProfileClient({
   userName,
   userInitials,
   primaryRole,
+  activeTab,
   profile,
+  marketplaceVisibility,
 }: {
   agencyName: string;
   userName: string;
   userInitials: string;
   primaryRole: string;
+  activeTab: "overview" | "marketplace";
   profile: SerializedProfile;
+  marketplaceVisibility: SerializedMarketplaceVisibility;
 }) {
   const router = useRouter();
   const canWrite = canManageWorkforce(primaryRole);
@@ -185,10 +193,44 @@ export function WorkforceProfileClient({
         <ComplianceBadge status={profile.complianceStatus} />
         <ShiftReadinessBadge readiness={profile.shiftReadiness} />
         {inviteBadge}
+        {marketplaceVisibility.isMarketplaceVisible ? (
+          <Badge tone="teal">Marketplace visible</Badge>
+        ) : null}
         {!profile.isActive ? <Badge tone="rose">Inactive</Badge> : null}
       </div>
 
-      {canWrite ? (
+      <nav className="flex gap-1 border-b border-ink-200" aria-label="Profile sections">
+        <Link
+          href={`/workforce/${profile.id}`}
+          className={`px-3 py-2 text-[13px] border-b-2 -mb-px ${
+            activeTab === "overview"
+              ? "border-ink-900 text-ink-900 font-medium"
+              : "border-transparent text-ink-500 hover:text-ink-800"
+          }`}
+        >
+          Overview
+        </Link>
+        <Link
+          href={`/workforce/${profile.id}?tab=marketplace`}
+          className={`px-3 py-2 text-[13px] border-b-2 -mb-px ${
+            activeTab === "marketplace"
+              ? "border-ink-900 text-ink-900 font-medium"
+              : "border-transparent text-ink-500 hover:text-ink-800"
+          }`}
+        >
+          Marketplace
+        </Link>
+      </nav>
+
+      {activeTab === "marketplace" ? (
+        <WorkforceMarketplaceTab
+          professionalId={profile.id}
+          primaryRole={primaryRole}
+          visibility={marketplaceVisibility}
+        />
+      ) : null}
+
+      {activeTab === "overview" && canWrite ? (
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -228,10 +270,11 @@ export function WorkforceProfileClient({
         </div>
       ) : null}
 
-      {!profile.userId && inviteUrl ? (
+      {activeTab === "overview" && !profile.userId && inviteUrl ? (
         <InviteLinkCopy url={inviteUrl} label="Provider account invite" />
       ) : null}
 
+      {activeTab === "overview" ? (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <section className="rounded-xl border border-ink-200 bg-white p-5 space-y-3">
           <h2 className="text-[14px] font-medium tracking-tight">Contact</h2>
@@ -319,11 +362,14 @@ export function WorkforceProfileClient({
           )}
         </section>
       </div>
+      ) : null}
 
+      {activeTab === "overview" ? (
       <EntityActivityPanel
         entityType="healthcare_professional"
         entityId={profile.id}
       />
+      ) : null}
 
       {editOpen ? (
         <div

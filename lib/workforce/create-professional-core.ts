@@ -1,6 +1,10 @@
 import { and, eq, ilike } from "drizzle-orm";
 import { db } from "@/drizzle/db";
-import { AgencyTable, HealthcareProfessionalTable } from "@/drizzle/schema";
+import {
+  AgencyTable,
+  HealthcareProfessionalTable,
+  ProfessionalMarketplaceVisibilityTable,
+} from "@/drizzle/schema";
 import { createUserInvite } from "@/lib/services/invites";
 import {
   workforceProfessionalSchema,
@@ -122,6 +126,12 @@ export async function createProfessionalCore(
         process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ?? "http://localhost:3000";
       inviteUrl = `${base}/invite/${invite.token}`;
     }
+
+    await tx.insert(ProfessionalMarketplaceVisibilityTable).values({
+      healthcareProfessionalId: professional.id,
+      agencyId,
+      isMarketplaceVisible: false,
+    });
 
     await logActivity({
       agencyId,

@@ -448,6 +448,8 @@ export const HealthcareProfessionalTable = pgTable(
 
     isActive: boolean("is_active").notNull().default(true),
 
+    publicSlug: varchar("public_slug", { length: 160 }),
+
     createdAt,
     updatedAt,
   },
@@ -458,7 +460,45 @@ export const HealthcareProfessionalTable = pgTable(
     availabilityIdx: index("idx_professionals_availability").on(
       table.availabilityStatus
     ),
+    publicSlugIdx: uniqueIndex("ux_professionals_public_slug").on(table.publicSlug),
   })
+);
+
+/* ---------------- MARKETPLACE VISIBILITY ---------------- */
+
+export const ProfessionalMarketplaceVisibilityTable = pgTable(
+  "professional_marketplace_visibility",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+
+    healthcareProfessionalId: uuid("healthcare_professional_id")
+      .notNull()
+      .references(() => HealthcareProfessionalTable.id, { onDelete: "cascade" }),
+
+    agencyId: uuid("agency_id")
+      .notNull()
+      .references(() => AgencyTable.id, { onDelete: "cascade" }),
+
+    isMarketplaceVisible: boolean("is_marketplace_visible").notNull().default(false),
+
+    visibilityBlockedReason: varchar("visibility_blocked_reason", { length: 64 }),
+
+    marketplaceVisibleAt: timestamp("marketplace_visible_at", { withTimezone: true }),
+    marketplaceHiddenAt: timestamp("marketplace_hidden_at", { withTimezone: true }),
+
+    enabledByUserId: uuid("enabled_by_user_id").references(() => UserTable.id, {
+      onDelete: "set null",
+    }),
+
+    createdAt,
+    updatedAt,
+  },
+  (table) => ({
+    professionalIdx: uniqueIndex("ux_marketplace_visibility_professional").on(
+      table.healthcareProfessionalId,
+    ),
+    agencyIdx: index("idx_marketplace_visibility_agency").on(table.agencyId),
+  }),
 );
 
 /* ---------------- CREDENTIALS ---------------- */

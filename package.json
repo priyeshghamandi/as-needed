@@ -17,6 +17,8 @@
     "test:unit": "vitest run lib/dashboard lib/auth/dashboard-access.test.ts lib/validations/onboarding lib/onboarding lib/places/service-area-bounds.test.ts",
     "test:unit:onboarding": "vitest run lib/validations/onboarding lib/onboarding lib/places/service-area-bounds.test.ts lib/onboarding/onboarding-api-auth.test.ts",
     "test:unit:workforce": "vitest run lib/validations/healthcare-professional lib/workforce lib/auth/workforce-access-rules lib/auth/workforce-access.test.ts app/api/workforce",
+    "test:unit:marketplace-eligibility": "vitest run lib/marketplace lib/auth/marketplace-visibility-permissions.test.ts app/api/workforce/marketplace-visibility 'app/api/workforce/[id]/marketplace-visibility'",
+    "test:e2e:marketplace-eligibility": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/marketplace-eligibility",
     "test:e2e:workforce": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/workforce",
     "test:unit:facilities": "vitest run lib/validations/facility lib/facilities lib/auth/facilities-access-rules lib/auth/facilities-access.test.ts app/api/facilities",
     "test:e2e:facilities": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/facilities",
