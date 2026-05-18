@@ -3,7 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { SuggestAlternativeModal } from "@/components/alternatives/suggest-alternative-modal";
 import { AgencyShell } from "@/components/agency-shell";
+import { canProposeAlternative } from "@/lib/fulfillment/alternative-status";
 import { Badge, Icon } from "@/components/primitives";
 import {
   canManageStaffingRequests,
@@ -21,7 +23,7 @@ import {
 
 type SerializedData = Omit<
   AgencyFulfillmentPageData,
-  "shiftStartAt" | "shiftEndAt" | "reviewHistory"
+  "shiftStartAt" | "shiftEndAt" | "reviewHistory" | "alternatives"
 > & {
   shiftStartAt: string | null;
   shiftEndAt: string | null;
@@ -33,6 +35,16 @@ type SerializedData = Omit<
     declineNotes: string | null;
     reviewerName: string;
     reviewedAt: string;
+  }[];
+  alternatives: {
+    id: string;
+    originalProfessionalId: string;
+    originalDisplayName: string;
+    suggestedProfessionalId: string;
+    suggestedDisplayName: string;
+    status: "pending_customer" | "approved" | "rejected" | "withdrawn";
+    messageToCustomer: string | null;
+    proposedAt: string;
   }[];
 };
 
@@ -68,11 +80,22 @@ export function AgencyFulfillmentReviewClient({
   const [declineReason, setDeclineReason] =
     useState<(typeof DECLINE_REASONS)[number]>("unavailable");
   const [declineNotes, setDeclineNotes] = useState("");
+  const [suggestTarget, setSuggestTarget] = useState<{
+    professionalId: string;
+    displayName: string;
+  } | null>(null);
 
   const status = data.fulfillmentStatus as StaffingRequestFulfillmentStatus | null;
   const statusLabel = status ? FULFILLMENT_STATUS_LABELS[status] : "Pending";
   const statusTone = status ? FULFILLMENT_STATUS_TONES[status] : "neutral";
   const canReview = canWrite && (status === "pending_agency_review" || !status);
+  const canSuggest = canWrite && canProposeAlternative(status);
+
+  const pendingByOriginal = new Map(
+    data.alternatives
+      .filter((a) => a.status === "pending_customer")
+      .map((a) => [a.originalProfessionalId, a]),
+  );
 
   const window =
     data.shiftStartAt && data.shiftEndAt
@@ -128,6 +151,26 @@ export function AgencyFulfillmentReviewClient({
       setDeclineTarget(null);
       setDeclineNotes("");
       setToast("Fulfillment declined for this professional.");
+      router.refresh();
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function withdrawAlternative(alternativeId: string) {
+    setPending(true);
+    setToast(null);
+    try {
+      const res = await fetch(
+        `/api/staffing-requests/${data.requestId}/alternatives/${alternativeId}`,
+        { method: "DELETE" },
+      );
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setToast(json.error ?? "Could not withdraw suggested alternative.");
+        return;
+      }
+      setToast("Suggested alternative withdrawn.");
       router.refresh();
     } finally {
       setPending(false);
@@ -191,9 +234,11 @@ export function AgencyFulfillmentReviewClient({
           <h2 className="text-[14px] font-medium tracking-tight">
             Customer-selected professionals (your agency)
           </h2>
-          <span className="text-[12px] text-ink-500 shrink-0">
-            Suggest alternative — module 23
-          </span>
+          {canSuggest ? (
+            <span className="text-[12px] text-ink-500 shrink-0">
+              Declined selections can receive a suggested alternative
+            </span>
+          ) : null}
         </div>
         <table className="w-full min-w-[640px] text-left text-[13px]">
           <thead>
@@ -204,7 +249,7 @@ export function AgencyFulfillmentReviewClient({
               <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-wider text-ink-500">
                 Status
               </th>
-              {canReview ? (
+              {canWrite ? (
                 <th className="px-4 py-3 font-mono text-[11px] uppercase tracking-wider text-ink-500">
                   Actions
                 </th>
@@ -212,7 +257,9 @@ export function AgencyFulfillmentReviewClient({
             </tr>
           </thead>
           <tbody>
-            {data.selections.map((row) => (
+            {data.selections.map((row) => {
+              const pendingAlt = pendingByOriginal.get(row.professionalId);
+              return (
               <tr key={row.professionalId} className="border-b border-ink-100 last:border-0">
                 <td className="px-4 py-3">
                   <span className="font-medium">{row.displayName}</span>
@@ -232,11 +279,39 @@ export function AgencyFulfillmentReviewClient({
                     <Badge tone="amber">Pending review</Badge>
                   )}
                 </td>
-                {canReview ? (
+                {canWrite ? (
                   <td className="px-4 py-3">
-                    {row.review ? (
-                      <span className="text-ink-500">—</span>
-                    ) : (
+                    {row.review?.decision === "declined" && canSuggest && !pendingAlt ? (
+                      <button
+                        type="button"
+                        disabled={pending}
+                        onClick={() =>
+                          setSuggestTarget({
+                            professionalId: row.professionalId,
+                            displayName: row.displayName,
+                          })
+                        }
+                        className="h-8 px-3 rounded-md border border-teal-700 text-teal-900 text-[12px] font-medium"
+                      >
+                        Suggest alternative
+                      </button>
+                    ) : pendingAlt ? (
+                      <div className="space-y-1">
+                        <span className="text-[12px] text-ink-700">
+                          Pending: {pendingAlt.suggestedDisplayName}
+                        </span>
+                        {pendingAlt.status === "pending_customer" ? (
+                          <button
+                            type="button"
+                            disabled={pending}
+                            onClick={() => withdrawAlternative(pendingAlt.id)}
+                            className="block h-8 px-3 rounded-md border border-ink-200 text-[12px]"
+                          >
+                            Withdraw suggestion
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : canReview && !row.review ? (
                       <div className="flex flex-wrap gap-2">
                         <button
                           type="button"
@@ -260,11 +335,14 @@ export function AgencyFulfillmentReviewClient({
                           Decline
                         </button>
                       </div>
+                    ) : (
+                      <span className="text-ink-500">—</span>
                     )}
                   </td>
                 ) : null}
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </section>
@@ -292,6 +370,19 @@ export function AgencyFulfillmentReviewClient({
             ))}
           </ul>
         </section>
+      ) : null}
+
+      {suggestTarget ? (
+        <SuggestAlternativeModal
+          requestId={data.requestId}
+          originalProfessionalId={suggestTarget.professionalId}
+          originalDisplayName={suggestTarget.displayName}
+          onClose={() => setSuggestTarget(null)}
+          onSuccess={() => {
+            setToast("Suggested alternative proposed. Customer will be notified.");
+            router.refresh();
+          }}
+        />
       ) : null}
 
       {declineTarget ? (

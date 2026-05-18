@@ -64,6 +64,13 @@
       "when": 1779800000000,
       "tag": "0009_fulfillment_reviews",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1779900000000,
+      "tag": "0010_suggested_alternatives",
+      "breakpoints": true
     }
   ]
 }

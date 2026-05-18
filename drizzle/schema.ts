@@ -108,6 +108,14 @@ export const StaffingRequestFulfillmentStatusEnum = pgEnum(
 
 export const StaffingRequestSelectionTypeEnum = pgEnum("staffing_request_selection_type", [
   "customer_preferred",
+  "suggested_alternative",
+]);
+
+export const SuggestedAlternativeStatusEnum = pgEnum("suggested_alternative_status", [
+  "pending_customer",
+  "approved",
+  "rejected",
+  "withdrawn",
 ]);
 
 export const StaffingRequestRoutingStatusEnum = pgEnum("staffing_request_routing_status", [
@@ -839,6 +847,51 @@ export const FulfillmentReviewTable = pgTable(
     ).on(table.staffingRequestId, table.agencyId, table.healthcareProfessionalId),
     requestIdx: index("idx_fulfillment_reviews_request").on(table.staffingRequestId),
     agencyIdx: index("idx_fulfillment_reviews_agency").on(table.agencyId),
+  }),
+);
+
+export const SuggestedAlternativeTable = pgTable(
+  "suggested_alternatives",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+
+    staffingRequestId: uuid("staffing_request_id")
+      .notNull()
+      .references(() => StaffingRequestTable.id, { onDelete: "cascade" }),
+
+    staffingRequestRouteId: uuid("staffing_request_route_id")
+      .notNull()
+      .references(() => StaffingRequestRouteTable.id, { onDelete: "cascade" }),
+
+    agencyId: uuid("agency_id")
+      .notNull()
+      .references(() => AgencyTable.id, { onDelete: "cascade" }),
+
+    originalProfessionalId: uuid("original_professional_id")
+      .notNull()
+      .references(() => HealthcareProfessionalTable.id, { onDelete: "cascade" }),
+
+    suggestedProfessionalId: uuid("suggested_professional_id")
+      .notNull()
+      .references(() => HealthcareProfessionalTable.id, { onDelete: "cascade" }),
+
+    messageToCustomer: text("message_to_customer"),
+
+    status: SuggestedAlternativeStatusEnum("status").notNull().default("pending_customer"),
+
+    proposedByUserId: uuid("proposed_by_user_id")
+      .notNull()
+      .references(() => UserTable.id, { onDelete: "cascade" }),
+
+    proposedAt: timestamp("proposed_at", { withTimezone: true }).notNull().defaultNow(),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    customerRejectionReason: text("customer_rejection_reason"),
+
+    createdAt,
+  },
+  (table) => ({
+    requestIdx: index("idx_suggested_alternatives_request").on(table.staffingRequestId),
+    agencyIdx: index("idx_suggested_alternatives_agency").on(table.agencyId),
   }),
 );
 

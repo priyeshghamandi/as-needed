@@ -47,7 +47,13 @@ export function assertFulfillmentTransition(
     pending_agency_review: ["agency_confirmed", "agency_declined", "alternative_proposed"],
     agency_confirmed: ["customer_approved", "customer_rejected"],
     agency_declined: ["alternative_proposed", "cancelled"],
-    alternative_proposed: ["customer_approved", "customer_rejected"],
+    alternative_proposed: [
+      "customer_approved",
+      "customer_rejected",
+      "agency_declined",
+      "pending_agency_review",
+      "agency_confirmed",
+    ],
   };
 
   const key = from ?? "null";
