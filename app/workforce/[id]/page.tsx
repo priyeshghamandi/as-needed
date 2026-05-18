@@ -1,18 +1,24 @@
 import { notFound } from "next/navigation";
 import { WorkforceProfileClient } from "@/components/workforce/workforce-profile-client";
+import { getMarketplaceVisibilityState } from "@/lib/marketplace/visibility-queries";
 import { loadWorkforcePageContext } from "@/lib/workforce/load-page-context";
 import { getProfessionalProfile } from "@/lib/workforce/queries";
 
 type PageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ tab?: string }>;
 };
 
-export default async function WorkforceProfilePage({ params }: PageProps) {
+export default async function WorkforceProfilePage({ params, searchParams }: PageProps) {
   const { id } = await params;
+  const { tab } = await searchParams;
   const ctx = await loadWorkforcePageContext();
   const profile = await getProfessionalProfile(ctx.agencyId, id);
 
   if (!profile) notFound();
+
+  const marketplaceVisibility = await getMarketplaceVisibilityState(ctx.agencyId, id);
+  if (!marketplaceVisibility) notFound();
 
   const serialized = {
     id: profile.id,
@@ -46,13 +52,26 @@ export default async function WorkforceProfilePage({ params }: PageProps) {
     })),
   };
 
+  const serializedMarketplace = {
+    isMarketplaceVisible: marketplaceVisibility.isMarketplaceVisible,
+    visibilityBlockedReason: marketplaceVisibility.visibilityBlockedReason,
+    marketplaceVisibleAt: marketplaceVisibility.marketplaceVisibleAt?.toISOString() ?? null,
+    marketplaceHiddenAt: marketplaceVisibility.marketplaceHiddenAt?.toISOString() ?? null,
+    enabledByName: marketplaceVisibility.enabledByName,
+    publicSlug: marketplaceVisibility.publicSlug,
+    checklist: marketplaceVisibility.checklist,
+  };
+
   return (
     <WorkforceProfileClient
       agencyName={ctx.agencyName}
       userName={ctx.userName}
       userInitials={ctx.userInitials}
       primaryRole={ctx.primaryRole}
+      activeTab={tab === "marketplace" ? "marketplace" : "overview"}
       profile={serialized}
+      marketplaceVisibility={serializedMarketplace}
+      serviceArea={ctx.serviceArea}
     />
   );
 }

@@ -2,10 +2,10 @@
 
 ## Project
 
-Healthcare Staffing Operations Platform
+Hybrid Healthcare Staffing Marketplace and Agency Operations Platform
 
 Purpose:
-A SaaS platform for healthcare staffing agencies to coordinate workforce availability, fulfill staffing requests, manage shifts, and operate staffing workflows in real time.
+A platform where customers discover eligible healthcare professionals through public category and search experiences, submit staffing requests routed to owning agencies, and agencies fulfill with confirmation or suggested alternatives—while agencies retain workforce ownership, operational control, and internal shift coordination.
 
 ---
 
@@ -24,22 +24,43 @@ A SaaS platform for healthcare staffing agencies to coordinate workforce availab
 
 # Core Modules
 
+## Foundation and agency operations
+
 | # | Module | Purpose | Status |
 |---|---|---|---|
 | 1 | Auth | Authentication, sessions, roles, invites, access control | READY_FOR_TEST |
-| 2 | Agency Onboarding | Agency setup wizard and operational onboarding | FAILED_TEST |
+| 2 | Agency Onboarding | Agency setup wizard, service area, operational onboarding | FAILED_TEST |
 | 3 | Operations Dashboard | Real-time staffing operations visibility | FAILED_TEST |
-| 4 | Workforce | Healthcare professional management | FAILED_TEST |
+| 4 | Workforce | Healthcare professional management (agency-owned) | FAILED_TEST |
 | 5 | Facilities | Facility/customer management | FAILED_TEST |
-| 6 | Staffing Requests | Staffing request lifecycle management | FAILED_TEST |
+| 6 | Staffing Requests | Staffing request lifecycle (including marketplace-originated requests) | FAILED_TEST |
 | 7 | Shifts | Shift creation, tracking, and fulfillment | FAILED_TEST |
-| 8 | Matching & Assignments | Workforce matching and assignment workflows | FAILED_TEST |
+| 8 | Matching & Assignments | Internal workforce matching and assignment workflows | FAILED_TEST |
 | 9 | Healthcare Professional Portal | Shift acceptance and availability management | FAILED_TEST |
-| 10 | Facility Portal | Facility staffing request and tracking portal | PENDING |
+| 10 | Facility Portal | Customer request tracking and agency coordination (authenticated) | PENDING |
 | 11 | Compliance | Credential tracking and compliance workflows | PENDING |
 | 12 | Notifications & Alerts | Operational alerts and staffing notifications | PENDING |
 | 13 | Activity Logs | Audit trail and operational activity tracking | PENDING |
 | 14 | Settings | Agency configuration and preferences | PENDING |
+
+## Marketplace discovery and eligibility
+
+| # | Module | Purpose | Status |
+|---|---|---|---|
+| 15 | Marketplace Eligibility Rules | Opt-in visibility, geography/service-area enforcement, public eligibility gates | PENDING |
+| 16 | Category Directory | Public SEO category pages and browse-by-role structure | PENDING |
+| 17 | Professional Public Profiles | Agency-controlled opt-in public profiles with approximate availability | PENDING |
+| 18 | Marketplace Search | Public search: role + location + shift need with mandatory geo filtering | PENDING |
+| 19 | Public Marketplace | Public discovery shell, listings integration, Request Professional entry | PENDING |
+
+## Marketplace request and fulfillment
+
+| # | Module | Purpose | Status |
+|---|---|---|---|
+| 20 | Customer Requests | Customer selects professionals → creates staffing request | PENDING |
+| 21 | Request Routing | Route staffing requests to owning agency by professional selection | PENDING |
+| 22 | Agency Fulfillment Review | Agency confirms requested professional or declines with reason | PENDING |
+| 23 | Alternative Suggestions | Agency proposes suggested alternative; customer approval flow | PENDING |
 
 ---
 
@@ -52,19 +73,19 @@ A SaaS platform for healthcare staffing agencies to coordinate workforce availab
 3. Operations Dashboard
 
 **Before starting Phase 1:**
-- Verify Auth authorization is correct: role-based redirects, agency-scoped access (403 on cross-agency), invite flows end-to-end. Do not start Onboarding until this passes.
+- Verify Auth authorization: role-based redirects, agency-scoped access (403 on cross-agency), invite flows end-to-end. Do not start Onboarding until this passes.
 
 **After each module in Phase 1:**
 - `npm run typecheck` + `npm run build` must pass
 - Walk the golden path for that module manually
 
-**End of Phase 1 checkpoint (before starting Phase 2):**
-- Run full T* test suite: Auth (T001–T026), Onboarding (T001–T020), Ops Dashboard (T*)
+**End of Phase 1 checkpoint (before Phase 2):**
+- Run full T* test suite: Auth, Onboarding, Ops Dashboard
 - All must pass before Phase 2 begins
 
 ---
 
-## Phase 2: Core Operations
+## Phase 2: Agency core operations
 
 4. Workforce
 5. Facilities
@@ -81,41 +102,91 @@ A SaaS platform for healthcare staffing agencies to coordinate workforce availab
 - `npm run typecheck` + `npm run build` must pass
 - Walk the golden path for that module manually
 
-**End of Phase 2 checkpoint (before starting Phase 3):**
+**End of Phase 2 checkpoint (before Phase 3):**
 - Run full T* test suite for modules 4–8
 - All must pass before Phase 3 begins
 
 ---
 
-## Phase 3: User Portals
+## Phase 3: Marketplace eligibility and discovery
+
+15. Marketplace Eligibility Rules
+16. Category Directory
+17. Professional Public Profiles
+18. Marketplace Search
+19. Public Marketplace
+
+**Dependencies:**
+- Marketplace Eligibility Rules requires Workforce (4) and Agency Onboarding (2) service areas
+- Professional Public Profiles requires Workforce (4) and Marketplace Eligibility Rules (15)
+- Marketplace Search and Public Marketplace require Category Directory (16) and eligibility rules (15)
+
+**After each module in Phase 3:**
+- `npm run typecheck` + `npm run build` must pass
+- Verify geo fail-closed: no out-of-area professionals in listings or search
+- Verify opt-out professionals never appear on public routes
+
+**End of Phase 3 checkpoint (before Phase 4):**
+- Run full T* test suite for modules 15–19
+- Manual pass: browse category → search → view public profile (in-area only)
+
+---
+
+## Phase 4: Marketplace request and agency fulfillment
+
+20. Customer Requests
+21. Request Routing
+22. Agency Fulfillment Review
+23. Alternative Suggestions
+
+**Dependencies:**
+- Customer Requests requires Public Marketplace (19), Staffing Requests (6), Facilities (5)
+- Request Routing requires Customer Requests (20) and Workforce agency ownership model
+- Agency Fulfillment Review requires Request Routing (21) and Staffing Requests (6)
+- Alternative Suggestions requires Agency Fulfillment Review (22)
+
+**After each module in Phase 4:**
+- `npm run typecheck` + `npm run build` must pass
+- Walk golden path: Request Professional → routed to agency → confirm or suggest alternative → customer approves
+
+**End of Phase 4 checkpoint (before Phase 5):**
+- Run full T* test suite for modules 20–23
+- Confirm no direct customer ↔ professional messaging was introduced
+
+---
+
+## Phase 5: User portals
 
 9. Healthcare Professional Portal
 10. Facility Portal
 
-**After each module in Phase 3:**
+**After each module in Phase 5:**
 - `npm run typecheck` + `npm run build` must pass
 - Walk the golden path for that module manually
 
-**End of Phase 3 checkpoint (before starting Phase 4):**
+**End of Phase 5 checkpoint (before Phase 6):**
 - Run full T* test suite for modules 9–10
-- All must pass before Phase 4 begins
+- All must pass before Phase 6 begins
 
 ---
 
-## Phase 4: Operational Systems
+## Phase 6: Operational systems
 
 11. Compliance
 12. Notifications & Alerts
 13. Activity Logs
 14. Settings
 
-**After each module in Phase 4:**
+**After each module in Phase 6:**
 - `npm run typecheck` + `npm run build` must pass
 - Walk the golden path for that module manually
 
-**End of Phase 4 checkpoint (MVP complete):**
+**End of Phase 6 checkpoint (MVP complete):**
 - Run full T* test suite for modules 11–14
-- Run a full end-to-end pass of the complete user journey (agency signup → onboard → create request → match → shift → complete)
+- Run end-to-end hybrid journey:
+  - agency signup → onboard → add workforce → enable marketplace opt-in
+  - public search → select professional → Request Professional
+  - request routes to agency → confirm or suggest alternative → customer approves → shift confirmed
 - Fix all failures before declaring MVP ready
 
 ---
@@ -124,6 +195,7 @@ A SaaS platform for healthcare staffing agencies to coordinate workforce availab
 
 Modules required for MVP launch:
 
+**Foundation and operations**
 - Auth
 - Agency Onboarding
 - Operations Dashboard
@@ -133,8 +205,20 @@ Modules required for MVP launch:
 - Shifts
 - Matching & Assignments
 - Healthcare Professional Portal
+- Facility Portal
 - Notifications & Alerts
 - Compliance
+
+**Marketplace**
+- Marketplace Eligibility Rules
+- Category Directory
+- Professional Public Profiles
+- Marketplace Search
+- Public Marketplace
+- Customer Requests
+- Request Routing
+- Agency Fulfillment Review
+- Alternative Suggestions
 
 ---
 
@@ -144,14 +228,15 @@ Not included in current MVP:
 
 - Payroll
 - Billing & invoicing
-- Marketplace discovery
+- Direct customer ↔ professional messaging
 - AI scheduling optimization
 - Credential verification integrations
 - Mobile native apps
 - Analytics suite
 - Calendar sync
-- Messaging platform
+- Multi-agency professional sharing / float pools
 - Vendor management integrations
+- Advanced multi-region service areas
 
 ---
 
@@ -165,3 +250,32 @@ Each module must contain:
 prd.md
 test.md
 tasks.md
+```
+
+Each module is implementation-focused and production-oriented:
+
+- clear boundaries between public discovery and agency operations
+- no cross-module leakage of exact availability to public surfaces
+- agency ownership and fulfillment authority preserved in all flows
+- geography and opt-in rules enforced at module boundaries
+- customer flows terminate in staffing requests, not direct hire or booking
+
+## Marketplace module principles
+
+- **Marketplace Eligibility Rules**: single source of truth for opt-in and geo eligibility checks used by discovery modules
+- **Public modules** (15–19): read-only public data; no agency ops mutations
+- **Request modules** (20–21): create and route staffing requests only
+- **Fulfillment modules** (22–23): agency actions and customer approval; integrate with Staffing Requests and Shifts
+
+## Terminology (enforced across modules)
+
+Use:
+- Request Professional
+- Staffing Request
+- Fulfillment
+- Suggested Alternative
+
+Avoid:
+- Booking / Book Now
+- Hire / Direct Hire
+- Open marketplace / gig language
