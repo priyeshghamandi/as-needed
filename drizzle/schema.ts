@@ -88,6 +88,35 @@ export const StaffingRequestStatusEnum = pgEnum("staffing_request_status", [
   "cancelled",
 ]);
 
+export const StaffingRequestSourceEnum = pgEnum("staffing_request_source", [
+  "agency",
+  "marketplace_customer",
+]);
+
+export const StaffingRequestFulfillmentStatusEnum = pgEnum(
+  "staffing_request_fulfillment_status",
+  [
+    "pending_agency_review",
+    "agency_confirmed",
+    "agency_declined",
+    "alternative_proposed",
+    "customer_approved",
+    "customer_rejected",
+    "cancelled",
+  ],
+);
+
+export const StaffingRequestSelectionTypeEnum = pgEnum("staffing_request_selection_type", [
+  "customer_preferred",
+]);
+
+export const StaffingRequestRoutingStatusEnum = pgEnum("staffing_request_routing_status", [
+  "pending",
+  "routed",
+  "acknowledged",
+  "closed",
+]);
+
 export const ShiftStatusEnum = pgEnum("shift_status", [
   "open",
   "matching",
@@ -663,6 +692,12 @@ export const StaffingRequestTable = pgTable(
 
     status: StaffingRequestStatusEnum("status").notNull().default("open"),
 
+    source: StaffingRequestSourceEnum("source").notNull().default("agency"),
+
+    fulfillmentStatus: StaffingRequestFulfillmentStatusEnum("fulfillment_status"),
+
+    customerSubmittedAt: timestamp("customer_submitted_at", { withTimezone: true }),
+
     requiredCredentials: jsonb("required_credentials").$type<string[]>(),
 
     notes: text("notes"),
@@ -678,7 +713,76 @@ export const StaffingRequestTable = pgTable(
     coordinatorIdx: index("idx_staffing_requests_coordinator").on(
       table.assignedCoordinatorId
     ),
+    sourceIdx: index("idx_staffing_requests_source").on(table.source),
+    fulfillmentIdx: index("idx_staffing_requests_fulfillment").on(table.fulfillmentStatus),
   })
+);
+
+export const StaffingRequestSelectionTable = pgTable(
+  "staffing_request_selections",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+
+    staffingRequestId: uuid("staffing_request_id")
+      .notNull()
+      .references(() => StaffingRequestTable.id, { onDelete: "cascade" }),
+
+    healthcareProfessionalId: uuid("healthcare_professional_id")
+      .notNull()
+      .references(() => HealthcareProfessionalTable.id, { onDelete: "cascade" }),
+
+    agencyId: uuid("agency_id")
+      .notNull()
+      .references(() => AgencyTable.id, { onDelete: "cascade" }),
+
+    selectionType: StaffingRequestSelectionTypeEnum("selection_type")
+      .notNull()
+      .default("customer_preferred"),
+
+    sortOrder: integer("sort_order").notNull().default(0),
+
+    createdAt,
+  },
+  (table) => ({
+    requestIdx: index("idx_staffing_request_selections_request").on(table.staffingRequestId),
+  }),
+);
+
+export const StaffingRequestRouteTable = pgTable(
+  "staffing_request_routes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+
+    staffingRequestId: uuid("staffing_request_id")
+      .notNull()
+      .references(() => StaffingRequestTable.id, { onDelete: "cascade" }),
+
+    agencyId: uuid("agency_id")
+      .notNull()
+      .references(() => AgencyTable.id, { onDelete: "cascade" }),
+
+    routingStatus: StaffingRequestRoutingStatusEnum("routing_status")
+      .notNull()
+      .default("pending"),
+
+    routedAt: timestamp("routed_at", { withTimezone: true }),
+    acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }),
+    acknowledgedByUserId: uuid("acknowledged_by_user_id").references(() => UserTable.id, {
+      onDelete: "set null",
+    }),
+    responseDueAt: timestamp("response_due_at", { withTimezone: true }),
+    closedReason: text("closed_reason"),
+
+    createdAt,
+    updatedAt,
+  },
+  (table) => ({
+    requestAgencyUniq: uniqueIndex("ux_staffing_request_routes_request_agency").on(
+      table.staffingRequestId,
+      table.agencyId,
+    ),
+    agencyIdx: index("idx_staffing_request_routes_agency").on(table.agencyId),
+  }),
 );
 
 /* ---------------- SHIFTS ---------------- */

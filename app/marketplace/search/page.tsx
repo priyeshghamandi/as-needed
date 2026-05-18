@@ -1,5 +1,7 @@
 import { Suspense } from "react";
+import { auth } from "@/auth";
 import { MarketplaceSearchClient } from "@/components/marketplace/marketplace-search-client";
+import { buildMarketplaceContinueRequestUrl } from "@/lib/marketplace/marketplace-cart";
 
 export const metadata = {
   title: "Search professionals",
@@ -14,10 +16,16 @@ function SearchFallback() {
   );
 }
 
-export default function MarketplaceSearchPage() {
+export default async function MarketplaceSearchPage() {
+  const session = await auth();
+  const continueRequestHref =
+    session?.user?.primaryRole === "facility_user"
+      ? "/customer/requests/new"
+      : buildMarketplaceContinueRequestUrl();
+
   return (
     <Suspense fallback={<SearchFallback />}>
-      <MarketplaceSearchClient />
+      <MarketplaceSearchClient continueRequestHref={continueRequestHref} />
     </Suspense>
   );
 }

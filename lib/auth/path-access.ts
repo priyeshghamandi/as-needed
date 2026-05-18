@@ -37,6 +37,7 @@ export function canAccessPath(pathname: string, roles: ScopedRole[]): boolean {
   const providerPaths = ["/my-shifts", "/availability", "/rn"];
 
   const facilityPaths = ["/facility"];
+  const customerPaths = ["/customer"];
 
   const isAgencyPath = agencyPaths.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`),
@@ -47,6 +48,9 @@ export function canAccessPath(pathname: string, roles: ScopedRole[]): boolean {
   const isFacilityPath = facilityPaths.some(
     (p) => pathname === p || pathname.startsWith(`${p}/`),
   );
+  const isCustomerPath = customerPaths.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
 
   const hasAgency = roles.some((r) => isAgencyRole(r.role));
   const hasProvider = roles.some((r) => isProviderRole(r.role));
@@ -55,6 +59,8 @@ export function canAccessPath(pathname: string, roles: ScopedRole[]): boolean {
   if (isAgencyPath && !hasAgency) return false;
   if (isProviderPath && !hasProvider) return false;
   if (isFacilityPath && !hasFacility) return false;
+  if (isCustomerPath && !hasFacility) return false;
+  if (isCustomerPath && hasAgency && !hasFacility) return false;
 
   const isCompliancePath =
     pathname === "/compliance" || pathname.startsWith("/compliance/");

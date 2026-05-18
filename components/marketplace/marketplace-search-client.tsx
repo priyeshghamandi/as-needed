@@ -85,7 +85,11 @@ type SearchResponse = {
   error?: string;
 };
 
-export function MarketplaceSearchClient() {
+export function MarketplaceSearchClient({
+  continueRequestHref = buildMarketplaceContinueRequestUrl(),
+}: {
+  continueRequestHref?: string;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -297,7 +301,7 @@ export function MarketplaceSearchClient() {
 
   const cartFull = (cart?.professionalIds.length ?? 0) >= MARKETPLACE_CART_MAX;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const continueHref = buildMarketplaceContinueRequestUrl();
+  const continueHref = continueRequestHref;
 
   const searchForm = (
     <form

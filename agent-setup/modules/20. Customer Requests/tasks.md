@@ -6,7 +6,7 @@
 |---|---|
 | Module | Customer Requests |
 | Branch | `module/customer-requests` |
-| Status | PENDING |
+| Status | COMPLETE |
 | Depends on | Staffing Requests (6), Facilities (5), Public Marketplace (19), Request Routing (21) |
 
 ---
@@ -15,21 +15,21 @@
 
 | ID | Task | Status |
 |---|---|---|
-| CRQ-001 | Migration: `source`, `fulfillment_status` on `staffing_requests` | PENDING |
-| CRQ-002 | Migration: `staffing_request_selections` | PENDING |
-| CRQ-003 | `lib/validations/customer-request.ts` | PENDING |
-| CRQ-004 | `lib/customer-requests/create-customer-request.ts` | PENDING |
-| CRQ-005 | `POST /api/customer/requests` | PENDING |
-| CRQ-006 | `GET /api/customer/requests` + `[id]` | PENDING |
-| CRQ-007 | `app/customer/requests/page.tsx` list | PENDING |
-| CRQ-008 | `app/customer/requests/new/page.tsx` form | PENDING |
-| CRQ-009 | Load cart from sessionStorage | PENDING |
-| CRQ-010 | Selected professionals review UI | PENDING |
-| CRQ-011 | `app/customer/requests/[id]/page.tsx` detail | PENDING |
-| CRQ-012 | Invoke `routeStaffingRequest` on success | PENDING |
-| CRQ-013 | Duplicate detection | PENDING |
-| CRQ-014 | Customer layout shell / nav link | PENDING |
-| CRQ-015 | lint, typecheck, build | PENDING |
+| CRQ-001 | Migration: `source`, `fulfillment_status` on `staffing_requests` | DONE |
+| CRQ-002 | Migration: `staffing_request_selections` | DONE |
+| CRQ-003 | `lib/validations/customer-request.ts` | DONE |
+| CRQ-004 | `lib/customer-requests/create-customer-request.ts` | DONE |
+| CRQ-005 | `POST /api/customer/requests` | DONE |
+| CRQ-006 | `GET /api/customer/requests` + `[id]` | DONE |
+| CRQ-007 | `app/customer/requests/page.tsx` list | DONE |
+| CRQ-008 | `app/customer/requests/new/page.tsx` form | DONE |
+| CRQ-009 | Load cart from sessionStorage | DONE |
+| CRQ-010 | Selected professionals review UI | DONE |
+| CRQ-011 | `app/customer/requests/[id]/page.tsx` detail | DONE |
+| CRQ-012 | Invoke `routeStaffingRequest` on success | DONE |
+| CRQ-013 | Duplicate detection | DONE |
+| CRQ-014 | Customer layout shell / nav link | DONE |
+| CRQ-015 | lint, typecheck, build | DONE |
 
 ---
 
@@ -37,7 +37,7 @@
 
 | ID | Task | Status |
 |---|---|---|
-| CRQ-T001 | Vitest validation + create | PENDING |
-| CRQ-T002 | API tests | PENDING |
-| CRQ-T003 | E2E access + create + list | PENDING |
-| CRQ-T004 | lint, typecheck, build, test | PENDING |
+| CRQ-T001 | Vitest validation + create | DONE |
+| CRQ-T002 | API tests | DONE |
+| CRQ-T003 | E2E access + create + list | DONE |
+| CRQ-T004 | lint, typecheck, build, test | DONE |
