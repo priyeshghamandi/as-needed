@@ -1,6 +1,12 @@
 import { notFound } from "next/navigation";
 import { StaffingRequestDetailClient } from "@/components/staffing-requests/staffing-request-detail-client";
+import { canManageStaffingRequests } from "@/lib/auth/staffing-requests-access-rules";
 import { getMatchCandidates } from "@/lib/matching/candidate-query";
+import { acknowledgeStaffingRequestRoute } from "@/lib/request-routing/acknowledge-route";
+import {
+  getAgencyMarketplaceSelections,
+  getAgencyRouteForRequest,
+} from "@/lib/request-routing/queries";
 import { loadStaffingRequestsPageContext } from "@/lib/staffing-requests/load-page-context";
 import { getStaffingRequestDetail } from "@/lib/staffing-requests/queries";
 
@@ -14,6 +20,26 @@ export default async function StaffingRequestDetailPage({ params }: PageProps) {
   const detail = await getStaffingRequestDetail(ctx.agencyId, id);
 
   if (!detail) notFound();
+
+  const isMarketplace = detail.source === "marketplace_customer";
+  let routeContext = isMarketplace ? await getAgencyRouteForRequest(ctx.agencyId, id) : null;
+
+  if (
+    routeContext?.routingStatus === "routed" &&
+    canManageStaffingRequests(ctx.primaryRole)
+  ) {
+    await acknowledgeStaffingRequestRoute({
+      agencyId: ctx.agencyId,
+      staffingRequestId: id,
+      userId: ctx.userId,
+    });
+    routeContext = await getAgencyRouteForRequest(ctx.agencyId, id);
+  }
+
+  const marketplaceSelections =
+    isMarketplace && routeContext
+      ? await getAgencyMarketplaceSelections(ctx.agencyId, id)
+      : [];
 
   const primaryShiftId = detail.shifts[0]?.id ?? "";
   const suggestedCandidates =
@@ -54,6 +80,17 @@ export default async function StaffingRequestDetailPage({ params }: PageProps) {
       request={serialized}
       primaryShiftId={primaryShiftId}
       suggestedCandidates={suggestedCandidates}
+      marketplaceContext={
+        isMarketplace && routeContext
+          ? {
+              routingStatus: routeContext.routingStatus,
+              isOverdue: routeContext.isOverdue,
+              responseDueAt: routeContext.responseDueAt?.toISOString() ?? null,
+              fulfillmentStatus: detail.fulfillmentStatus,
+              selections: marketplaceSelections,
+            }
+          : null
+      }
     />
   );
 }

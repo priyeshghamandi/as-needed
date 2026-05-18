@@ -9,6 +9,7 @@ import {
   UserTable,
 } from "@/drizzle/schema";
 import { FILLED_ASSIGNMENT_STATUSES } from "@/lib/dashboard/metrics";
+import { hasStaffingRequestAgencyAccess } from "@/lib/request-routing/queries";
 import { computeFulfillment } from "@/lib/staffing-requests/fulfillment";
 import {
   buildStaffingRequestWhereConditions,
@@ -170,6 +171,8 @@ export interface StaffingRequestDetail {
   id: string;
   title: string;
   status: string;
+  source: string;
+  fulfillmentStatus: string | null;
   priority: string;
   roleNeeded: string;
   specialty: string | null;
@@ -200,11 +203,16 @@ export async function getStaffingRequestDetail(
   agencyId: string,
   requestId: string,
 ): Promise<StaffingRequestDetail | null> {
+  const allowed = await hasStaffingRequestAgencyAccess(agencyId, requestId);
+  if (!allowed) return null;
+
   const [row] = await db
     .select({
       id: StaffingRequestTable.id,
       title: StaffingRequestTable.title,
       status: StaffingRequestTable.status,
+      source: StaffingRequestTable.source,
+      fulfillmentStatus: StaffingRequestTable.fulfillmentStatus,
       priority: StaffingRequestTable.priority,
       roleNeeded: StaffingRequestTable.roleNeeded,
       specialty: StaffingRequestTable.specialty,
@@ -228,7 +236,7 @@ export async function getStaffingRequestDetail(
     .from(StaffingRequestTable)
     .innerJoin(FacilityTable, eq(StaffingRequestTable.facilityId, FacilityTable.id))
     .leftJoin(UserTable, eq(StaffingRequestTable.assignedCoordinatorId, UserTable.id))
-    .where(and(eq(StaffingRequestTable.id, requestId), eq(StaffingRequestTable.agencyId, agencyId)))
+    .where(eq(StaffingRequestTable.id, requestId))
     .limit(1);
 
   if (!row) return null;
@@ -266,6 +274,8 @@ export async function getStaffingRequestDetail(
     id: row.id,
     title: row.title,
     status: row.status,
+    source: row.source,
+    fulfillmentStatus: row.fulfillmentStatus,
     priority: row.priority,
     roleNeeded: row.roleNeeded,
     specialty: row.specialty,

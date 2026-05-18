@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Icon, Avatar } from "@/components/primitives";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { canViewCompliance } from "@/lib/auth/compliance-access-rules";
+import { canViewStaffingRequests } from "@/lib/auth/staffing-requests-access-rules";
 import { AGENCY_SIDEBAR_NAV } from "@/lib/navigation/agency-sidebar-nav";
 
 const NAV = AGENCY_SIDEBAR_NAV;
@@ -40,9 +42,26 @@ export function AgencyShell({
   unreadCount?: number;
 }) {
   const pathname = usePathname();
+  const [routedBadgeCount, setRoutedBadgeCount] = useState(0);
   const navItems = NAV.filter(
     (n) => n.id !== "compliance" || canViewCompliance(primaryRole),
   );
+
+  useEffect(() => {
+    if (!canViewStaffingRequests(primaryRole)) return;
+    let cancelled = false;
+    fetch("/api/staffing-requests/routed?summary=count")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data && typeof data.pendingCount === "number") {
+          setRoutedBadgeCount(data.pendingCount);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [primaryRole, pathname]);
   const agencyInitials = agencyName
     .split(/\s+/)
     .slice(0, 2)
@@ -51,9 +70,13 @@ export function AgencyShell({
     .toUpperCase();
 
   const activeNav =
-    NAV.find(
-      (n) => pathname === n.href || (n.href !== "/dashboard" && pathname.startsWith(`${n.href}/`)),
-    )?.id ?? (pathname.startsWith("/dashboard") ? "dashboard" : "workforce");
+    [...navItems]
+      .sort((a, b) => b.href.length - a.href.length)
+      .find(
+        (n) =>
+          pathname === n.href ||
+          (n.href !== "/dashboard" && pathname.startsWith(`${n.href}/`)),
+      )?.id ?? (pathname.startsWith("/dashboard") ? "dashboard" : "workforce");
 
   return (
     <div className="min-h-screen bg-paper text-ink-900 flex overflow-x-hidden">
@@ -86,6 +109,11 @@ export function AgencyShell({
                   className={`w-4 h-4 ${active ? "text-paper" : "text-ink-500 group-hover:text-ink-800"}`}
                 />
                 <span className="flex-1 text-left">{n.label}</span>
+                {"badge" in n && n.badge === "routed" && routedBadgeCount > 0 ? (
+                  <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-white text-[10px] font-mono inline-flex items-center justify-center">
+                    {routedBadgeCount > 99 ? "99+" : routedBadgeCount}
+                  </span>
+                ) : null}
               </Link>
             );
           })}

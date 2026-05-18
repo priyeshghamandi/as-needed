@@ -27,6 +27,8 @@
     "test:e2e:public-marketplace": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/marketplace/public-marketplace-home e2e/marketplace/public-marketplace-nav",
     "test:unit:customer-requests": "vitest run lib/validations/customer-request.test.ts lib/customer-requests/create-customer-request.test.ts app/api/customer/requests/route.test.ts",
     "test:e2e:customer-requests": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/customer-requests",
+    "test:unit:request-routing": "vitest run lib/request-routing app/api/staffing-requests/routed/route.test.ts",
+    "test:e2e:request-routing": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/request-routing",
     "test:e2e:workforce": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/workforce",
     "test:unit:facilities": "vitest run lib/validations/facility lib/facilities lib/auth/facilities-access-rules lib/auth/facilities-access.test.ts app/api/facilities",
     "test:e2e:facilities": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/facilities",
