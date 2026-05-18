@@ -79,8 +79,8 @@ export function AgencyShell({
       )?.id ?? (pathname.startsWith("/dashboard") ? "dashboard" : "workforce");
 
   return (
-    <div className="min-h-screen bg-paper text-ink-900 flex overflow-x-hidden">
-      <aside className="hidden md:flex w-[232px] shrink-0 h-screen sticky top-0 border-r border-ink-200/70 bg-paper flex-col">
+    <div className="h-screen bg-paper text-ink-900 flex overflow-hidden">
+      <aside className="hidden md:flex w-[232px] shrink-0 h-full border-r border-ink-200/70 bg-paper flex-col overflow-hidden">
         <div className="px-4 h-14 flex items-center gap-2 border-b border-ink-200/70">
           <LogoMark />
           <span className="font-semibold tracking-tight text-[15px]">AsNeeded</span>
@@ -125,8 +125,8 @@ export function AgencyShell({
           </div>
         </div>
       </aside>
-      <div className="flex-1 min-w-0 flex flex-col">
-        <header className="sticky top-0 z-30 h-14 bg-paper/85 backdrop-blur border-b border-ink-200/70">
+      <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
+        <header className="shrink-0 z-30 h-14 bg-paper/85 backdrop-blur border-b border-ink-200/70">
           <div className="h-full px-4 md:px-6 flex items-center gap-3 min-w-0">
             <div className="flex items-center gap-2 md:hidden shrink-0">
               <LogoMark />
@@ -137,7 +137,7 @@ export function AgencyShell({
             </div>
           </div>
         </header>
-        <main className="px-4 md:px-6 py-6 space-y-6 min-w-0 max-w-full">
+        <main className="flex-1 min-h-0 overflow-y-auto px-4 md:px-6 py-6 space-y-6 min-w-0 max-w-full">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h1 className="text-[22px] md:text-[28px] leading-tight tracking-[-0.01em] font-medium">

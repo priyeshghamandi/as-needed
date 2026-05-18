@@ -98,7 +98,7 @@ function Sidebar({
     .toUpperCase();
 
   return (
-    <aside className="hidden md:flex w-[232px] shrink-0 h-screen sticky top-0 border-r border-ink-200/70 bg-paper flex-col">
+    <aside className="hidden md:flex w-[232px] shrink-0 h-full border-r border-ink-200/70 bg-paper flex-col overflow-hidden">
       <div className="px-4 h-14 flex items-center gap-2 border-b border-ink-200/70">
         <LogoMark />
         <span className="font-semibold tracking-tight text-[15px]">AsNeeded</span>
@@ -159,7 +159,7 @@ function Sidebar({
 
 function Topbar({ unreadCount = 0 }: { unreadCount?: number }) {
   return (
-    <div className="sticky top-0 z-30 h-14 bg-paper/85 backdrop-blur border-b border-ink-200/70">
+    <div className="shrink-0 z-30 h-14 bg-paper/85 backdrop-blur border-b border-ink-200/70">
       <div className="h-full px-4 md:px-6 flex items-center gap-3 min-w-0">
         <div className="flex items-center gap-2 md:hidden shrink-0">
           <LogoMark />
@@ -749,17 +749,17 @@ export function OpsApp({
   const greeting = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
 
   return (
-    <div className="min-h-screen bg-paper text-ink-900 flex overflow-x-hidden">
+    <div className="h-screen bg-paper text-ink-900 flex overflow-hidden">
       <Sidebar
         agencyName={agencyName}
         userName={userName}
         userInitials={userInitials}
         primaryRole={primaryRole}
       />
-      <div className="flex-1 min-w-0 flex flex-col">
+      <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
         <Topbar unreadCount={unreadCount} />
         <CriticalAlertBanner alert={criticalAlert} />
-        <main className="px-4 md:px-6 py-6 space-y-6 rise-in min-w-0 max-w-full">
+        <main className="flex-1 min-h-0 overflow-y-auto px-4 md:px-6 py-6 space-y-6 rise-in min-w-0 max-w-full">
           {/* Greeting */}
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
