@@ -22,11 +22,11 @@ const instrumentSerif = Instrument_Serif({
 
 export const metadata: Metadata = {
   title: {
-    default: "AsNeeded — Healthcare Staffing Marketplace",
+    default: "AsNeeded — Healthcare staffing platform",
     template: "%s · AsNeeded",
   },
   description:
-    "Discover and request healthcare professionals for your facility. Staffing fulfilled by licensed agency coordinators.",
+    "Healthcare staffing operations for agencies with a public marketplace for facility discovery and agency-mediated fulfillment.",
 };
 
 export default function RootLayout({

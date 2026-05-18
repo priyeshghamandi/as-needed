@@ -67,9 +67,15 @@ test.describe("Public Marketplace Home", () => {
     await expect(page.getByText(disclaimer)).toBeVisible();
   });
 
-  test("PMK-E2E-006: root redirects to marketplace", async ({ page }) => {
+  test("PMK-E2E-006: root is the platform homepage", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveURL(/\/marketplace$/);
+    await expect(page).toHaveURL("/");
+    await expect(
+      page.getByRole("heading", {
+        name: /run healthcare staffing operations/i,
+      }),
+    ).toBeVisible();
+    await expect(page.getByRole("link", { name: /browse marketplace/i })).toBeVisible();
   });
 
   test("PMK-A11Y-001: axe on marketplace home", async ({ page }) => {

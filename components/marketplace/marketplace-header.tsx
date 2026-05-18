@@ -8,6 +8,7 @@ import { LocationChip } from "@/components/marketplace/location-chip";
 import { SignOutButton } from "@/components/sign-out-button";
 
 const NAV_LINKS = [
+  { href: "/", label: "Home" },
   { href: "/marketplace/categories", label: "Categories" },
   { href: "/marketplace/search", label: "Search" },
 ] as const;
