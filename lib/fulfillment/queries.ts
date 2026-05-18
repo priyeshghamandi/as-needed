@@ -9,8 +9,11 @@ import {
   StaffingRequestTable,
   UserTable,
 } from "@/drizzle/schema";
+import { listAlternativesForAgency } from "@/lib/alternatives/queries";
+import { getProfessionalPublicSummary } from "@/lib/alternatives/picker-candidates";
 import { getVisibilityBlockReason } from "@/lib/marketplace/eligibility";
 import { hasStaffingRequestAgencyAccess } from "@/lib/request-routing/queries";
+import type { SuggestedAlternativeStatus } from "@/lib/fulfillment/alternative-status";
 import type { StaffingRequestFulfillmentStatus } from "@/lib/ui/fulfillment-status";
 
 export type FulfillmentReviewHistoryItem = {
@@ -36,6 +39,17 @@ export type FulfillmentSelectionRow = {
   complianceBlocked: boolean;
 };
 
+export type AgencyAlternativeSummary = {
+  id: string;
+  originalProfessionalId: string;
+  originalDisplayName: string;
+  suggestedProfessionalId: string;
+  suggestedDisplayName: string;
+  status: SuggestedAlternativeStatus;
+  messageToCustomer: string | null;
+  proposedAt: Date;
+};
+
 export type AgencyFulfillmentPageData = {
   requestId: string;
   title: string;
@@ -47,6 +61,7 @@ export type AgencyFulfillmentPageData = {
   shiftType: string | null;
   selections: FulfillmentSelectionRow[];
   reviewHistory: FulfillmentReviewHistoryItem[];
+  alternatives: AgencyAlternativeSummary[];
 };
 
 export async function getAgencyFulfillmentPageData(
@@ -166,6 +181,26 @@ export async function getAgencyFulfillmentPageData(
     reviewedAt: r.reviewedAt,
   }));
 
+  const altRows = await listAlternativesForAgency(staffingRequestId, agencyId);
+  const alternatives: AgencyAlternativeSummary[] = [];
+  for (const alt of altRows) {
+    const [original, suggested] = await Promise.all([
+      getProfessionalPublicSummary(alt.originalProfessionalId),
+      getProfessionalPublicSummary(alt.suggestedProfessionalId),
+    ]);
+    if (!original || !suggested) continue;
+    alternatives.push({
+      id: alt.id,
+      originalProfessionalId: alt.originalProfessionalId,
+      originalDisplayName: original.displayName,
+      suggestedProfessionalId: alt.suggestedProfessionalId,
+      suggestedDisplayName: suggested.displayName,
+      status: alt.status,
+      messageToCustomer: alt.messageToCustomer,
+      proposedAt: alt.proposedAt,
+    });
+  }
+
   return {
     requestId: request.id,
     title: request.title,
@@ -177,5 +212,6 @@ export async function getAgencyFulfillmentPageData(
     shiftType: request.shiftType,
     selections: selectionRows,
     reviewHistory,
+    alternatives,
   };
 }

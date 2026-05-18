@@ -28,6 +28,10 @@ export default async function StaffingRequestFulfillmentPage({ params }: PagePro
           ...item,
           reviewedAt: item.reviewedAt.toISOString(),
         })),
+        alternatives: data.alternatives.map((alt) => ({
+          ...alt,
+          proposedAt: alt.proposedAt.toISOString(),
+        })),
       }}
     />
   );

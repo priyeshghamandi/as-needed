@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { CustomerSuggestedAlternativeCard } from "@/components/alternatives/customer-suggested-alternative-card";
 import { CustomerApproveFulfillment } from "@/components/fulfillment/customer-approve-fulfillment";
+import type { PendingAlternativeForCustomer } from "@/lib/alternatives/queries";
 import { CustomerShell } from "@/components/customer-requests/customer-shell";
 import { CustomerRequestSelectionCards } from "@/components/customer-requests/customer-request-selection-cards";
 import { Badge } from "@/components/primitives";
@@ -17,12 +19,16 @@ export function CustomerRequestDetailView({
   userName,
   userInitials,
   request,
+  pendingAlternative,
   showSubmittedBanner,
 }: {
   scope: { facilityName: string; agencyName: string };
   userName: string;
   userInitials: string;
   request: CustomerRequestDetail;
+  pendingAlternative: (Omit<PendingAlternativeForCustomer, "proposedAt"> & {
+    proposedAt: string;
+  }) | null;
   showSubmittedBanner?: boolean;
 }) {
   const status = request.fulfillmentStatus as StaffingRequestFulfillmentStatus | null;
@@ -97,6 +103,13 @@ export function CustomerRequestDetailView({
             ) : null}
           </dl>
         </section>
+
+        {pendingAlternative ? (
+          <CustomerSuggestedAlternativeCard
+            requestId={request.id}
+            alternative={pendingAlternative}
+          />
+        ) : null}
 
         {status === "agency_confirmed" ? (
           <CustomerApproveFulfillment requestId={request.id} />

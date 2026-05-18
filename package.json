@@ -31,6 +31,8 @@
     "test:e2e:request-routing": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/request-routing",
     "test:unit:fulfillment": "vitest run lib/fulfillment 'app/api/staffing-requests/[id]/fulfillment'",
     "test:e2e:fulfillment": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/fulfillment",
+    "test:unit:alternatives": "vitest run lib/fulfillment/alternative-status.test.ts lib/alternatives 'app/api/staffing-requests/[id]/alternatives' 'app/api/customer/requests/[id]/alternatives'",
+    "test:e2e:alternatives": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/alternatives",
     "test:e2e:workforce": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/workforce",
     "test:unit:facilities": "vitest run lib/validations/facility lib/facilities lib/auth/facilities-access-rules lib/auth/facilities-access.test.ts app/api/facilities",
     "test:e2e:facilities": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/facilities",

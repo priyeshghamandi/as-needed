@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { CustomerRequestDetailView } from "@/components/customer-requests/customer-request-detail";
+import { getPendingAlternativeForCustomer } from "@/lib/alternatives/queries";
 import { getCustomerRequestDetail } from "@/lib/customer-requests/queries";
 import { loadCustomerRequestsPageContext } from "@/lib/customer-requests/load-page-context";
 
@@ -15,7 +16,10 @@ type PageProps = {
 export default async function CustomerRequestDetailPage({ params, searchParams }: PageProps) {
   const ctx = await loadCustomerRequestsPageContext();
   const { id } = await params;
-  const request = await getCustomerRequestDetail(ctx.scope.facilityId, id);
+  const [request, pendingAlternative] = await Promise.all([
+    getCustomerRequestDetail(ctx.scope.facilityId, id),
+    getPendingAlternativeForCustomer(id),
+  ]);
   if (!request) notFound();
 
   const raw = await searchParams;
@@ -27,6 +31,11 @@ export default async function CustomerRequestDetailPage({ params, searchParams }
       userName={ctx.userName}
       userInitials={ctx.userInitials}
       request={request}
+      pendingAlternative={
+        pendingAlternative
+          ? { ...pendingAlternative, proposedAt: pendingAlternative.proposedAt.toISOString() }
+          : null
+      }
       showSubmittedBanner={showSubmittedBanner}
     />
   );
