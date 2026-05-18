@@ -18,6 +18,10 @@ import {
   type SerializedMarketplaceVisibility,
 } from "@/components/workforce/workforce-marketplace-tab";
 import {
+  WorkforcePublicProfileTab,
+  type SerializedPublicProfileEdit,
+} from "@/components/workforce/workforce-public-profile-tab";
+import {
   updateProfessionalSchema,
   WORKFORCE_PROFESSIONAL_ROLES,
   WORKFORCE_ROLE_LABELS,
@@ -78,15 +82,17 @@ export function WorkforceProfileClient({
   activeTab,
   profile,
   marketplaceVisibility,
+  publicProfileEdit,
   serviceArea,
 }: {
   agencyName: string;
   userName: string;
   userInitials: string;
   primaryRole: string;
-  activeTab: "overview" | "marketplace";
+  activeTab: "overview" | "marketplace" | "public-profile";
   profile: SerializedProfile;
   marketplaceVisibility: SerializedMarketplaceVisibility;
+  publicProfileEdit: SerializedPublicProfileEdit;
   serviceArea: ServiceAreaRestrictionInput;
 }) {
   const router = useRouter();
@@ -223,6 +229,16 @@ export function WorkforceProfileClient({
         >
           Marketplace
         </Link>
+        <Link
+          href={`/workforce/${profile.id}?tab=public-profile`}
+          className={`px-3 py-2 text-[13px] border-b-2 -mb-px ${
+            activeTab === "public-profile"
+              ? "border-ink-900 text-ink-900 font-medium"
+              : "border-transparent text-ink-500 hover:text-ink-800"
+          }`}
+        >
+          Public profile
+        </Link>
       </nav>
 
       {activeTab === "marketplace" ? (
@@ -231,6 +247,14 @@ export function WorkforceProfileClient({
           primaryRole={primaryRole}
           visibility={marketplaceVisibility}
           serviceArea={serviceArea}
+        />
+      ) : null}
+
+      {activeTab === "public-profile" ? (
+        <WorkforcePublicProfileTab
+          professionalId={profile.id}
+          primaryRole={primaryRole}
+          initial={publicProfileEdit}
         />
       ) : null}
 

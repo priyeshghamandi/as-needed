@@ -13,13 +13,37 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const customerLocation = await getMarketplaceCustomerLocation();
   const profile = await resolvePublicProfessionalProfile(publicSlug, customerLocation);
 
-  if (!profile) {
-    return { title: "Professional not found" };
+  const preview =
+    profile ?? (await resolvePublicProfessionalProfile(publicSlug, null));
+
+  if (!preview) {
+    return { title: "Professional not found", robots: { index: false, follow: false } };
   }
 
+  const title = `${preview.displayName} — ${preview.roleLabel}`;
+  const description = preview.headline;
+
   return {
-    title: `${profile.displayName} — ${profile.roleLabel}`,
-    description: profile.headline,
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "profile",
+      ...(preview.photoUrl ? { images: [{ url: preview.photoUrl }] } : {}),
+    },
+    twitter: {
+      card: preview.photoUrl ? "summary_large_image" : "summary",
+      title,
+      description,
+      ...(preview.photoUrl ? { images: [preview.photoUrl] } : {}),
+    },
+    alternates: {
+      canonical: `/marketplace/professionals/${publicSlug}`,
+    },
+    robots: profile
+      ? { index: true, follow: true }
+      : { index: false, follow: true },
   };
 }
 
