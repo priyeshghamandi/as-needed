@@ -20,7 +20,9 @@ import {
 } from "@/lib/staffing-requests/staffing-requests-ui";
 import { facilityTypeLabel } from "@/lib/facilities/facilities-ui";
 import { SuggestedMatchesPanel } from "@/components/matching/suggested-matches-panel";
+import { MarketplaceRequestBanner } from "@/components/request-routing/marketplace-request-banner";
 import type { MatchCandidateRow } from "@/lib/matching/types";
+import type { StaffingRequestRoutingStatus } from "@/lib/ui/routing-status";
 
 export type SerializedStaffingRequestDetail = {
   id: string;
@@ -55,6 +57,14 @@ export type SerializedStaffingRequestDetail = {
   }[];
 };
 
+export type MarketplaceRequestContext = {
+  routingStatus: StaffingRequestRoutingStatus;
+  isOverdue: boolean;
+  responseDueAt: string | null;
+  fulfillmentStatus: string | null;
+  selections: { id: string; displayName: string; role: string }[];
+};
+
 export function StaffingRequestDetailClient({
   agencyName,
   userName,
@@ -63,6 +73,7 @@ export function StaffingRequestDetailClient({
   request,
   primaryShiftId,
   suggestedCandidates = [],
+  marketplaceContext = null,
 }: {
   agencyName: string;
   userName: string;
@@ -71,6 +82,7 @@ export function StaffingRequestDetailClient({
   request: SerializedStaffingRequestDetail;
   primaryShiftId?: string;
   suggestedCandidates?: MatchCandidateRow[];
+  marketplaceContext?: MarketplaceRequestContext | null;
 }) {
   const router = useRouter();
   const canWrite = canManageStaffingRequests(primaryRole);
@@ -151,6 +163,15 @@ export function StaffingRequestDetailClient({
         >
           {toast}
         </div>
+      ) : null}
+
+      {marketplaceContext ? (
+        <MarketplaceRequestBanner
+          routingStatus={marketplaceContext.routingStatus}
+          isOverdue={marketplaceContext.isOverdue}
+          responseDueAt={marketplaceContext.responseDueAt}
+          marketplaceSelections={marketplaceContext.selections}
+        />
       ) : null}
 
       {status === "cancelled" ? (

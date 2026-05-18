@@ -105,6 +105,14 @@ async function main() {
     .values({
       name: AGENCY_NAMES[1],
       onboardingCompletedAt: new Date(),
+      primaryServiceAreaName: "San Francisco, CA",
+      primaryServiceAreaPlaceId: "mock-sf-b",
+      primaryServiceAreaCity: "San Francisco",
+      primaryServiceAreaState: "CA",
+      primaryServiceAreaCountry: "US",
+      primaryServiceAreaLat: "37.7749",
+      primaryServiceAreaLng: "-122.4194",
+      serviceAreaRadiusMiles: 50,
     })
     .returning({ id: AgencyTable.id });
 
@@ -155,7 +163,12 @@ async function main() {
     "agency_owner",
     agencyAId,
   );
-  await createUser("e2e-dash-owner-b@example.com", "E2E Owner B", "agency_owner", agencyBId);
+  const ownerBId = await createUser(
+    "e2e-dash-owner-b@example.com",
+    "E2E Owner B",
+    "agency_owner",
+    agencyBId,
+  );
   await createUser(
     "e2e-dash-owner-incomplete@example.com",
     "E2E Owner Incomplete",
@@ -397,6 +410,41 @@ async function main() {
     city: "Austin",
     state: "TX",
   });
+
+  await db
+    .update(HealthcareProfessionalTable)
+    .set({
+      publicSlug: "e2e-marketplace-rn-agency-b",
+      availabilityStatus: "available",
+      city: "San Francisco",
+      state: "CA",
+      latitude: "37.7749",
+      longitude: "-122.4194",
+      placeId: "mock-sf",
+    })
+    .where(eq(HealthcareProfessionalTable.id, AGENCY_B_PRO_ID));
+  await db.insert(ProfessionalMarketplaceVisibilityTable).values({
+    healthcareProfessionalId: AGENCY_B_PRO_ID,
+    agencyId: agencyBId,
+    isMarketplaceVisible: true,
+    marketplaceVisibleAt: new Date(),
+    enabledByUserId: ownerBId,
+  });
+  await db.insert(ProfessionalMarketplaceProfileTable).values({
+    healthcareProfessionalId: AGENCY_B_PRO_ID,
+    headline: "E2E RN Agency B",
+    bio: "Seeded for multi-agency routing E2E.",
+    approximateAvailability: "available_this_week",
+  });
+  await db.insert(CredentialTable).values({
+    agencyId: agencyBId,
+    professionalId: AGENCY_B_PRO_ID,
+    type: "license",
+    name: "RN License",
+    status: "verified",
+    expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+  });
+  await syncMarketplaceComplianceBlock(agencyBId, AGENCY_B_PRO_ID);
 
   for (let i = 0; i < 4; i++) {
     const [shift] = await db
