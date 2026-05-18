@@ -6,7 +6,7 @@
 |---|---|
 | Module | Agency Fulfillment Review |
 | Branch | `module/agency-fulfillment-review` |
-| Status | PENDING |
+| Status | COMPLETE |
 | Depends on | Request Routing (21), Customer Requests (20) |
 
 ---
@@ -15,16 +15,16 @@
 
 | ID | Task | Status |
 |---|---|---|
-| AFR-001 | Migration: `fulfillment_reviews` | PENDING |
-| AFR-002 | `lib/fulfillment/fulfillment-status.ts` transitions | PENDING |
-| AFR-003 | `POST .../fulfillment/confirm` | PENDING |
-| AFR-004 | `POST .../fulfillment/decline` | PENDING |
-| AFR-005 | `POST /api/customer/requests/[id]/approve-fulfillment` | PENDING |
-| AFR-006 | `app/staffing-requests/[id]/fulfillment/page.tsx` | PENDING |
-| AFR-007 | Confirm/decline UI + history | PENDING |
-| AFR-008 | Customer detail Approve fulfillment CTA | PENDING |
-| AFR-009 | Notification hooks | PENDING |
-| AFR-010 | lint, typecheck, build | PENDING |
+| AFR-001 | Migration: `fulfillment_reviews` | DONE |
+| AFR-002 | `lib/fulfillment/fulfillment-status.ts` transitions | DONE |
+| AFR-003 | `POST .../fulfillment/confirm` | DONE |
+| AFR-004 | `POST .../fulfillment/decline` | DONE |
+| AFR-005 | `POST /api/customer/requests/[id]/approve-fulfillment` | DONE |
+| AFR-006 | `app/staffing-requests/[id]/fulfillment/page.tsx` | DONE |
+| AFR-007 | Confirm/decline UI + history | DONE |
+| AFR-008 | Customer detail Approve fulfillment CTA | DONE |
+| AFR-009 | Notification hooks | DONE |
+| AFR-010 | lint, typecheck, build | DONE |
 
 ---
 
@@ -32,6 +32,6 @@
 
 | ID | Task | Status |
 |---|---|---|
-| AFR-T001 | Vitest status transitions | PENDING |
-| AFR-T002 | E2E confirm/decline/approve | PENDING |
-| AFR-T003 | lint, typecheck, build, test | PENDING |
+| AFR-T001 | Vitest status transitions | DONE |
+| AFR-T002 | E2E confirm/decline/approve | DONE |
+| AFR-T003 | lint, typecheck, build, test | DONE |

@@ -89,7 +89,7 @@ export function RoutedRequestsListClient({
                 >
                   <td className="px-4 py-3">
                     <Link
-                      href={`/staffing-requests/${item.staffingRequestId}?routeId=${item.routeId}`}
+                      href={`/staffing-requests/${item.staffingRequestId}/fulfillment`}
                       className="font-medium text-teal-800 hover:underline"
                     >
                       {item.title}

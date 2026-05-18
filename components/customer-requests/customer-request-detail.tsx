@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CustomerApproveFulfillment } from "@/components/fulfillment/customer-approve-fulfillment";
 import { CustomerShell } from "@/components/customer-requests/customer-shell";
 import { CustomerRequestSelectionCards } from "@/components/customer-requests/customer-request-selection-cards";
 import { Badge } from "@/components/primitives";
@@ -96,6 +97,10 @@ export function CustomerRequestDetailView({
             ) : null}
           </dl>
         </section>
+
+        {status === "agency_confirmed" ? (
+          <CustomerApproveFulfillment requestId={request.id} />
+        ) : null}
 
         <section className="space-y-3">
           <h2 className="text-[14px] font-mono uppercase tracking-wider text-ink-500">

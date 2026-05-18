@@ -117,6 +117,18 @@ export const StaffingRequestRoutingStatusEnum = pgEnum("staffing_request_routing
   "closed",
 ]);
 
+export const FulfillmentReviewDecisionEnum = pgEnum("fulfillment_review_decision", [
+  "confirmed",
+  "declined",
+]);
+
+export const FulfillmentDeclineReasonEnum = pgEnum("fulfillment_decline_reason", [
+  "unavailable",
+  "credentials",
+  "scheduling_conflict",
+  "other",
+]);
+
 export const ShiftStatusEnum = pgEnum("shift_status", [
   "open",
   "matching",
@@ -697,6 +709,7 @@ export const StaffingRequestTable = pgTable(
     fulfillmentStatus: StaffingRequestFulfillmentStatusEnum("fulfillment_status"),
 
     customerSubmittedAt: timestamp("customer_submitted_at", { withTimezone: true }),
+    customerApprovedAt: timestamp("customer_approved_at", { withTimezone: true }),
 
     requiredCredentials: jsonb("required_credentials").$type<string[]>(),
 
@@ -782,6 +795,50 @@ export const StaffingRequestRouteTable = pgTable(
       table.agencyId,
     ),
     agencyIdx: index("idx_staffing_request_routes_agency").on(table.agencyId),
+  }),
+);
+
+export const FulfillmentReviewTable = pgTable(
+  "fulfillment_reviews",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+
+    staffingRequestId: uuid("staffing_request_id")
+      .notNull()
+      .references(() => StaffingRequestTable.id, { onDelete: "cascade" }),
+
+    staffingRequestRouteId: uuid("staffing_request_route_id")
+      .notNull()
+      .references(() => StaffingRequestRouteTable.id, { onDelete: "cascade" }),
+
+    agencyId: uuid("agency_id")
+      .notNull()
+      .references(() => AgencyTable.id, { onDelete: "cascade" }),
+
+    healthcareProfessionalId: uuid("healthcare_professional_id").references(
+      () => HealthcareProfessionalTable.id,
+      { onDelete: "set null" },
+    ),
+
+    decision: FulfillmentReviewDecisionEnum("decision").notNull(),
+
+    declineReason: FulfillmentDeclineReasonEnum("decline_reason"),
+    declineNotes: text("decline_notes"),
+
+    reviewedByUserId: uuid("reviewed_by_user_id")
+      .notNull()
+      .references(() => UserTable.id, { onDelete: "cascade" }),
+
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }).notNull().defaultNow(),
+
+    createdAt,
+  },
+  (table) => ({
+    requestAgencyProfessionalUniq: uniqueIndex(
+      "ux_fulfillment_reviews_request_agency_professional",
+    ).on(table.staffingRequestId, table.agencyId, table.healthcareProfessionalId),
+    requestIdx: index("idx_fulfillment_reviews_request").on(table.staffingRequestId),
+    agencyIdx: index("idx_fulfillment_reviews_agency").on(table.agencyId),
   }),
 );
 

@@ -166,12 +166,24 @@ export function StaffingRequestDetailClient({
       ) : null}
 
       {marketplaceContext ? (
-        <MarketplaceRequestBanner
-          routingStatus={marketplaceContext.routingStatus}
-          isOverdue={marketplaceContext.isOverdue}
-          responseDueAt={marketplaceContext.responseDueAt}
-          marketplaceSelections={marketplaceContext.selections}
-        />
+        <>
+          <MarketplaceRequestBanner
+            routingStatus={marketplaceContext.routingStatus}
+            isOverdue={marketplaceContext.isOverdue}
+            responseDueAt={marketplaceContext.responseDueAt}
+            marketplaceSelections={marketplaceContext.selections}
+          />
+          {canWrite &&
+          (marketplaceContext.fulfillmentStatus === "pending_agency_review" ||
+            !marketplaceContext.fulfillmentStatus) ? (
+            <Link
+              href={`/staffing-requests/${request.id}/fulfillment`}
+              className="inline-flex h-10 items-center px-4 rounded-md bg-teal-700 text-white text-[13px] font-medium"
+            >
+              Review fulfillment
+            </Link>
+          ) : null}
+        </>
       ) : null}
 
       {status === "cancelled" ? (
