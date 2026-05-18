@@ -94,33 +94,35 @@ export function MarketplaceHome({ categories }: { categories: MarketplaceCategor
         </div>
       </section>
 
-      <section className="max-w-[1240px] mx-auto px-4 sm:px-8 pb-16">
-        <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
-          <h2 className="text-[14px] font-mono uppercase tracking-wider text-ink-500">
-            Popular roles
-          </h2>
-          <Link href="/marketplace/categories" className="text-[13px] text-teal-800 hover:underline">
-            View all categories →
-          </Link>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {categories.map((cat) => (
-            <Link
-              key={cat.slug}
-              href={`/marketplace/categories/${cat.slug}`}
-              className="rounded-xl border border-ink-200 bg-white p-4 hover:border-teal-300 hover:shadow-sm transition"
-            >
-              <span className="text-[15px] font-medium tracking-tight">{cat.name}</span>
-              {cat.description ? (
-                <span className="mt-2 block text-[12px] text-ink-600 line-clamp-2">
-                  {cat.description}
-                </span>
-              ) : null}
-              <span className="mt-2 block text-[12px] text-teal-800">View professionals →</span>
+      {categories.length > 0 ? (
+        <section className="max-w-[1240px] mx-auto px-4 sm:px-8 pb-16">
+          <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
+            <h2 className="text-[14px] font-mono uppercase tracking-wider text-ink-500">
+              Popular roles
+            </h2>
+            <Link href="/marketplace/categories" className="text-[13px] text-teal-800 hover:underline">
+              View all categories →
             </Link>
-          ))}
-        </div>
-      </section>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {categories.map((cat) => (
+              <Link
+                key={cat.slug}
+                href={`/marketplace/categories/${cat.slug}`}
+                className="rounded-xl border border-ink-200 bg-white p-4 hover:border-teal-300 hover:shadow-sm transition"
+              >
+                <span className="text-[15px] font-medium tracking-tight">{cat.name}</span>
+                {cat.description ? (
+                  <span className="mt-2 block text-[12px] text-ink-600 line-clamp-2">
+                    {cat.description}
+                  </span>
+                ) : null}
+                <span className="mt-2 block text-[12px] text-teal-800">View professionals →</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="bg-ink-50 border-y border-ink-200/80 py-14">
         <div className="max-w-[1240px] mx-auto px-4 sm:px-8">
@@ -181,17 +183,23 @@ export function MarketplaceHome({ categories }: { categories: MarketplaceCategor
 
       <section className="max-w-[1240px] mx-auto px-4 sm:px-8 py-16">
         <h2 className="text-[22px] font-medium tracking-tight mb-6">Common questions</h2>
-        <dl className="space-y-4 max-w-[720px]">
+        <div className="space-y-3 max-w-[720px]">
           {FAQ.map((item) => (
-            <div
+            <details
               key={item.q}
-              className="rounded-xl border border-ink-200 bg-white p-5"
+              className="group rounded-xl border border-ink-200 bg-white p-5 open:shadow-sm"
             >
-              <dt className="text-[15px] font-medium">{item.q}</dt>
-              <dd className="mt-2 text-[14px] text-ink-600 leading-relaxed">{item.a}</dd>
-            </div>
+              <summary className="cursor-pointer list-none text-[15px] font-medium flex items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+                {item.q}
+                <Icon
+                  name="chevron-down"
+                  className="w-4 h-4 text-ink-500 shrink-0 transition-transform group-open:rotate-180"
+                />
+              </summary>
+              <p className="mt-3 text-[14px] text-ink-600 leading-relaxed">{item.a}</p>
+            </details>
           ))}
-        </dl>
+        </div>
       </section>
     </>
   );

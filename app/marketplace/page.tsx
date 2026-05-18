@@ -1,13 +1,13 @@
 import { MarketplaceHome } from "@/components/marketplace/marketplace-home";
-import { listMarketplaceCategories } from "@/lib/marketplace/categories";
+import { listPopularMarketplaceCategories } from "@/lib/marketplace/categories";
 
 export const metadata = {
   title: "Healthcare Staffing Marketplace",
   description:
-    "Search and browse healthcare professionals by role and location. Request staffing fulfilled by licensed agencies.",
+    "Discover and request healthcare professionals. Staffing fulfilled by agency coordinators.",
 };
 
 export default async function MarketplacePage() {
-  const categories = await listMarketplaceCategories();
+  const categories = await listPopularMarketplaceCategories();
   return <MarketplaceHome categories={categories} />;
 }
