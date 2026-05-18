@@ -11,9 +11,14 @@ export type MarketplaceRequestCart = {
   locationDisplayName: string | null;
 };
 
-/** Post-login destination until Customer Requests module ships. Cart stays in sessionStorage. */
 export function buildMarketplaceContinueRequestUrl(): string {
-  return `/login?callbackUrl=${encodeURIComponent("/facility/requests")}`;
+  return `/login?callbackUrl=${encodeURIComponent("/customer/requests/new")}`;
+}
+
+export function buildMarketplaceRequestProfessionalUrl(professionalId: string): string {
+  return `/login?callbackUrl=${encodeURIComponent(
+    `/customer/requests/new?professionalId=${professionalId}`,
+  )}`;
 }
 
 export function readMarketplaceCart(): MarketplaceRequestCart | null {

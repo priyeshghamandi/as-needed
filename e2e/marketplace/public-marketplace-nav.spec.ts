@@ -7,7 +7,7 @@ test.describe("Public Marketplace Navigation", () => {
     await page.goto("/marketplace");
     await expect(page.getByRole("link", { name: /my staffing requests/i })).toBeVisible();
     await page.getByRole("link", { name: /my staffing requests/i }).click();
-    await expect(page).toHaveURL(/\/facility/);
+    await expect(page).toHaveURL(/\/customer\/requests/);
   });
 
   test("mobile nav exposes categories and search", async ({ page }) => {

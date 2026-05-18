@@ -3,7 +3,7 @@
  * Run: npm run db:seed:dashboard-e2e
  */
 import "./preload-env";
-import { inArray, like, sql } from "drizzle-orm";
+import { eq, inArray, like, sql } from "drizzle-orm";
 import { db } from "../drizzle/db";
 import {
   ActivityLogTable,
@@ -13,13 +13,17 @@ import {
   NotificationTable,
   FacilityTable,
   HealthcareProfessionalTable,
+  ProfessionalMarketplaceProfileTable,
+  ProfessionalMarketplaceVisibilityTable,
   ShiftAssignmentTable,
   ShiftTable,
   StaffingRequestTable,
+  UserInviteTable,
   UserRoleTable,
   UserTable,
 } from "../drizzle/schema";
 import { hashPassword } from "../lib/auth/password";
+import { syncMarketplaceComplianceBlock } from "../lib/marketplace/compliance-visibility";
 
 const PASSWORD = "E2eTestPassword1!";
 
@@ -62,6 +66,8 @@ async function main() {
       .where(inArray(UserTable.id, existingUsers.map((u) => u.id)));
     console.log(`Removed ${existingUsers.length} existing seed users`);
   }
+
+  await db.delete(UserInviteTable).where(inArray(UserInviteTable.email, SEED_EMAILS));
 
   const oldAgencies = await db
     .select({ id: AgencyTable.id })
@@ -186,7 +192,7 @@ async function main() {
     "provider",
     null,
   );
-  await createUser(
+  const facilityUserId = await createUser(
     "e2e-dash-facility@example.com",
     "E2E Facility User",
     "facility_user",
@@ -338,11 +344,13 @@ async function main() {
   });
 
   const E2E_PROVIDER_PRO_ID = "e2e00000-0000-4000-8000-0000000000a1";
+  const E2E_MP_PRO_1 = "e2e00000-0000-4000-8000-000000000401";
+  const E2E_MP_PRO_2 = "e2e00000-0000-4000-8000-000000000402";
   const pros: string[] = [];
   const proDefs = [
     { id: E2E_PROVIDER_PRO_ID, firstName: "Jane", lastName: "Smith", availabilityStatus: "available" as const, email: "jane.smith.e2e@example.com", userId: providerUserId },
-    { firstName: "Pro2", lastName: "E2E", availabilityStatus: "available" as const, email: "pro2.e2e@example.com" },
-    { firstName: "Pro3", lastName: "E2E", availabilityStatus: "unavailable" as const, email: null },
+    { id: E2E_MP_PRO_1, firstName: "Pro2", lastName: "E2E", availabilityStatus: "available" as const, email: "pro2.e2e@example.com" },
+    { id: E2E_MP_PRO_2, firstName: "Pro3", lastName: "E2E", availabilityStatus: "available" as const, email: "pro3.e2e@example.com" },
   ];
   for (const def of proDefs) {
     const [p] = await db
@@ -699,7 +707,53 @@ async function main() {
     });
   }
 
+  await db.insert(UserInviteTable).values({
+    token: "e2e-facility-invite-token-000000000001",
+    email: "e2e-dash-facility@example.com",
+    role: "facility_user",
+    inviteType: "facility_user",
+    agencyId: agencyAId,
+    facilityId: facility.id,
+    invitedByUserId: ownerAId,
+    status: "accepted",
+    expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+    acceptedAt: new Date(),
+  });
+
+  for (const proId of [E2E_MP_PRO_1, E2E_MP_PRO_2]) {
+    const proIndex = proId === E2E_MP_PRO_1 ? 1 : 2;
+    await db
+      .update(HealthcareProfessionalTable)
+      .set({ publicSlug: `e2e-marketplace-rn-${proIndex}`, availabilityStatus: "available" })
+      .where(eq(HealthcareProfessionalTable.id, proId));
+    await db.insert(ProfessionalMarketplaceVisibilityTable).values({
+      healthcareProfessionalId: proId,
+      agencyId: agencyAId,
+      isMarketplaceVisible: true,
+      marketplaceVisibleAt: new Date(),
+      enabledByUserId: ownerAId,
+    });
+    await db.insert(ProfessionalMarketplaceProfileTable).values({
+      healthcareProfessionalId: proId,
+      headline: `E2E RN ${proIndex}`,
+      bio: "Seeded for customer request E2E.",
+      approximateAvailability: "available_this_week",
+    });
+    await db.insert(CredentialTable).values({
+      agencyId: agencyAId,
+      professionalId: proId,
+      type: "license",
+      name: "RN License",
+      status: "verified",
+      expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+    });
+    await syncMarketplaceComplianceBlock(agencyAId, proId);
+  }
+
   console.log("Dashboard E2E seed complete.");
+  console.log(
+    `Facility user: ${facilityUserId}, marketplace pros: ${E2E_MP_PRO_1}, ${E2E_MP_PRO_2}`,
+  );
   console.log(
     `Agency A: ${agencyAId}, Agency B: ${agencyBId}, Agency B pro: ${AGENCY_B_PRO_ID}, provider pro: e2e00000-0000-4000-8000-0000000000a1, Agency B facility: ${AGENCY_B_FACILITY_ID}, Agency B request: e2e00000-0000-4000-8000-000000000011, Agency B shift: e2e00000-0000-4000-8000-000000000012, draft: ${draftRequest.id}`,
   );

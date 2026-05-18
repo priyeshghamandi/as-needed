@@ -44,7 +44,7 @@ export function MarketplaceHeader({
           ) : null}
           {showFacilityRequestsLink ? (
             <Link
-              href="/facility"
+              href="/customer/requests"
               className="hidden sm:inline text-[13px] text-ink-700 hover:underline px-2"
             >
               My staffing requests
@@ -86,7 +86,7 @@ export function MarketplaceHeader({
           ))}
           {showFacilityRequestsLink ? (
             <Link
-              href="/facility"
+              href="/customer/requests"
               className="block rounded-lg px-3 py-2 text-[14px] text-ink-800 hover:bg-ink-100"
               onClick={() => setMobileOpen(false)}
             >
