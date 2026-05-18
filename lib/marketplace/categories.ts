@@ -27,6 +27,8 @@ function mapRow(row: typeof MarketplaceCategoryTable.$inferSelect): MarketplaceC
   };
 }
 
+export const POPULAR_CATEGORY_LIMIT = 6;
+
 export async function listMarketplaceCategories(): Promise<MarketplaceCategory[]> {
   const rows = await db
     .select()
@@ -35,6 +37,11 @@ export async function listMarketplaceCategories(): Promise<MarketplaceCategory[]
     .orderBy(asc(MarketplaceCategoryTable.sortOrder));
 
   return rows.map(mapRow);
+}
+
+export async function listPopularMarketplaceCategories(): Promise<MarketplaceCategory[]> {
+  const categories = await listMarketplaceCategories();
+  return categories.slice(0, POPULAR_CATEGORY_LIMIT);
 }
 
 export async function getMarketplaceCategoryBySlug(
