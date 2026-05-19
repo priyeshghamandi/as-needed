@@ -47,7 +47,7 @@
     "test:e2e:provider": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/provider-portal",
     "test:unit:compliance": "vitest run lib/validations/credential.test.ts lib/compliance lib/auth/compliance-access-rules lib/auth/compliance-access.test.ts lib/auth/compliance-path-access.test.ts app/api/compliance",
     "test:e2e:compliance": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/compliance",
-    "test:unit:notifications": "vitest run lib/notifications/create-notification.test.ts lib/notifications/unread-count.test.ts lib/notifications/entity-route.test.ts lib/auth/notifications-path-access.test.ts app/api/notifications",
+    "test:unit:notifications": "vitest run lib/notifications lib/email/notification-email.test.ts lib/email/dispatch-notification-email.test.ts lib/auth/notifications-path-access.test.ts app/api/notifications",
     "test:e2e:notifications": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/notifications",
     "test:unit:activity": "vitest run lib/activity lib/auth/activity-path-access.test.ts app/api/activity-logs",
     "test:e2e:activity": "PLAYWRIGHT_BROWSERS_PATH=./.playwright-browsers playwright test e2e/activity",
@@ -61,6 +61,7 @@
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.2",
     "@hookform/resolvers": "^5.2.2",
+    "@sendgrid/mail": "^8.1.6",
     "@t3-oss/env-nextjs": "^0.13.11",
     "argon2": "^0.44.0",
     "drizzle-orm": "^0.45.2",
