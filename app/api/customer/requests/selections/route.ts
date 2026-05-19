@@ -4,14 +4,14 @@ import {
   requireAuthContext,
   UnauthorizedError,
 } from "@/lib/auth/authorization";
-import { requireFacilityCustomerContext } from "@/lib/auth/customer-requests-access";
+import { requireCustomerContext } from "@/lib/auth/customer-requests-access";
 import { getCustomerSelectionPreviews } from "@/lib/customer-requests/create-customer-request";
 import { getMarketplaceCustomerLocation } from "@/lib/marketplace/customer-location";
 
 export async function GET(request: Request) {
   try {
     const { session, context } = await requireAuthContext();
-    await requireFacilityCustomerContext(context, session.user?.email);
+    await requireCustomerContext(context, session.user?.email);
 
     const { searchParams } = new URL(request.url);
     const idsParam = searchParams.get("ids") ?? "";

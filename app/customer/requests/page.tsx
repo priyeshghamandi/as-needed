@@ -12,7 +12,12 @@ export default async function CustomerRequestsPage() {
 
   return (
     <CustomerRequestsList
-      scope={ctx.scope}
+      scope={{
+        facilityName: ctx.facilityName,
+        agencyName: ctx.agencyName,
+      }}
+      requestsNavLabel={ctx.navRequestsLabel}
+      isConsumer={ctx.isConsumer}
       userName={ctx.userName}
       userInitials={ctx.userInitials}
       items={items}

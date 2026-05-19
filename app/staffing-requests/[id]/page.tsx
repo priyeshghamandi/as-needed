@@ -21,7 +21,8 @@ export default async function StaffingRequestDetailPage({ params }: PageProps) {
 
   if (!detail) notFound();
 
-  const isMarketplace = detail.source === "marketplace_customer";
+  const isMarketplace =
+    detail.source === "marketplace_customer" || detail.source === "marketplace_consumer";
   let routeContext = isMarketplace ? await getAgencyRouteForRequest(ctx.agencyId, id) : null;
 
   if (

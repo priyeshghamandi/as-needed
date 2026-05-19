@@ -17,14 +17,21 @@ export default async function MarketplaceLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
-  const isFacilityUser = session?.user?.primaryRole === "facility_user";
+  const role = session?.user?.primaryRole;
+  const isFacilityUser = role === "facility_user";
+  const isConsumer = role === "consumer";
+  const showCustomerRequestsLink = isFacilityUser || isConsumer;
 
   return (
     <div className="min-h-screen bg-paper text-ink-900 flex flex-col">
       <FulfillmentBanner />
       <MarketplaceHeader
-        showFacilityRequestsLink={isFacilityUser}
-        facilityUserName={isFacilityUser ? session?.user?.name : null}
+        showCustomerRequestsLink={showCustomerRequestsLink}
+        customerRequestsLabel={
+          isConsumer ? "My care requests" : "My staffing requests"
+        }
+        signedInUserName={showCustomerRequestsLink ? session?.user?.name : null}
+        showCareSignupLink={!session?.user}
       />
       <main className="flex-1">{children}</main>
       <MarketplaceFooter />

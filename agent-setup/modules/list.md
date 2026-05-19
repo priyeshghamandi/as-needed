@@ -61,6 +61,7 @@ A platform where customers discover eligible healthcare professionals through pu
 | 21 | Request Routing | Route staffing requests to owning agency by professional selection | PENDING |
 | 22 | Agency Fulfillment Review | Agency confirms requested professional or declines with reason | PENDING |
 | 23 | Alternative Suggestions | Agency proposes suggested alternative; customer approval flow | PENDING |
+| 24 | Consumer Home Care | Self-serve consumers (home care) without agency invite; care site + shared customer request flow | COMPLETE |
 
 ---
 
@@ -138,20 +139,23 @@ A platform where customers discover eligible healthcare professionals through pu
 21. Request Routing
 22. Agency Fulfillment Review
 23. Alternative Suggestions
+24. Consumer Home Care
 
 **Dependencies:**
 - Customer Requests requires Public Marketplace (19), Staffing Requests (6), Facilities (5)
 - Request Routing requires Customer Requests (20) and Workforce agency ownership model
 - Agency Fulfillment Review requires Request Routing (21) and Staffing Requests (6)
 - Alternative Suggestions requires Agency Fulfillment Review (22)
+- Consumer Home Care requires Customer Requests (20), Request Routing (21), Auth (1), Public Marketplace (19); extends Auth with `consumer` role and care site model
 
 **After each module in Phase 4:**
 - `npm run typecheck` + `npm run build` must pass
 - Walk golden path: Request Professional → routed to agency → confirm or suggest alternative → customer approves
 
 **End of Phase 4 checkpoint (before Phase 5):**
-- Run full T* test suite for modules 20–23
+- Run full T* test suite for modules 20–24
 - Confirm no direct customer ↔ professional messaging was introduced
+- Confirm invited `facility_user` path still works after Consumer Home Care (24)
 
 ---
 
@@ -219,6 +223,7 @@ Modules required for MVP launch:
 - Request Routing
 - Agency Fulfillment Review
 - Alternative Suggestions
+- Consumer Home Care
 
 ---
 
@@ -229,6 +234,7 @@ Not included in current MVP:
 - Payroll
 - Billing & invoicing
 - Direct customer ↔ professional messaging
+- Consumer payments or insurance intake
 - AI scheduling optimization
 - Credential verification integrations
 - Mobile native apps
@@ -266,6 +272,7 @@ Each module is implementation-focused and production-oriented:
 - **Public modules** (15–19): read-only public data; no agency ops mutations
 - **Request modules** (20–21): create and route staffing requests only
 - **Fulfillment modules** (22–23): agency actions and customer approval; integrate with Staffing Requests and Shifts
+- **Consumer Home Care** (24): self-serve `consumer` role and care site; reuses customer request routes (20) and routing (21); does not replace invite-only facility users (10)
 
 ## Terminology (enforced across modules)
 

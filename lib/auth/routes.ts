@@ -1,6 +1,7 @@
 export const PUBLIC_PATHS = [
   "/",
   "/signup",
+  "/signup/care",
   "/login",
   "/invite",
   "/marketplace",

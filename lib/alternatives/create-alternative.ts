@@ -19,6 +19,7 @@ import { isGeoEligible } from "@/lib/marketplace/geo-eligibility";
 import { hasStaffingRequestAgencyAccess } from "@/lib/request-routing/queries";
 import { parseCoordinate } from "@/lib/matching/distance";
 import { AgencyTable } from "@/drizzle/schema";
+import { isMarketplaceCustomerSource } from "@/lib/staffing-requests/marketplace-sources";
 import type { StaffingRequestFulfillmentStatus } from "@/lib/ui/fulfillment-status";
 import { createSuggestedAlternativeSchema } from "@/lib/validations/suggested-alternative";
 
@@ -56,7 +57,7 @@ export async function createSuggestedAlternative(params: {
     .where(eq(StaffingRequestTable.id, params.staffingRequestId))
     .limit(1);
 
-  if (!request || request.source !== "marketplace_customer") {
+  if (!request || !isMarketplaceCustomerSource(request.source)) {
     return { ok: false, status: 404, message: "Marketplace request not found." };
   }
 

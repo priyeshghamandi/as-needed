@@ -46,7 +46,7 @@ export async function getRoutedRequestsForAgency(
     .where(
       and(
         eq(StaffingRequestRouteTable.agencyId, agencyId),
-        eq(StaffingRequestTable.source, "marketplace_customer"),
+        inArray(StaffingRequestTable.source, ["marketplace_customer", "marketplace_consumer"]),
       ),
     )
     .orderBy(desc(StaffingRequestRouteTable.routedAt));
@@ -120,7 +120,7 @@ export async function countRoutedQueueBadge(agencyId: string): Promise<number> {
       and(
         eq(StaffingRequestRouteTable.agencyId, agencyId),
         eq(StaffingRequestRouteTable.routingStatus, "routed"),
-        eq(StaffingRequestTable.source, "marketplace_customer"),
+        inArray(StaffingRequestTable.source, ["marketplace_customer", "marketplace_consumer"]),
       ),
     );
 

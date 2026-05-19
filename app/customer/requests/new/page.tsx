@@ -20,6 +20,8 @@ export default async function CustomerRequestNewPage({ searchParams }: PageProps
     <Suspense fallback={<p className="p-8 text-[14px] text-ink-600">Loading…</p>}>
       <CustomerRequestCreateForm
         scope={ctx.scope}
+        isConsumer={ctx.isConsumer}
+        requestsNavLabel={ctx.navRequestsLabel}
         userName={ctx.userName}
         userInitials={ctx.userInitials}
         prefillProfessionalId={prefillProfessionalId}

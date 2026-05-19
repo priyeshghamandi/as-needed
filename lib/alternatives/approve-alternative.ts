@@ -6,6 +6,7 @@ import {
   SuggestedAlternativeTable,
 } from "@/drizzle/schema";
 import { assertAlternativeFulfillmentTransition } from "@/lib/fulfillment/alternative-status";
+import { isMarketplaceCustomerSource } from "@/lib/staffing-requests/marketplace-sources";
 import type { StaffingRequestFulfillmentStatus } from "@/lib/ui/fulfillment-status";
 
 export type ApproveAlternativeResult =
@@ -30,7 +31,7 @@ export async function approveSuggestedAlternative(params: {
   if (
     !request ||
     request.facilityId !== params.facilityId ||
-    request.source !== "marketplace_customer"
+    !isMarketplaceCustomerSource(request.source)
   ) {
     return { ok: false, status: 404, message: "Request not found." };
   }

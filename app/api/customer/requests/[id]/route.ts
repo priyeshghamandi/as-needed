@@ -4,8 +4,8 @@ import {
   requireAuthContext,
   UnauthorizedError,
 } from "@/lib/auth/authorization";
-import { requireFacilityCustomerContext } from "@/lib/auth/customer-requests-access";
-import { resolveCustomerFacilityScope } from "@/lib/customer-requests/facility-scope";
+import { requireCustomerContext } from "@/lib/auth/customer-requests-access";
+import { resolveCustomerOrConsumerScope } from "@/lib/customer-requests/customer-scope";
 import { getCustomerRequestDetail } from "@/lib/customer-requests/queries";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -13,8 +13,8 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function GET(_request: Request, context: RouteContext) {
   try {
     const { session, context: authContext } = await requireAuthContext();
-    const { email } = await requireFacilityCustomerContext(authContext, session.user?.email);
-    const scopeResult = await resolveCustomerFacilityScope(authContext.userId, email);
+    const { email } = await requireCustomerContext(authContext, session.user?.email);
+    const scopeResult = await resolveCustomerOrConsumerScope(authContext.userId, email);
     if (!scopeResult.ok) {
       return NextResponse.json({ error: "No facility linked to your account." }, { status: 403 });
     }

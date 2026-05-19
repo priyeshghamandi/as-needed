@@ -9,12 +9,20 @@ const SECONDARY_LINK_CLASS =
 
 const AUDIENCE_CARDS = [
   {
+    eyebrow: "For home care",
+    title: "Find in-home nursing and aide support",
+    body: "Sign up with your home address, browse eligible professionals, and request agency-coordinated care — no agency invite required.",
+    href: "/signup/care",
+    cta: "Find home care",
+    tone: "teal" as const,
+  },
+  {
     eyebrow: "For facilities",
     title: "Request staffing through the marketplace",
-    body: "Set your facility location, browse geo-eligible professionals, and submit agency-mediated staffing requests.",
+    body: "Invited facility contacts browse geo-eligible professionals and submit agency-mediated staffing requests.",
     href: "/marketplace",
     cta: "Explore marketplace",
-    tone: "teal" as const,
+    tone: "paper" as const,
   },
   {
     eyebrow: "For agencies",
@@ -64,15 +72,15 @@ export function PublicHome() {
               Agency signup
               <Icon name="arrow-right" className="w-4 h-4" />
             </Link>
-            <Link href="/marketplace" className={SECONDARY_LINK_CLASS}>
-              Browse marketplace
+            <Link href="/signup/care" className={SECONDARY_LINK_CLASS}>
+              Find home care
             </Link>
           </div>
         </div>
       </section>
 
       <section className="max-w-[1240px] mx-auto px-4 sm:px-8 pb-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {AUDIENCE_CARDS.map((card) => (
             <div
               key={card.title}

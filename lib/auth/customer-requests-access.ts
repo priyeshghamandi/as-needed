@@ -1,14 +1,17 @@
 import { ForbiddenError, UnauthorizedError } from "@/lib/auth/authorization";
-import { isFacilityRole } from "@/lib/auth/roles";
+import { isCustomerRole } from "@/lib/auth/roles";
 import type { AppRole } from "@/lib/auth/roles";
 
-export function assertFacilityUserRole(primaryRole: AppRole | null | undefined): void {
-  if (!primaryRole || !isFacilityRole(primaryRole)) {
-    throw new ForbiddenError("Facility customer access required.");
+export function assertCustomerRole(primaryRole: AppRole | null | undefined): void {
+  if (!primaryRole || !isCustomerRole(primaryRole)) {
+    throw new ForbiddenError("Customer access required.");
   }
 }
 
-export async function requireFacilityCustomerContext(
+/** @deprecated Use assertCustomerRole */
+export const assertFacilityUserRole = assertCustomerRole;
+
+export async function requireCustomerContext(
   context: {
     userId: string;
     primaryRole: AppRole | null | undefined;
@@ -18,6 +21,9 @@ export async function requireFacilityCustomerContext(
   if (!sessionEmail) {
     throw new UnauthorizedError();
   }
-  assertFacilityUserRole(context.primaryRole);
+  assertCustomerRole(context.primaryRole);
   return { userId: context.userId, email: sessionEmail };
 }
+
+/** @deprecated Use requireCustomerContext */
+export const requireFacilityCustomerContext = requireCustomerContext;

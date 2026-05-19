@@ -6,6 +6,7 @@ export type AppRole =
   | "recruiter"
   | "compliance_manager"
   | "facility_user"
+  | "consumer"
   | "provider";
 
 export const AGENCY_ROLES: AppRole[] = [
@@ -20,6 +21,10 @@ export const AGENCY_ROLES: AppRole[] = [
 export const PROVIDER_ROLES: AppRole[] = ["provider"];
 
 export const FACILITY_ROLES: AppRole[] = ["facility_user"];
+
+export const CONSUMER_ROLES: AppRole[] = ["consumer"];
+
+export const CUSTOMER_ROLES: AppRole[] = ["facility_user", "consumer"];
 
 export const INVITE_CREATOR_ROLES: AppRole[] = [
   "platform_admin",
@@ -44,6 +49,14 @@ export function isFacilityRole(role: AppRole): boolean {
   return FACILITY_ROLES.includes(role);
 }
 
+export function isConsumerRole(role: AppRole): boolean {
+  return CONSUMER_ROLES.includes(role);
+}
+
+export function isCustomerRole(role: AppRole): boolean {
+  return CUSTOMER_ROLES.includes(role);
+}
+
 export function pickPrimaryRole(roles: ScopedRole[]): AppRole | null {
   const order: AppRole[] = [
     "platform_admin",
@@ -53,6 +66,7 @@ export function pickPrimaryRole(roles: ScopedRole[]): AppRole | null {
     "recruiter",
     "compliance_manager",
     "facility_user",
+    "consumer",
     "provider",
   ];
 

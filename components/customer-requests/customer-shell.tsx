@@ -6,14 +6,10 @@ import { Avatar, Button } from "@/components/primitives";
 import { MarketplaceLogo } from "@/components/marketplace/marketplace-logo";
 import { SignOutButton } from "@/components/sign-out-button";
 
-const NAV = [
-  { href: "/customer/requests", label: "My staffing requests" },
-  { href: "/marketplace", label: "Marketplace" },
-] as const;
-
 export function CustomerShell({
   facilityName,
   agencyName,
+  requestsNavLabel = "My staffing requests",
   userName,
   userInitials,
   title,
@@ -23,7 +19,8 @@ export function CustomerShell({
   headerActionLabel,
 }: {
   facilityName: string;
-  agencyName: string;
+  agencyName?: string | null;
+  requestsNavLabel?: string;
   userName: string;
   userInitials: string;
   title: string;
@@ -32,6 +29,10 @@ export function CustomerShell({
   headerActionHref?: string;
   headerActionLabel?: string;
 }) {
+  const nav = [
+    { href: "/customer/requests", label: requestsNavLabel },
+    { href: "/marketplace", label: "Marketplace" },
+  ] as const;
   const pathname = usePathname();
 
   return (
@@ -40,7 +41,7 @@ export function CustomerShell({
         <div className="max-w-[1100px] mx-auto px-4 sm:px-8 h-14 flex items-center gap-4">
           <MarketplaceLogo />
           <nav className="hidden sm:flex items-center gap-1 text-[13px]">
-            {NAV.map((item) => {
+            {nav.map((item) => {
               const active =
                 pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
@@ -59,7 +60,11 @@ export function CustomerShell({
           <div className="ml-auto flex items-center gap-3">
             <div className="hidden md:block text-right">
               <p className="text-[13px] font-medium leading-tight">{facilityName}</p>
-              <p className="text-[11px] text-ink-500">via {agencyName}</p>
+              {agencyName ? (
+                <p className="text-[11px] text-ink-500">via {agencyName}</p>
+              ) : (
+                <p className="text-[11px] text-ink-500">Home care</p>
+              )}
             </div>
             <Avatar initials={userInitials} />
             <span className="hidden lg:inline text-[13px] text-ink-600">{userName}</span>

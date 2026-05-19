@@ -26,7 +26,8 @@ It combines:
 
 Primary customers (buyers):
 - Healthcare staffing agencies (operations SaaS)
-- Facilities and healthcare organizations (marketplace customers)
+- Facilities and healthcare organizations (marketplace customers, invite-based)
+- Individuals and families seeking home care (marketplace customers, self-serve — module 24)
 
 Secondary users:
 - Healthcare professionals invited and managed by agencies
@@ -152,32 +153,70 @@ Public visibility (when agency-enabled):
 
 ---
 
-## Customer Users (Facilities)
+## Customer Users — Organization (Facilities)
 
 Examples:
 - hospitals
 - clinics
 - nursing homes
 - assisted living facilities
-- home healthcare organizations
+- home healthcare organizations (B2B facility contacts)
 
-Customers use the platform to:
-- browse public category directory and search results
-- filter by role, location, and shift need within supported regions
-- view agency-controlled public professional profiles
-- select preferred professionals and **Request Professional** (creates a staffing request)
+Role: `facility_user`
+
+Access:
+- **Invite-only** — created when an agency adds a facility and invites a contact (modules 5, 10)
+- Uses `/customer/requests/*` (marketplace cart) and/or `/facility/*` portal
+
+These customers use the platform to:
+- browse public category directory and search results (after invite + login)
+- select preferred professionals and **Request Professional**
 - track staffing request and fulfillment status
 - approve agency confirmation or **Suggested Alternative**
-- communicate with **agency coordinators** (not professionals directly in MVP)
 
-Customers do **not**:
-- hire or contract professionals directly through the platform
+They do **not** need to pick “their agency” on the marketplace first; they may select professionals from **any** eligible agency in their area once authenticated. They **do** require an agency to have onboarded them as a facility contact.
+
+---
+
+## Customer Users — Consumer (Home Care)
+
+Examples:
+- families needing in-home nursing or aide support
+- individuals arranging post-discharge home care
+- private-pay home care seekers
+
+Role: `consumer`
+
+Access:
+- **Self-signup** at `/signup/care` (module 24) — **no agency invite required**
+- Care **site** (home address) created at signup; linked via `user_care_sites`
+- Same marketplace discovery and `/customer/requests/*` flows as facility customers after auth
+
+Consumers use the platform to:
+- sign up with home location without a pre-existing agency relationship on AsNeeded
+- browse and search geo-eligible professionals from **all agencies** on the platform
+- submit **Staffing Requests** that route to the **owning agencies** of selected professionals
+- approve agency confirmation or **Suggested Alternative** on `/customer/requests/[id]`
+
+Consumers do **not**:
+- hire or contract professionals directly
 - message professionals directly in MVP
-- see professionals outside supported geography/service areas
+- access agency operations routes (`/dashboard`, `/staffing-requests`, etc.)
+- use `/facility/*` invite-only portal (module 10)
 
-Customer access may be:
-- authenticated account (invite or signup flow per module PRD)
-- request submission tied to facility identity and location
+Module reference: `modules/24. Consumer Home Care`
+
+---
+
+## Customer Users (shared rules)
+
+All customer types (`facility_user` and `consumer`):
+
+- browse within geography rules
+- view only opt-in public profiles
+- **Request Professional** — not Book / Hire
+- agency-mediated fulfillment only
+- no direct customer ↔ professional messaging in MVP
 
 ---
 
@@ -230,6 +269,8 @@ Every module should support this hybrid marketplace + agency fulfillment loop:
 17. Notifications and activity logs track key events
 
 Agency-only paths (without public discovery) may still exist for invited facilities and coordinator-created requests, but must converge on the same staffing request and fulfillment model.
+
+**Consumer path (module 24):** signup → care site → marketplace → select professionals → staffing request → route to each professional’s agency → same fulfillment loop as facility customers.
 
 ---
 
@@ -506,8 +547,9 @@ Core tables likely include:
 - agencies
 - user_roles
 - healthcare_professionals
-- facilities
-- customers (or facility accounts as customer identity)
+- facilities (organization sites and consumer home care sites via `site_kind`)
+- user_care_sites (consumer user ↔ care site link)
+- customers (facility_user invite path; consumer self-serve path per module 24)
 - staffing_requests
 - staffing_request_selections (customer-selected professionals)
 - staffing_request_routes (agency routing per request)
@@ -546,7 +588,8 @@ Rules:
 - agency selects service area during signup/onboarding
 - Google Places autocomplete may be used for service area and location capture
 - healthcare professional locations must be restricted to agency service area
-- facility/customer locations must be validated for request eligibility
+- facility/customer/care-site locations must be validated for request eligibility
+- consumer care sites use the same location fields as facilities (lat/lng, placeId)
 - public search and category listings **must filter** by supported regions
 - do not show professionals outside agency/customer coverage intersection (per PRD rules)
 - customers should never see professionals outside supported regions
@@ -623,22 +666,36 @@ Cannot:
 - communicate with customers directly in MVP
 - enable own public marketplace visibility without agency control
 
-## Customer / Facility User
+## Customer / Facility User (`facility_user`)
 
 Can:
-- browse public marketplace within geography rules
+- browse public marketplace within geography rules (after invite)
 - view public profiles for eligible professionals
-- submit **Request Professional** / staffing requests
+- submit **Request Professional** / staffing requests for invited facility
 - view own request and fulfillment status
 - approve agency confirmation or suggested alternative
-- message agency coordinator
+- use `/facility/*` portal where implemented (module 10)
 
 Cannot:
+- self-signup without agency invite (MVP)
 - view non–opt-in or out-of-area professionals
-- see exact professional schedules on public surfaces
 - hire or contract professionals directly
 - message professionals directly in MVP
 - access other customers’ requests or agency-internal ops data
+
+## Consumer (`consumer`)
+
+Can:
+- self-signup (`/signup/care`)
+- browse public marketplace within geography rules
+- submit staffing requests from care site via `/customer/requests/*`
+- view and approve fulfillment for own requests only
+
+Cannot:
+- access `/facility/*` (invite-only facility portal)
+- access agency operations routes
+- message professionals directly in MVP
+- submit requests without at least one selected professional (MVP)
 
 ## Public (unauthenticated)
 
@@ -746,6 +803,7 @@ When asked to generate module docs:
 8. Ensure tasks are granular and implementation-ready
 9. For marketplace modules, explicitly test geography fail-closed and opt-in visibility
 10. Preserve agency-centric fulfillment in all customer-facing flows
+11. For module 24 (Consumer Home Care): distinguish `consumer` from `facility_user`; care site without agency invite; routing still per professional owning agency
 
 ---
 
@@ -763,6 +821,7 @@ Examples:
 - module/customer-requests
 - module/agency-fulfillment-review
 - module/alternative-suggestions
+- module/consumer-home-care
 - module/workforce
 - module/facilities
 - module/staffing-requests

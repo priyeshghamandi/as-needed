@@ -16,13 +16,15 @@ import { roleNeededLabel } from "@/lib/staffing-requests/staffing-requests-ui";
 
 export function CustomerRequestDetailView({
   scope,
+  requestsNavLabel,
   userName,
   userInitials,
   request,
   pendingAlternative,
   showSubmittedBanner,
 }: {
-  scope: { facilityName: string; agencyName: string };
+  scope: { facilityName: string; agencyName?: string | null };
+  requestsNavLabel?: string;
   userName: string;
   userInitials: string;
   request: CustomerRequestDetail;
@@ -40,7 +42,7 @@ export function CustomerRequestDetailView({
     displayName: s.displayName,
     role: s.role,
     roleLabel: roleNeededLabel(s.role),
-    agencyName: scope.agencyName,
+    agencyName: scope.agencyName ?? "Agency",
     headline: null,
     eligible: true,
   }));
@@ -54,6 +56,7 @@ export function CustomerRequestDetailView({
     <CustomerShell
       facilityName={scope.facilityName}
       agencyName={scope.agencyName}
+      requestsNavLabel={requestsNavLabel}
       userName={userName}
       userInitials={userInitials}
       title={request.title}

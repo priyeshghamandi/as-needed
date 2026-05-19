@@ -8,7 +8,7 @@ import {
   StaffingRequestSelectionTable,
   StaffingRequestTable,
 } from "@/drizzle/schema";
-import type { CustomerFacilityScope } from "@/lib/customer-requests/facility-scope";
+import type { CustomerRequestScope } from "@/lib/customer-requests/customer-scope";
 import { routeStaffingRequest } from "@/lib/request-routing/route-staffing-request";
 import { isProfessionalPublicEligible } from "@/lib/marketplace/eligibility";
 import type { CustomerLocationContext } from "@/lib/marketplace/types";
@@ -79,6 +79,7 @@ export async function getCustomerSelectionPreviews(
 
 async function findDuplicateRequest(params: {
   facilityId: string;
+  source: "marketplace_customer" | "marketplace_consumer";
   professionalIds: string[];
   availabilityStart: Date;
   availabilityEnd: Date;
@@ -94,7 +95,7 @@ async function findDuplicateRequest(params: {
     .where(
       and(
         eq(StaffingRequestTable.facilityId, params.facilityId),
-        eq(StaffingRequestTable.source, "marketplace_customer"),
+        eq(StaffingRequestTable.source, params.source),
         gte(StaffingRequestTable.customerSubmittedAt, oneHourAgo),
       ),
     );
@@ -129,10 +130,12 @@ async function findDuplicateRequest(params: {
 
 export async function createCustomerStaffingRequest(params: {
   userId: string;
-  scope: CustomerFacilityScope;
+  scope: CustomerRequestScope;
   input: CustomerRequestCreateInput;
   customerLocation: CustomerLocationContext | null;
 }): Promise<CreateCustomerRequestResult> {
+  const isConsumer = params.scope.scopeType === "consumer";
+  const requestSource = isConsumer ? "marketplace_consumer" : "marketplace_customer";
   const parsed = customerRequestCreateSchema.safeParse(params.input);
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
@@ -193,7 +196,9 @@ export async function createCustomerStaffingRequest(params: {
       ok: false,
       status: 400,
       code: "location_required",
-      message: "Set your facility location before submitting a request.",
+      message: isConsumer
+        ? "Set your home location before submitting a request."
+        : "Set your facility location before submitting a request.",
     };
   }
 
@@ -216,6 +221,7 @@ export async function createCustomerStaffingRequest(params: {
 
   const duplicateId = await findDuplicateRequest({
     facilityId: data.facilityId,
+    source: requestSource,
     professionalIds: data.professionalIds,
     availabilityStart: startAt,
     availabilityEnd: endAt,
@@ -231,17 +237,35 @@ export async function createCustomerStaffingRequest(params: {
     };
   }
 
+  const facilityWhere = isConsumer
+    ? and(
+        eq(FacilityTable.id, data.facilityId),
+        eq(FacilityTable.siteKind, "consumer_home"),
+        eq(FacilityTable.createdByUserId, params.userId),
+      )
+    : and(
+        eq(FacilityTable.id, data.facilityId),
+        eq(
+          FacilityTable.agencyId,
+          params.scope.scopeType === "facility" ? params.scope.agencyId : "",
+        ),
+      );
+
   const [facility] = await db
     .select({ id: FacilityTable.id })
     .from(FacilityTable)
-    .where(
-      and(eq(FacilityTable.id, data.facilityId), eq(FacilityTable.agencyId, params.scope.agencyId)),
-    )
+    .where(facilityWhere)
     .limit(1);
 
   if (!facility) {
     return { ok: false, status: 404, message: "Facility not found." };
   }
+
+  const primaryAgencyId = isConsumer
+    ? professionals[0]!.agencyId
+    : params.scope.scopeType === "facility"
+      ? params.scope.agencyId
+      : professionals[0]!.agencyId;
 
   const title =
     data.title.trim() ||
@@ -253,7 +277,7 @@ export async function createCustomerStaffingRequest(params: {
     const [request] = await tx
       .insert(StaffingRequestTable)
       .values({
-        agencyId: params.scope.agencyId,
+        agencyId: primaryAgencyId,
         facilityId: data.facilityId,
         createdByUserId: params.userId,
         title,
@@ -261,7 +285,7 @@ export async function createCustomerStaffingRequest(params: {
         professionalsRequired: data.professionalsRequired,
         priority: "normal",
         status: "open",
-        source: "marketplace_customer",
+        source: requestSource,
         fulfillmentStatus: "pending_agency_review",
         customerSubmittedAt: now,
         notes: data.notes?.trim() || null,
@@ -269,7 +293,7 @@ export async function createCustomerStaffingRequest(params: {
       .returning({ id: StaffingRequestTable.id });
 
     await tx.insert(ShiftTable).values({
-      agencyId: params.scope.agencyId,
+      agencyId: primaryAgencyId,
       staffingRequestId: request.id,
       facilityId: data.facilityId,
       startAt,

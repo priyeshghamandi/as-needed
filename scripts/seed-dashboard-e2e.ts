@@ -18,6 +18,7 @@ import {
   ShiftAssignmentTable,
   ShiftTable,
   StaffingRequestTable,
+  UserCareSiteTable,
   UserInviteTable,
   UserRoleTable,
   UserTable,
@@ -36,6 +37,7 @@ const SEED_EMAILS = [
   "e2e-dash-compliance@example.com",
   "e2e-dash-provider@example.com",
   "e2e-dash-facility@example.com",
+  "e2e-dash-consumer@example.com",
   "e2e-workforce-empty@example.com",
   "e2e-provider-unlinked@example.com",
 ];
@@ -210,6 +212,12 @@ async function main() {
     "E2E Facility User",
     "facility_user",
     agencyAId,
+  );
+  const consumerUserId = await createUser(
+    "e2e-dash-consumer@example.com",
+    "E2E Consumer",
+    "consumer",
+    null,
   );
   await createUser(
     "e2e-workforce-empty@example.com",
@@ -755,6 +763,31 @@ async function main() {
     });
   }
 
+  const [consumerCareSite] = await db
+    .insert(FacilityTable)
+    .values({
+      agencyId: null,
+      siteKind: "consumer_home",
+      createdByUserId: consumerUserId,
+      name: "E2E Home Care",
+      type: "home_healthcare",
+      contactName: "E2E Consumer",
+      contactEmail: "e2e-dash-consumer@example.com",
+      contactPhone: "5554443333",
+      city: "San Francisco",
+      state: "CA",
+      country: "US",
+      placeId: "mock-sf-consumer",
+      latitude: "37.7749",
+      longitude: "-122.4194",
+    })
+    .returning({ id: FacilityTable.id });
+
+  await db.insert(UserCareSiteTable).values({
+    userId: consumerUserId,
+    careSiteId: consumerCareSite.id,
+  });
+
   await db.insert(UserInviteTable).values({
     token: "e2e-facility-invite-token-000000000001",
     email: "e2e-dash-facility@example.com",
@@ -800,7 +833,7 @@ async function main() {
 
   console.log("Dashboard E2E seed complete.");
   console.log(
-    `Facility user: ${facilityUserId}, marketplace pros: ${E2E_MP_PRO_1}, ${E2E_MP_PRO_2}`,
+    `Facility user: ${facilityUserId}, consumer: ${consumerUserId} (care site ${consumerCareSite.id}), marketplace pros: ${E2E_MP_PRO_1}, ${E2E_MP_PRO_2}`,
   );
   console.log(
     `Agency A: ${agencyAId}, Agency B: ${agencyBId}, Agency B pro: ${AGENCY_B_PRO_ID}, provider pro: e2e00000-0000-4000-8000-0000000000a1, Agency B facility: ${AGENCY_B_FACILITY_ID}, Agency B request: e2e00000-0000-4000-8000-000000000011, Agency B shift: e2e00000-0000-4000-8000-000000000012, draft: ${draftRequest.id}`,

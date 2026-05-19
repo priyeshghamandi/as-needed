@@ -48,7 +48,13 @@ export const UserRoleEnum = pgEnum("user_role", [
   "recruiter",
   "compliance_manager",
   "facility_user",
+  "consumer",
   "provider",
+]);
+
+export const FacilitySiteKindEnum = pgEnum("facility_site_kind", [
+  "organization",
+  "consumer_home",
 ]);
 
 export const FacilityTypeEnum = pgEnum("facility_type", [
@@ -91,6 +97,7 @@ export const StaffingRequestStatusEnum = pgEnum("staffing_request_status", [
 export const StaffingRequestSourceEnum = pgEnum("staffing_request_source", [
   "agency",
   "marketplace_customer",
+  "marketplace_consumer",
 ]);
 
 export const StaffingRequestFulfillmentStatusEnum = pgEnum(
@@ -379,9 +386,14 @@ export const FacilityTable = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
 
-    agencyId: uuid("agency_id")
-      .notNull()
-      .references(() => AgencyTable.id, { onDelete: "cascade" }),
+    agencyId: uuid("agency_id").references(() => AgencyTable.id, {
+      onDelete: "cascade",
+    }),
+
+    siteKind: FacilitySiteKindEnum("site_kind").notNull().default("organization"),
+    createdByUserId: uuid("created_by_user_id").references(() => UserTable.id, {
+      onDelete: "set null",
+    }),
 
     name: text("name").notNull(),
     type: FacilityTypeEnum("type").notNull().default("other"),
@@ -409,7 +421,25 @@ export const FacilityTable = pgTable(
   (table) => ({
     agencyIdx: index("idx_facilities_agency").on(table.agencyId),
     typeIdx: index("idx_facilities_type").on(table.type),
+    siteKindIdx: index("idx_facilities_site_kind").on(table.siteKind),
   })
+);
+
+export const UserCareSiteTable = pgTable(
+  "user_care_sites",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => UserTable.id, { onDelete: "cascade" }),
+    careSiteId: uuid("care_site_id")
+      .notNull()
+      .references(() => FacilityTable.id, { onDelete: "cascade" }),
+    createdAt,
+  },
+  (table) => ({
+    userUniq: uniqueIndex("ux_user_care_sites_user").on(table.userId),
+  }),
 );
 
 export const UserInviteTable = pgTable(

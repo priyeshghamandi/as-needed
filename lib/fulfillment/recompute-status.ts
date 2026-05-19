@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/drizzle/db";
 import {
   FulfillmentReviewTable,
@@ -168,7 +168,7 @@ export async function getMarketplaceRequestFacilityId(
     .where(
       and(
         eq(StaffingRequestTable.id, staffingRequestId),
-        eq(StaffingRequestTable.source, "marketplace_customer"),
+        inArray(StaffingRequestTable.source, ["marketplace_customer", "marketplace_consumer"]),
       ),
     )
     .limit(1);

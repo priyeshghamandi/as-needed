@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/drizzle/db";
 import { FulfillmentReviewTable, StaffingRequestTable } from "@/drizzle/schema";
 import { canAgencyReviewFulfillment } from "@/lib/fulfillment/fulfillment-status";
+import { isMarketplaceCustomerSource } from "@/lib/staffing-requests/marketplace-sources";
 import { notifyCustomerAgencyDeclined } from "@/lib/fulfillment/notify-fulfillment";
 import {
   assertProfessionalInAgencySelections,
@@ -49,7 +50,7 @@ export async function declineAgencyFulfillment(params: {
     .where(eq(StaffingRequestTable.id, params.staffingRequestId))
     .limit(1);
 
-  if (!request || request.source !== "marketplace_customer") {
+  if (!request || !isMarketplaceCustomerSource(request.source)) {
     return { ok: false, status: 404, message: "Marketplace request not found." };
   }
 
