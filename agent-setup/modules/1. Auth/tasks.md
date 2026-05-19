@@ -6,7 +6,9 @@ Auth
 
 ## Status
 
-READY_FOR_TEST
+FAILED_TEST
+
+**Test run:** 2026-05-19 — 25/26 AUTH-T* passed; **AUTH-T024** failed (repo-wide ESLint errors in `components/onboarding-app.tsx`, not Auth code).
 
 ---
 
@@ -99,32 +101,68 @@ npm run dev
 
 | ID | Task | Status | Owner | Notes |
 |---|---|---|---|---|
-| AUTH-T001 | Test agency owner signup success path | PENDING | Test Agent | |
-| AUTH-T002 | Test duplicate email prevention | PENDING | Test Agent | |
-| AUTH-T003 | Test password hashing | PENDING | Test Agent | |
-| AUTH-T004 | Test weak password rejection | PENDING | Test Agent | |
-| AUTH-T005 | Test login success path | PENDING | Test Agent | |
-| AUTH-T006 | Test invalid login handling | PENDING | Test Agent | |
-| AUTH-T007 | Test logout flow | PENDING | Test Agent | |
-| AUTH-T008 | Test protected routes as unauthenticated user | PENDING | Test Agent | |
-| AUTH-T009 | Test agency user route access | PENDING | Test Agent | |
-| AUTH-T010 | Test provider route restriction | PENDING | Test Agent | |
-| AUTH-T011 | Test facility user route restriction | PENDING | Test Agent | |
-| AUTH-T012 | Test role-based redirects | PENDING | Test Agent | |
-| AUTH-T013 | Test agency-scoped authorization | PENDING | Test Agent | |
-| AUTH-T014 | Test agency staff invite creation | PENDING | Test Agent | |
-| AUTH-T015 | Test valid invite acceptance | PENDING | Test Agent | |
-| AUTH-T016 | Test expired invite rejection | PENDING | Test Agent | |
-| AUTH-T017 | Test invalid invite rejection | PENDING | Test Agent | |
-| AUTH-T018 | Test HP cannot self-signup | PENDING | Test Agent | |
-| AUTH-T019 | Test facility cannot fully self-signup | PENDING | Test Agent | |
-| AUTH-T020 | Test session persistence on refresh | PENDING | Test Agent | |
-| AUTH-T021 | Test expired session handling | PENDING | Test Agent | |
-| AUTH-T022 | Test sensitive fields excluded from responses | PENDING | Test Agent | |
-| AUTH-T023 | Test direct API invalid payload rejection | PENDING | Test Agent | |
-| AUTH-T024 | Run lint | PENDING | Test Agent | `npm run lint` |
-| AUTH-T025 | Run typecheck | PENDING | Test Agent | `npm run typecheck` |
-| AUTH-T026 | Run build | PENDING | Test Agent | `npm run build` |
+| AUTH-T001 | Test agency owner signup success path | PASSED | Test Agent | `lib/auth/auth-module.test.ts` — creates user, agency, role |
+| AUTH-T002 | Test duplicate email prevention | PASSED | Test Agent | Same suite — `DuplicateEmailError` |
+| AUTH-T003 | Test password hashing | PASSED | Test Agent | argon2 hash + DB verification |
+| AUTH-T004 | Test weak password rejection | PASSED | Test Agent | `agencySignupSchema` rejects &lt;8 chars |
+| AUTH-T005 | Test login success path | PASSED | Test Agent | `e2e/auth/auth-flows.spec.ts` |
+| AUTH-T006 | Test invalid login handling | PASSED | Test Agent | E2E error message + Zod schema |
+| AUTH-T007 | Test logout flow | PASSED | Test Agent | E2E sign-out → `/login`, protected blocked |
+| AUTH-T008 | Test protected routes as unauthenticated user | PASSED | Test Agent | E2E access specs (dashboard, facilities, onboarding, provider) |
+| AUTH-T009 | Test agency user route access | PASSED | Test Agent | E2E dashboard + facilities access |
+| AUTH-T010 | Test provider route restriction | PASSED | Test Agent | E2E dashboard + provider portal access |
+| AUTH-T011 | Test facility user route restriction | PASSED | Test Agent | E2E dashboard + facilities access |
+| AUTH-T012 | Test role-based redirects | PASSED | Test Agent | `getPostLoginRedirect` unit test |
+| AUTH-T013 | Test agency-scoped authorization | PASSED | Test Agent | Vitest role scope + E2E `GET /api/agencies/*` → 403 |
+| AUTH-T014 | Test agency staff invite creation | PASSED | Test Agent | `createUserInvite` integration test |
+| AUTH-T015 | Test valid invite acceptance | PASSED | Test Agent | E2E `/invite/[token]` → dashboard |
+| AUTH-T016 | Test expired invite rejection | PASSED | Test Agent | Vitest expired token → `InviteError EXPIRED` |
+| AUTH-T017 | Test invalid invite rejection | PASSED | Test Agent | Vitest bad token + E2E 404 for unknown token |
+| AUTH-T018 | Test HP cannot self-signup | PASSED | Test Agent | E2E `/signup` — invite-only copy, no provider signup |
+| AUTH-T019 | Test facility cannot fully self-signup | PASSED | Test Agent | E2E `/signup` — request-access only |
+| AUTH-T020 | Test session persistence on refresh | PASSED | Test Agent | E2E reload while logged in |
+| AUTH-T021 | Test expired session handling | PASSED | Test Agent | E2E cleared cookies → `/login` (JWT TTL not manually expired) |
+| AUTH-T022 | Test sensitive fields excluded from responses | PASSED | Test Agent | `toPublicUser` omits `passwordHash` |
+| AUTH-T023 | Test direct API invalid payload rejection | PASSED | Test Agent | Zod on invite schemas |
+| AUTH-T024 | Run lint | FAILED_TEST | Test Agent | `npm run lint` — 2 errors in `components/onboarding-app.tsx` (`react-hooks/refs`); 50 warnings repo-wide |
+| AUTH-T025 | Run typecheck | PASSED | Test Agent | `npm run typecheck` |
+| AUTH-T026 | Run build | PASSED | Test Agent | `npm run build` |
+
+---
+
+# Test Agent Summary (2026-05-19)
+
+**Commands run**
+
+```bash
+npm run lint          # FAILED — 2 errors (onboarding-app.tsx)
+npm run typecheck     # PASSED
+npm run build         # PASSED
+npx vitest run lib/auth/auth-module.test.ts lib/auth/dashboard-access.test.ts
+PLAYWRIGHT_BASE_URL=http://localhost:3001 npx playwright test e2e/auth e2e/dashboard/dashboard-access.spec.ts e2e/onboarding/onboarding-access.spec.ts e2e/provider-portal/provider-access.spec.ts e2e/facilities/facilities-access.spec.ts
+```
+
+**Note:** Use `PLAYWRIGHT_BASE_URL=http://localhost:3001` when port 3000 is occupied (e.g. Docker). Default Playwright config assumes `localhost:3000`.
+
+**New test assets:** `lib/auth/auth-module.test.ts`, `e2e/auth/auth-flows.spec.ts`
+
+### Issue 1: ESLint fails repo-wide (blocks AUTH-T024)
+
+Severity: Major
+
+Where: `components/onboarding-app.tsx` (lines 796, 995)
+
+Expected: `npm run lint` exits 0
+
+Actual: 2 `react-hooks/refs` errors — ref updated during render
+
+Steps to reproduce:
+1. Run `npm run lint`
+
+Fix guidance:
+- Move `rowsRef.current = rows` / `facsRef.current = facs` into `useEffect` in onboarding-app (Agency Onboarding module scope)
+
+Task failed testing. Code Agent should fix only the issues listed above and return AUTH-T024 to READY_FOR_TEST.
 
 ---
 

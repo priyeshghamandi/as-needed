@@ -15,7 +15,7 @@ Legend:
 
 | # | Module | `tasks.md` status | Pending summary |
 |---|--------|-------------------|-----------------|
-| 1 | Auth | READY_FOR_TEST | All **AUTH-T001–T026** (full test suite) |
+| 1 | Auth | FAILED_TEST | **AUTH-T024** lint (onboarding-app refs); 25/26 AUTH-T* passed |
 | 2 | Agency Onboarding | FAILED_TEST | A11y, auth/edge tests, PRD §14; **ONBOARD-T007**, **ONBOARD-T020** failed |
 | 3 | Operations Dashboard | FAILED_TEST | **OPS-010**, **015**, **016**, **019**, **024**, **025**; **OPS-T011**, **T017** |
 | 4 | Workforce | FAILED_TEST | **WORK-T013** (axe), **WORK-T015** (PRD sign-off) |
@@ -44,16 +44,29 @@ Legend:
 
 ## 1. Auth
 
-**Module status:** READY_FOR_TEST  
-**Implementation:** AUTH-001–030 marked PASSED / READY_FOR_TEST.
+**Module status:** FAILED_TEST  
+**Implementation:** AUTH-001–030 marked PASSED / READY_FOR_TEST.  
+**Testing:** 25/26 AUTH-T* **PASSED** (2026-05-19).
 
 ### Pending
 
-| ID | Task |
-|----|------|
-| AUTH-T001–T026 | Entire Test Agent suite: signup, login, logout, RBAC, invites, session, API validation, lint/typecheck/build |
+| ID | Task | Status |
+|----|------|--------|
+| AUTH-T024 | Run lint | FAILED_TEST — 2 ESLint errors in `components/onboarding-app.tsx` (`react-hooks/refs`); not Auth code |
 
-**Known limitations (from tasks):** JWT sessions; facility self-signup UI mock; no invite email delivery.
+### Passed (test suite)
+
+Signup, login, logout, RBAC, invites, session, API validation, typecheck, build — covered by `lib/auth/auth-module.test.ts`, `e2e/auth/auth-flows.spec.ts`, and cross-module access E2E specs. See `modules/1. Auth/tasks.md` for per-task notes.
+
+**Run commands**
+
+```bash
+npm run typecheck && npm run build
+npx vitest run lib/auth/auth-module.test.ts lib/auth/dashboard-access.test.ts
+PLAYWRIGHT_BASE_URL=http://localhost:3001 npx playwright test e2e/auth e2e/dashboard/dashboard-access.spec.ts e2e/onboarding/onboarding-access.spec.ts e2e/provider-portal/provider-access.spec.ts e2e/facilities/facilities-access.spec.ts
+```
+
+**Known limitations (from tasks):** JWT sessions; facility self-signup UI mock; no invite email delivery. E2E requires app on port **3001** if Docker occupies **3000**.
 
 ---
 
@@ -326,7 +339,7 @@ Repo has `app/marketplace/search/page.tsx`, `lib/marketplace/search-params.ts`, 
 1. **Accessibility (axe)** — Onboarding, Dashboard, Workforce, Facilities, Staffing Requests, Shifts, Matching, Provider Portal, Eligibility, Category Directory (category pages), Settings/Notifications/Activity (when tested).
 2. **PRD §14 sign-off** — Failed or blocked on axe for modules 2–7.
 3. **READY_FOR_TEST modules (12–14)** — Implementation marked done; **entire Test Agent task lists still PENDING**.
-4. **Auth test suite** — Module 1 ready but **no AUTH-T* executed** per tasks.
+4. **Auth test suite** — **25/26 AUTH-T* passed**; **AUTH-T024** blocked by onboarding-app ESLint errors.
 5. **Stale module docs** — **10 Facility Portal**, **11 Compliance**, **17 Public Profiles**, **18 Search** need `tasks.md` sync with repo; **list.md** module table needs update for 15–24.
 
 ---
@@ -334,7 +347,7 @@ Repo has `app/marketplace/search/page.tsx`, `lib/marketplace/search-params.ts`, 
 ## Suggested priority (product, not enforced)
 
 1. Sync **tasks.md** for modules 11, 17, 18 (and 10) after codebase audit.
-2. Close **Auth** test suite (blocks confident Phase 1 sign-off).
+2. Close **Auth** lint blocker (**AUTH-T024** / onboarding-app refs) then mark module complete.
 3. Finish **FAILED_TEST** polish on Phase 1–2 ops modules (2–7, 3).
 4. Run **READY_FOR_TEST** test passes: Notifications, Activity Logs, Settings.
 5. Marketplace tests: **16** geo E2E; **24** consumer E2E; **15** axe.
@@ -342,4 +355,4 @@ Repo has `app/marketplace/search/page.tsx`, `lib/marketplace/search-params.ts`, 
 
 ---
 
-*Last updated: audit of all 24 `tasks.md` files under `agent-setup/modules/`.*
+*Last updated: Auth module test run 2026-05-19 (25/26 AUTH-T* passed).*
