@@ -1,28 +1,24 @@
-import { FacilityDashboardView } from "@/components/facility/facility-dashboard-view";
 import { FacilityNotLinked } from "@/components/facility/facility-not-linked";
-import { getFacilityDashboard } from "@/lib/facility/queries";
+import { FacilityRequestCreateForm } from "@/components/facility/facility-request-create-form";
 import { loadFacilityPageContext } from "@/lib/facility/load-page-context";
 
 export const metadata = {
-  title: "Facility dashboard",
+  title: "Create staffing request",
 };
 
-export default async function FacilityDashboardPage() {
-  const ctx = await loadFacilityPageContext("/facility/dashboard");
+export default async function FacilityRequestNewPage() {
+  const ctx = await loadFacilityPageContext("/facility/requests/new");
 
   if (!ctx.linked) {
     return <FacilityNotLinked userName={ctx.userName} />;
   }
 
-  const data = await getFacilityDashboard(ctx.facility);
-
   return (
-    <FacilityDashboardView
+    <FacilityRequestCreateForm
       facilityName={ctx.facility.facilityName}
       agencyName={ctx.facility.agencyName}
       userName={ctx.userName}
       userInitials={ctx.userInitials}
-      data={data}
     />
   );
 }
