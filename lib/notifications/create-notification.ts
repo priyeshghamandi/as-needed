@@ -1,7 +1,18 @@
 import { db } from "@/drizzle/db";
 import { NotificationTable } from "@/drizzle/schema";
+import { dispatchNotificationEmails } from "@/lib/email/dispatch-notification-email";
 import { createNotificationSchema } from "@/lib/validations/notification";
 import type { NotificationPayload } from "@/lib/notifications/types";
+
+async function sendNotificationEmailsSafely(
+  items: Parameters<typeof dispatchNotificationEmails>[0],
+): Promise<void> {
+  try {
+    await dispatchNotificationEmails(items);
+  } catch (error) {
+    console.error("Failed to send notification email", error);
+  }
+}
 
 export async function createNotification(
   input: NotificationPayload,
@@ -25,6 +36,17 @@ export async function createNotification(
       relatedEntityId: parsed.relatedEntityId ?? null,
     })
     .returning({ id: NotificationTable.id });
+
+  void sendNotificationEmailsSafely([
+    {
+      userId: parsed.userId,
+      title: parsed.title,
+      message: parsed.message,
+      priority: parsed.priority ?? "info",
+      relatedEntityType: parsed.relatedEntityType ?? null,
+      relatedEntityId: parsed.relatedEntityId ?? null,
+    },
+  ]);
 
   return { id: row.id };
 }
@@ -56,6 +78,17 @@ export async function createNotificationsForUsers(
       })),
     )
     .returning({ id: NotificationTable.id });
+
+  void sendNotificationEmailsSafely(
+    userIds.map((userId) => ({
+      userId,
+      title: base.title,
+      message: base.message,
+      priority: base.priority ?? "info",
+      relatedEntityType: base.relatedEntityType ?? null,
+      relatedEntityId: base.relatedEntityId ?? null,
+    })),
+  );
 
   return { ids: rows.map((r) => r.id) };
 }
