@@ -48,7 +48,7 @@ A platform where customers discover eligible healthcare professionals through pu
 | # | Module | Purpose | Status |
 |---|---|---|---|
 | 15 | Marketplace Eligibility Rules | Opt-in visibility, geography/service-area enforcement, public eligibility gates | PENDING |
-| 16 | Category Directory | Public SEO category pages and browse-by-role structure | PENDING |
+| 16 | Category Directory | Public SEO category pages and browse-by-role structure | COMPLETE |
 | 17 | Professional Public Profiles | Agency-controlled opt-in public profiles with approximate availability | PENDING |
 | 18 | Marketplace Search | Public search: role + location + shift need with mandatory geo filtering | PENDING |
 | 19 | Public Marketplace | Public discovery shell, listings integration, Request Professional entry | PENDING |

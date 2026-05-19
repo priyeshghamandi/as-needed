@@ -4,6 +4,20 @@
 
 Category Directory (`modules/16. Category Directory`)
 
+## 0. Test Coverage Status (codebase audit)
+
+| Area | Status | Notes |
+|---|---|---|
+| Vitest `categories.test.ts` | Done | CAT-UNIT-001 (sort); slug resolver exercised via pages/API |
+| API route tests | Done | `route.test.ts` under `app/api/marketplace/categories/` |
+| E2E `category-directory.spec.ts` | Done | CAT-E2E-001–003 implemented |
+| E2E `category-listings-geo.spec.ts` | **Not in repo** | CAT-E2E-004–008, CAT-E2E-007–008 planned here |
+| Responsive (CAT-RESP-001) | Pending | No dedicated spec |
+| Axe on category pages (CAT-A11Y-001) | Pending | Marketplace home has axe (module 19); category slug/index not covered |
+| npm scripts | Present | `test:unit:category-directory`, `test:e2e:category-directory` in `package.json` |
+
+---
+
 ## 1. Test Strategy
 
 Validate public category routes, SEO metadata, location-gated listings, eligibility integration, and empty states.
@@ -155,3 +169,5 @@ npm test
 ## 10. Pass Criteria
 
 All CAT-* tests pass; geography fail-closed verified.
+
+**Current:** Implementation complete; full pass criteria blocked on CAT-T004–T006 (geo E2E, category axe/responsive, full CI test run).
