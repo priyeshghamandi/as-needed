@@ -14,11 +14,15 @@ const NAV_LINKS = [
 ] as const;
 
 export function MarketplaceHeader({
-  showFacilityRequestsLink = false,
-  facilityUserName = null,
+  showCustomerRequestsLink = false,
+  customerRequestsLabel = "My staffing requests",
+  signedInUserName = null,
+  showCareSignupLink = false,
 }: {
-  showFacilityRequestsLink?: boolean;
-  facilityUserName?: string | null;
+  showCustomerRequestsLink?: boolean;
+  customerRequestsLabel?: string;
+  signedInUserName?: string | null;
+  showCareSignupLink?: boolean;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -39,25 +43,35 @@ export function MarketplaceHeader({
         </nav>
         <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
           <LocationChip />
-          {facilityUserName ? (
+          {signedInUserName ? (
             <span className="hidden lg:inline text-[13px] text-ink-600 max-w-[140px] truncate px-1">
-              {facilityUserName}
+              {signedInUserName}
             </span>
           ) : null}
-          {showFacilityRequestsLink ? (
+          {showCustomerRequestsLink ? (
             <Link
               href="/customer/requests"
               className="hidden sm:inline text-[13px] text-ink-700 hover:underline px-2"
             >
-              My staffing requests
+              {customerRequestsLabel}
             </Link>
           ) : null}
-          {facilityUserName ? (
+          {signedInUserName ? (
             <SignOutButton className="hidden sm:inline-flex px-2" />
           ) : (
-            <Link href="/login" className="hidden sm:inline text-[13px] text-ink-700 hover:underline px-2">
-              Log in
-            </Link>
+            <>
+              <Link href="/login" className="hidden sm:inline text-[13px] text-ink-700 hover:underline px-2">
+                Log in
+              </Link>
+              {showCareSignupLink ? (
+                <Link
+                  href="/signup/care"
+                  className="hidden sm:inline text-[13px] text-teal-800 hover:underline px-2"
+                >
+                  Find home care
+                </Link>
+              ) : null}
+            </>
           )}
           <Button as={Link} href="/signup" size="sm" variant="primary" className="hidden sm:inline-flex">
             For agencies <Icon name="arrow-right" className="w-3.5 h-3.5" />
@@ -90,27 +104,38 @@ export function MarketplaceHeader({
               {link.label}
             </Link>
           ))}
-          {showFacilityRequestsLink ? (
+          {showCustomerRequestsLink ? (
             <Link
               href="/customer/requests"
               className="block rounded-lg px-3 py-2 text-[14px] text-ink-800 hover:bg-ink-100"
               onClick={() => setMobileOpen(false)}
             >
-              My staffing requests
+              {customerRequestsLabel}
             </Link>
           ) : null}
-          {facilityUserName ? (
+          {signedInUserName ? (
             <div className="px-3 py-2" onClick={() => setMobileOpen(false)}>
               <SignOutButton />
             </div>
           ) : (
-            <Link
-              href="/login"
-              className="block rounded-lg px-3 py-2 text-[14px] text-ink-800 hover:bg-ink-100"
-              onClick={() => setMobileOpen(false)}
-            >
-              Log in
-            </Link>
+            <>
+              <Link
+                href="/login"
+                className="block rounded-lg px-3 py-2 text-[14px] text-ink-800 hover:bg-ink-100"
+                onClick={() => setMobileOpen(false)}
+              >
+                Log in
+              </Link>
+              {showCareSignupLink ? (
+                <Link
+                  href="/signup/care"
+                  className="block rounded-lg px-3 py-2 text-[14px] text-teal-800 hover:bg-teal-50"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Find home care
+                </Link>
+              ) : null}
+            </>
           )}
           <Link
             href="/signup"

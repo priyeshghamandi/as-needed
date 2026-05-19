@@ -14,11 +14,15 @@ import { formatShiftWindow } from "@/lib/staffing-requests/shift-datetime";
 
 export function CustomerRequestsList({
   scope,
+  requestsNavLabel,
+  isConsumer = false,
   userName,
   userInitials,
   items,
 }: {
-  scope: { facilityName: string; agencyName: string };
+  scope: { facilityName: string; agencyName?: string | null };
+  requestsNavLabel?: string;
+  isConsumer?: boolean;
   userName: string;
   userInitials: string;
   items: CustomerRequestListItem[];
@@ -27,10 +31,15 @@ export function CustomerRequestsList({
     <CustomerShell
       facilityName={scope.facilityName}
       agencyName={scope.agencyName}
+      requestsNavLabel={requestsNavLabel}
       userName={userName}
       userInitials={userInitials}
-      title="My staffing requests"
-      subtitle="Track marketplace staffing requests submitted to your agency coordinators."
+      title={isConsumer ? "My care requests" : "My staffing requests"}
+      subtitle={
+        isConsumer
+          ? "Track home care staffing requests coordinated by licensed agencies."
+          : "Track marketplace staffing requests submitted to your agency coordinators."
+      }
       headerActionHref="/marketplace/search"
       headerActionLabel="Find professionals"
     >

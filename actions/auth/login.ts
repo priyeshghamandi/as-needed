@@ -2,10 +2,12 @@
 
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { AuthError } from "next-auth";
-import { and, eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { signIn } from "@/auth";
 import { db } from "@/drizzle/db";
 import { AgencyTable, UserRoleTable, UserTable } from "@/drizzle/schema";
+import { getPostLoginRedirect } from "@/lib/auth/redirects";
+import type { ScopedRole } from "@/lib/auth/roles";
 import { loginSchema } from "@/lib/validations/auth";
 
 export type LoginState =
@@ -14,27 +16,35 @@ export type LoginState =
 
 async function resolvePostLoginRedirect(email: string): Promise<string> {
   try {
-    const rows = await db
-      .select({ onboardingCompletedAt: AgencyTable.onboardingCompletedAt })
+    const roleRows = await db
+      .select({
+        role: UserRoleTable.role,
+        agencyId: UserRoleTable.agencyId,
+        onboardingCompletedAt: AgencyTable.onboardingCompletedAt,
+      })
       .from(UserTable)
       .innerJoin(UserRoleTable, eq(UserRoleTable.userId, UserTable.id))
-      .innerJoin(AgencyTable, eq(AgencyTable.id, UserRoleTable.agencyId))
-      .where(
-        and(
-          eq(UserTable.email, email),
-          inArray(UserRoleTable.role, ["agency_owner", "agency_admin"]),
-        ),
-      )
-      .limit(1);
+      .leftJoin(AgencyTable, eq(AgencyTable.id, UserRoleTable.agencyId))
+      .where(eq(UserTable.email, email));
 
-    const row = rows[0];
-    if (row && row.onboardingCompletedAt === null) {
+    const roles: ScopedRole[] = roleRows.map((row) => ({
+      role: row.role,
+      agencyId: row.agencyId,
+    }));
+
+    const incompleteOnboarding = roleRows.find(
+      (row) =>
+        (row.role === "agency_owner" || row.role === "agency_admin") &&
+        row.onboardingCompletedAt === null,
+    );
+    if (incompleteOnboarding) {
       return "/onboarding";
     }
+
+    return getPostLoginRedirect(roles);
   } catch {
-    // DB error — fall through to default
+    return "/dashboard";
   }
-  return "/dashboard";
 }
 
 export async function loginAction(

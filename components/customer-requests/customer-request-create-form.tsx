@@ -7,7 +7,7 @@ import { CustomerShell } from "@/components/customer-requests/customer-shell";
 import { CustomerRequestSelectionCards } from "@/components/customer-requests/customer-request-selection-cards";
 import { Button, Icon } from "@/components/primitives";
 import type { CustomerSelectionPreview } from "@/lib/customer-requests/create-customer-request";
-import type { CustomerFacilityScope } from "@/lib/customer-requests/facility-scope";
+import type { CustomerRequestScope } from "@/lib/customer-requests/customer-scope";
 import {
   MARKETPLACE_REQUEST_CART_KEY,
   readMarketplaceCart,
@@ -36,11 +36,15 @@ function defaultAvailabilityFromCart(cart: MarketplaceRequestCart | null) {
 
 export function CustomerRequestCreateForm({
   scope,
+  isConsumer = false,
+  requestsNavLabel,
   userName,
   userInitials,
   prefillProfessionalId,
 }: {
-  scope: CustomerFacilityScope;
+  scope: CustomerRequestScope;
+  isConsumer?: boolean;
+  requestsNavLabel?: string;
   userName: string;
   userInitials: string;
   prefillProfessionalId?: string;
@@ -180,11 +184,16 @@ export function CustomerRequestCreateForm({
   return (
     <CustomerShell
       facilityName={scope.facilityName}
-      agencyName={scope.agencyName}
+      agencyName={scope.scopeType === "facility" ? scope.agencyName : null}
+      requestsNavLabel={requestsNavLabel}
       userName={userName}
       userInitials={userInitials}
-      title="Request professionals"
-      subtitle="Submit a staffing request for agency coordinators to review. This is not a direct hire or instant booking."
+      title={isConsumer ? "Request care" : "Request professionals"}
+      subtitle={
+        isConsumer
+          ? "Submit a home care staffing request for licensed agencies to coordinate. This is not direct hire."
+          : "Submit a staffing request for agency coordinators to review. This is not a direct hire or instant booking."
+      }
     >
       <form onSubmit={handleSubmit} className="space-y-8 pb-24">
         <section className="space-y-3">

@@ -4,19 +4,19 @@ import {
   requireAuthContext,
   UnauthorizedError,
 } from "@/lib/auth/authorization";
-import { requireFacilityCustomerContext } from "@/lib/auth/customer-requests-access";
+import { requireCustomerContext } from "@/lib/auth/customer-requests-access";
 import { createCustomerStaffingRequest } from "@/lib/customer-requests/create-customer-request";
-import { resolveCustomerFacilityScope } from "@/lib/customer-requests/facility-scope";
+import { resolveCustomerOrConsumerScope } from "@/lib/customer-requests/customer-scope";
 import { listCustomerRequests } from "@/lib/customer-requests/queries";
 import { getMarketplaceCustomerLocation } from "@/lib/marketplace/customer-location";
 
 export async function GET() {
   try {
     const { session, context } = await requireAuthContext();
-    const { email } = await requireFacilityCustomerContext(context, session.user?.email);
-    const scopeResult = await resolveCustomerFacilityScope(context.userId, email);
+    const { email } = await requireCustomerContext(context, session.user?.email);
+    const scopeResult = await resolveCustomerOrConsumerScope(context.userId, email);
     if (!scopeResult.ok) {
-      return NextResponse.json({ error: "No facility linked to your account." }, { status: 403 });
+      return NextResponse.json({ error: "No care site or facility linked to your account." }, { status: 403 });
     }
 
     const items = await listCustomerRequests(scopeResult.scope.facilityId);
@@ -43,10 +43,10 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const { session, context } = await requireAuthContext();
-    const { email, userId } = await requireFacilityCustomerContext(context, session.user?.email);
-    const scopeResult = await resolveCustomerFacilityScope(userId, email);
+    const { email, userId } = await requireCustomerContext(context, session.user?.email);
+    const scopeResult = await resolveCustomerOrConsumerScope(userId, email);
     if (!scopeResult.ok) {
-      return NextResponse.json({ error: "No facility linked to your account." }, { status: 403 });
+      return NextResponse.json({ error: "No care site or facility linked to your account." }, { status: 403 });
     }
 
     const body = await request.json();

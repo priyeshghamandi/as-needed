@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/drizzle/db";
 import { StaffingRequestTable, SuggestedAlternativeTable } from "@/drizzle/schema";
 import { assertAlternativeFulfillmentTransition } from "@/lib/fulfillment/alternative-status";
+import { isMarketplaceCustomerSource } from "@/lib/staffing-requests/marketplace-sources";
 import type { StaffingRequestFulfillmentStatus } from "@/lib/ui/fulfillment-status";
 import { rejectSuggestedAlternativeSchema } from "@/lib/validations/suggested-alternative";
 
@@ -37,7 +38,7 @@ export async function rejectSuggestedAlternative(params: {
   if (
     !request ||
     request.facilityId !== params.facilityId ||
-    request.source !== "marketplace_customer"
+    !isMarketplaceCustomerSource(request.source)
   ) {
     return { ok: false, status: 404, message: "Request not found." };
   }

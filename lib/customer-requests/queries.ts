@@ -1,4 +1,5 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
+import { MARKETPLACE_CUSTOMER_SOURCES } from "@/lib/staffing-requests/marketplace-sources";
 import { db } from "@/drizzle/db";
 import {
   HealthcareProfessionalTable,
@@ -56,7 +57,7 @@ export async function listCustomerRequests(
     .where(
       and(
         eq(StaffingRequestTable.facilityId, facilityId),
-        eq(StaffingRequestTable.source, "marketplace_customer"),
+        inArray(StaffingRequestTable.source, [...MARKETPLACE_CUSTOMER_SOURCES]),
       ),
     )
     .orderBy(desc(StaffingRequestTable.updatedAt));
@@ -133,7 +134,7 @@ export async function getCustomerRequestDetail(
       and(
         eq(StaffingRequestTable.id, requestId),
         eq(StaffingRequestTable.facilityId, facilityId),
-        eq(StaffingRequestTable.source, "marketplace_customer"),
+        inArray(StaffingRequestTable.source, [...MARKETPLACE_CUSTOMER_SOURCES]),
       ),
     )
     .limit(1);

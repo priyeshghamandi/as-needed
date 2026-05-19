@@ -79,12 +79,4 @@ export async function resolveCustomerFacilityScope(
   };
 }
 
-export async function assertCustomerRequestAccess(
-  userId: string,
-  userEmail: string,
-  requestFacilityId: string,
-): Promise<boolean> {
-  const scope = await resolveCustomerFacilityScope(userId, userEmail);
-  if (!scope.ok) return false;
-  return scope.scope.facilityId === requestFacilityId;
-}
+export { assertCustomerRequestAccess } from "@/lib/customer-requests/customer-scope";

@@ -6,6 +6,7 @@ import {
   StaffingRequestTable,
 } from "@/drizzle/schema";
 import { canAgencyReviewFulfillment } from "@/lib/fulfillment/fulfillment-status";
+import { isMarketplaceCustomerSource } from "@/lib/staffing-requests/marketplace-sources";
 import { notifyCustomerAgencyConfirmed } from "@/lib/fulfillment/notify-fulfillment";
 import {
   assertProfessionalInAgencySelections,
@@ -54,7 +55,7 @@ export async function confirmAgencyFulfillment(params: {
     .where(eq(StaffingRequestTable.id, params.staffingRequestId))
     .limit(1);
 
-  if (!request || request.source !== "marketplace_customer") {
+  if (!request || !isMarketplaceCustomerSource(request.source)) {
     return { ok: false, status: 404, message: "Marketplace request not found." };
   }
 

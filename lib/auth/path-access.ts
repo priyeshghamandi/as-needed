@@ -1,6 +1,7 @@
 import { canViewCompliance } from "@/lib/auth/compliance-access-rules";
 import {
   isAgencyRole,
+  isConsumerRole,
   isFacilityRole,
   isProviderRole,
   pickPrimaryRole,
@@ -17,7 +18,8 @@ export function canAccessPath(pathname: string, roles: ScopedRole[]): boolean {
       (r) =>
         isAgencyRole(r.role) ||
         isProviderRole(r.role) ||
-        isFacilityRole(r.role),
+        isFacilityRole(r.role) ||
+        isConsumerRole(r.role),
     );
   }
 
@@ -55,12 +57,14 @@ export function canAccessPath(pathname: string, roles: ScopedRole[]): boolean {
   const hasAgency = roles.some((r) => isAgencyRole(r.role));
   const hasProvider = roles.some((r) => isProviderRole(r.role));
   const hasFacility = roles.some((r) => isFacilityRole(r.role));
+  const hasConsumer = roles.some((r) => isConsumerRole(r.role));
+  const hasCustomer = hasFacility || hasConsumer;
 
   if (isAgencyPath && !hasAgency) return false;
   if (isProviderPath && !hasProvider) return false;
   if (isFacilityPath && !hasFacility) return false;
-  if (isCustomerPath && !hasFacility) return false;
-  if (isCustomerPath && hasAgency && !hasFacility) return false;
+  if (isCustomerPath && !hasCustomer) return false;
+  if (isCustomerPath && hasAgency && !hasCustomer) return false;
 
   const isCompliancePath =
     pathname === "/compliance" || pathname.startsWith("/compliance/");

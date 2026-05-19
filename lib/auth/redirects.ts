@@ -1,11 +1,16 @@
 import {
   isAgencyRole,
+  isConsumerRole,
   isFacilityRole,
   isProviderRole,
   type ScopedRole,
 } from "@/lib/auth/roles";
 
 export function getPostLoginRedirect(roles: ScopedRole[]): string {
+  if (roles.some((r) => isConsumerRole(r.role))) {
+    return "/customer/requests";
+  }
+
   if (roles.some((r) => isFacilityRole(r.role))) {
     return "/facility/dashboard";
   }

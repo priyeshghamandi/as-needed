@@ -27,7 +27,11 @@ export default async function CustomerRequestDetailPage({ params, searchParams }
 
   return (
     <CustomerRequestDetailView
-      scope={ctx.scope}
+      scope={{
+        facilityName: ctx.facilityName,
+        agencyName: ctx.agencyName,
+      }}
+      requestsNavLabel={ctx.navRequestsLabel}
       userName={ctx.userName}
       userInitials={ctx.userInitials}
       request={request}
