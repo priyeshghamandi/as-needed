@@ -15,6 +15,7 @@ export const users = {
   provider: "e2e-dash-provider@example.com",
   providerUnlinked: "e2e-provider-unlinked@example.com",
   facility: "e2e-dash-facility@example.com",
+  facilityB: "e2e-dash-facility-b@example.com",
   workforceEmpty: "e2e-workforce-empty@example.com",
 } as const;
 

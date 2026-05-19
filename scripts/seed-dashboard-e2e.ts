@@ -37,6 +37,7 @@ const SEED_EMAILS = [
   "e2e-dash-compliance@example.com",
   "e2e-dash-provider@example.com",
   "e2e-dash-facility@example.com",
+  "e2e-dash-facility-b@example.com",
   "e2e-dash-consumer@example.com",
   "e2e-workforce-empty@example.com",
   "e2e-provider-unlinked@example.com",
@@ -213,6 +214,12 @@ async function main() {
     "facility_user",
     agencyAId,
   );
+  const facilityUserBId = await createUser(
+    "e2e-dash-facility-b@example.com",
+    "E2E Facility User B",
+    "facility_user",
+    agencyAId,
+  );
   const consumerUserId = await createUser(
     "e2e-dash-consumer@example.com",
     "E2E Consumer",
@@ -244,20 +251,23 @@ async function main() {
     })
     .returning({ id: FacilityTable.id });
 
-  await db.insert(FacilityTable).values({
-    agencyId: agencyAId,
-    name: "SF Community Clinic",
-    type: "clinic",
-    contactName: "Sam Lee",
-    contactEmail: "clinic.contact@example.com",
-    contactPhone: "5551112222",
-    city: "San Francisco",
-    state: "CA",
-    country: "US",
-    placeId: "mock-sf",
-    latitude: "37.7749",
-    longitude: "-122.4194",
-  });
+  const [clinicFacility] = await db
+    .insert(FacilityTable)
+    .values({
+      agencyId: agencyAId,
+      name: "SF Community Clinic",
+      type: "clinic",
+      contactName: "Sam Lee",
+      contactEmail: "clinic.contact@example.com",
+      contactPhone: "5551112222",
+      city: "San Francisco",
+      state: "CA",
+      country: "US",
+      placeId: "mock-sf",
+      latitude: "37.7749",
+      longitude: "-122.4194",
+    })
+    .returning({ id: FacilityTable.id });
 
   const AGENCY_B_FACILITY_ID = "e2e00000-0000-4000-8000-0000000000f1";
   await db.insert(FacilityTable).values({
@@ -799,6 +809,67 @@ async function main() {
     status: "accepted",
     expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
     acceptedAt: new Date(),
+  });
+
+  await db.insert(UserInviteTable).values({
+    token: "e2e-facility-invite-token-000000000002",
+    email: "e2e-dash-facility-b@example.com",
+    role: "facility_user",
+    inviteType: "facility_user",
+    agencyId: agencyAId,
+    facilityId: clinicFacility.id,
+    invitedByUserId: ownerAId,
+    status: "accepted",
+    expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+    acceptedAt: new Date(),
+  });
+
+  const FPORT_CLINIC_REQUEST_ID = "e2e00000-0000-4000-8000-0000000000f2";
+  await db.insert(StaffingRequestTable).values({
+    id: FPORT_CLINIC_REQUEST_ID,
+    agencyId: agencyAId,
+    facilityId: clinicFacility.id,
+    createdByUserId: ownerAId,
+    title: "Clinic-only staffing request",
+    roleNeeded: "rn",
+    professionalsRequired: 1,
+    priority: "normal",
+    status: "open",
+  });
+
+  const FPORT_CONFIRMED_REQUEST_ID = "e2e00000-0000-4000-8000-0000000000f3";
+  const FPORT_CONFIRMED_SHIFT_ID = "e2e00000-0000-4000-8000-0000000000f4";
+  const FPORT_CONFIRMED_ASSIGNMENT_ID = "e2e00000-0000-4000-8000-0000000000f5";
+  const confirmedStart = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
+  const confirmedEnd = new Date(confirmedStart.getTime() + 8 * 60 * 60 * 1000);
+  await db.insert(StaffingRequestTable).values({
+    id: FPORT_CONFIRMED_REQUEST_ID,
+    agencyId: agencyAId,
+    facilityId: facility.id,
+    createdByUserId: ownerAId,
+    title: "Confirmed coverage — Facility Portal E2E",
+    roleNeeded: "rn",
+    professionalsRequired: 1,
+    priority: "normal",
+    status: "confirmed",
+    updatedAt: new Date(),
+  });
+  await db.insert(ShiftTable).values({
+    id: FPORT_CONFIRMED_SHIFT_ID,
+    agencyId: agencyAId,
+    staffingRequestId: FPORT_CONFIRMED_REQUEST_ID,
+    facilityId: facility.id,
+    startAt: confirmedStart,
+    endAt: confirmedEnd,
+    status: "open",
+    requiredCount: 1,
+  });
+  await db.insert(ShiftAssignmentTable).values({
+    id: FPORT_CONFIRMED_ASSIGNMENT_ID,
+    shiftId: FPORT_CONFIRMED_SHIFT_ID,
+    professionalId: E2E_PROVIDER_PRO_ID,
+    invitedByUserId: ownerAId,
+    status: "accepted",
   });
 
   for (const proId of [E2E_MP_PRO_1, E2E_MP_PRO_2]) {

@@ -6,7 +6,7 @@
 |---|---|
 | Module | Facility Portal |
 | Branch | `module/facility-portal` |
-| Status | PENDING |
+| Status | READY_FOR_TEST |
 | Depends on | Auth, Facilities, Staffing Requests (schema) |
 
 ---
@@ -28,27 +28,27 @@
 
 | ID | Task | Status | Owner | Notes |
 |---|---|---|---|---|
-| FPORT-001 | Create `lib/facility/resolve-facility.ts` from accepted invite | PENDING | Code Agent | email + role match |
-| FPORT-002 | Create `lib/validations/facility-staffing-request.ts` | PENDING | Code Agent | FPORT-027 |
-| FPORT-003 | Create `lib/facility/fulfillment-timeline.ts` | PENDING | Code Agent | Pure step derivation |
-| FPORT-004 | Add `requireFacilityContext` auth helper | PENDING | Code Agent | facilityId + agencyId |
-| FPORT-005 | Implement `GET /api/facility/context` | PENDING | Code Agent | |
-| FPORT-006 | Implement `GET /api/facility/dashboard` | PENDING | Code Agent | KPIs FPORT-010–013 |
-| FPORT-007 | Implement `GET /api/facility/requests` | PENDING | Code Agent | Filters + pagination |
-| FPORT-008 | Implement `GET /api/facility/requests/[id]` | PENDING | Code Agent | Timeline + assignments |
-| FPORT-009 | Implement `createFacilityStaffingRequestAction` | PENDING | Code Agent | Request + shift FPORT-028 |
-| FPORT-010 | Create `app/(facility)/layout.tsx` with nav | PENDING | Code Agent | Dashboard, Requests |
-| FPORT-011 | Build `/facility/dashboard` page | PENDING | Code Agent | KPI cards + snippets |
-| FPORT-012 | Build `/facility/requests` list page | PENDING | Code Agent | Table/cards responsive |
-| FPORT-013 | Build `/facility/requests/new` form | PENDING | Code Agent | RHF + Zod |
-| FPORT-014 | Build `/facility/requests/[id]` detail page | PENDING | Code Agent | Timeline + assigned staff |
-| FPORT-015 | Build `FulfillmentTimeline` component | PENDING | Code Agent | |
-| FPORT-016 | Build `AssignedProfessionalCard` read-only | PENDING | Code Agent | |
-| FPORT-017 | No-facility-linked empty state | PENDING | Code Agent | |
-| FPORT-018 | Submit button disable / idempotency FPORT-031 | PENDING | Code Agent | |
-| FPORT-019 | Verify `path-access.ts` `/facility` prefix | PENDING | Code Agent | |
-| FPORT-020 | Run lint, typecheck, build | PENDING | Code Agent | |
-| FPORT-021 | Mark READY_FOR_TEST | PENDING | Code Agent | |
+| FPORT-001 | Create `lib/facility/resolve-facility.ts` from accepted invite | READY_FOR_TEST | Code Agent | email + role match |
+| FPORT-002 | Create `lib/validations/facility-staffing-request.ts` | READY_FOR_TEST | Code Agent | FPORT-027 |
+| FPORT-003 | Create `lib/facility/fulfillment-timeline.ts` | READY_FOR_TEST | Code Agent | Pure step derivation |
+| FPORT-004 | Add `requireFacilityContext` auth helper | READY_FOR_TEST | Code Agent | facilityId + agencyId |
+| FPORT-005 | Implement `GET /api/facility/context` | READY_FOR_TEST | Code Agent | |
+| FPORT-006 | Implement `GET /api/facility/dashboard` | READY_FOR_TEST | Code Agent | KPIs FPORT-010–013 |
+| FPORT-007 | Implement `GET /api/facility/requests` | READY_FOR_TEST | Code Agent | Filters + pagination |
+| FPORT-008 | Implement `GET /api/facility/requests/[id]` | READY_FOR_TEST | Code Agent | Timeline + assignments |
+| FPORT-009 | Implement `createFacilityStaffingRequestAction` | READY_FOR_TEST | Code Agent | Request + shift FPORT-028 |
+| FPORT-010 | Create `app/facility/layout.tsx` with nav | READY_FOR_TEST | Code Agent | Dashboard, Requests |
+| FPORT-011 | Build `/facility/dashboard` page | READY_FOR_TEST | Code Agent | KPI cards + snippets |
+| FPORT-012 | Build `/facility/requests` list page | READY_FOR_TEST | Code Agent | Table/cards responsive |
+| FPORT-013 | Build `/facility/requests/new` form | READY_FOR_TEST | Code Agent | RHF + Zod |
+| FPORT-014 | Build `/facility/requests/[id]` detail page | READY_FOR_TEST | Code Agent | Timeline + assigned staff |
+| FPORT-015 | Build `FulfillmentTimeline` component | READY_FOR_TEST | Code Agent | |
+| FPORT-016 | Build `AssignedProfessionalCard` read-only | READY_FOR_TEST | Code Agent | |
+| FPORT-017 | No-facility-linked empty state | READY_FOR_TEST | Code Agent | |
+| FPORT-018 | Submit button disable / idempotency FPORT-031 | READY_FOR_TEST | Code Agent | disable while submitting |
+| FPORT-019 | Verify `path-access.ts` `/facility` prefix | READY_FOR_TEST | Code Agent | existing middleware |
+| FPORT-020 | Run lint, typecheck, build | READY_FOR_TEST | Code Agent | build passes |
+| FPORT-021 | Mark READY_FOR_TEST | READY_FOR_TEST | Code Agent | |
 
 ---
 

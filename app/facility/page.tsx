@@ -1,5 +1,5 @@
-import { FacilityApp } from "@/components/facility-app";
+import { redirect } from "next/navigation";
 
-export default function FacilityPage() {
-  return <FacilityApp />;
+export default function FacilityIndexPage() {
+  redirect("/facility/dashboard");
 }
