@@ -1,16 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Icon, Avatar } from "@/components/primitives";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { SignOutButton } from "@/components/sign-out-button";
-import { canViewCompliance } from "@/lib/auth/compliance-access-rules";
+import { AgencySidebar } from "@/components/agency-sidebar";
 import { canViewStaffingRequests } from "@/lib/auth/staffing-requests-access-rules";
-import { AGENCY_SIDEBAR_NAV } from "@/lib/navigation/agency-sidebar-nav";
-
-const NAV = AGENCY_SIDEBAR_NAV;
 
 function LogoMark() {
   return (
@@ -44,9 +39,6 @@ export function AgencyShell({
 }) {
   const pathname = usePathname();
   const [routedBadgeCount, setRoutedBadgeCount] = useState(0);
-  const navItems = NAV.filter(
-    (n) => n.id !== "compliance" || canViewCompliance(primaryRole),
-  );
 
   useEffect(() => {
     if (!canViewStaffingRequests(primaryRole)) return;
@@ -63,70 +55,16 @@ export function AgencyShell({
       cancelled = true;
     };
   }, [primaryRole, pathname]);
-  const agencyInitials = agencyName
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0] ?? "")
-    .join("")
-    .toUpperCase();
-
-  const activeNav =
-    [...navItems]
-      .sort((a, b) => b.href.length - a.href.length)
-      .find(
-        (n) =>
-          pathname === n.href ||
-          (n.href !== "/dashboard" && pathname.startsWith(`${n.href}/`)),
-      )?.id ?? (pathname.startsWith("/dashboard") ? "dashboard" : "workforce");
 
   return (
     <div className="h-screen bg-paper text-ink-900 flex overflow-hidden">
-      <aside className="hidden md:flex w-[232px] shrink-0 h-full border-r border-ink-200/70 bg-paper flex-col overflow-hidden">
-        <div className="px-4 h-14 flex items-center gap-2 border-b border-ink-200/70">
-          <LogoMark />
-          <span className="font-semibold tracking-tight text-[15px]">AsNeeded</span>
-        </div>
-        <div className="mx-3 mt-3 px-2.5 py-2 rounded-lg border border-ink-200 bg-white flex items-center gap-2.5">
-          <span className="w-7 h-7 rounded-md bg-teal-700 text-white inline-flex items-center justify-center font-mono text-[11px] shrink-0">
-            {agencyInitials || "AG"}
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="text-[12px] font-medium tracking-tight truncate">{agencyName}</div>
-          </div>
-        </div>
-        <nav className="px-2 mt-3 flex flex-col gap-px">
-          {navItems.map((n) => {
-            const active = activeNav === n.id;
-            return (
-              <Link
-                key={n.id}
-                href={n.href}
-                className={`group flex items-center gap-2.5 px-2.5 h-9 rounded-md text-[13px] tracking-tight ${
-                  active ? "bg-ink-900 text-paper" : "text-ink-700 hover:bg-ink-100"
-                }`}
-              >
-                <Icon
-                  name={n.icon}
-                  className={`w-4 h-4 ${active ? "text-paper" : "text-ink-500 group-hover:text-ink-800"}`}
-                />
-                <span className="flex-1 text-left">{n.label}</span>
-                {"badge" in n && n.badge === "routed" && routedBadgeCount > 0 ? (
-                  <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-white text-[10px] font-mono inline-flex items-center justify-center">
-                    {routedBadgeCount > 99 ? "99+" : routedBadgeCount}
-                  </span>
-                ) : null}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="mt-auto shrink-0 p-3 border-t border-ink-200/70 space-y-1">
-          <div className="w-full flex items-center gap-2 px-2 h-9 rounded-md text-[13px] text-ink-800">
-            <Avatar initials={userInitials} tone="teal" size={20} />
-            <div className="flex-1 text-left text-[12px] tracking-tight truncate">{userName}</div>
-          </div>
-          <SignOutButton variant="sidebar" />
-        </div>
-      </aside>
+      <AgencySidebar
+        agencyName={agencyName}
+        userName={userName}
+        userInitials={userInitials}
+        primaryRole={primaryRole}
+        routedBadgeCount={routedBadgeCount}
+      />
       <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
         <header className="shrink-0 z-30 h-14 bg-paper/85 backdrop-blur border-b border-ink-200/70">
           <div className="h-full px-4 md:px-6 flex items-center gap-3 min-w-0">

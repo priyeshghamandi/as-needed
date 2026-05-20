@@ -2,12 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { canViewCompliance } from "@/lib/auth/compliance-access-rules";
 import { Icon, Badge, Dot, Avatar, AvatarStack, Eyebrow } from "@/components/primitives";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { CriticalAlertBanner, type CriticalAlert } from "@/components/notifications/critical-alert-banner";
-import { AGENCY_SIDEBAR_NAV } from "@/lib/navigation/agency-sidebar-nav";
+import { AgencySidebar } from "@/components/agency-sidebar";
 import { SignOutButton } from "@/components/sign-out-button";
 import { RecentActivityFeed } from "@/components/activity/recent-activity-feed";
 import type { ActivityLogItem } from "@/lib/activity/types";
@@ -58,10 +56,6 @@ const ROLE_LABELS: Record<string, string> = {
   other: "Other",
 };
 
-// ───────────── Sidebar ─────────────
-
-const NAV = AGENCY_SIDEBAR_NAV;
-
 function LogoMark() {
   return (
     <span className="relative w-7 h-7 rounded-lg bg-ink-900 inline-flex items-center justify-center">
@@ -71,88 +65,15 @@ function LogoMark() {
   );
 }
 
-function Sidebar({
-  agencyName,
-  userName,
-  userInitials,
-  primaryRole,
-}: {
-  agencyName: string;
-  userName: string;
-  userInitials: string;
-  primaryRole: string;
-}) {
-  const pathname = usePathname();
-  const navItems = NAV.filter(
-    (n) => n.id !== "compliance" || canViewCompliance(primaryRole),
-  );
-  const activeNav =
-    NAV.find(
-      (n) => pathname === n.href || (n.href !== "/dashboard" && pathname.startsWith(`${n.href}/`)),
-    )?.id ?? "dashboard";
-
-  const initials = agencyName
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0] ?? "")
-    .join("")
-    .toUpperCase();
-
+function OpsSidebarFooter() {
   return (
-    <aside className="hidden md:flex w-[232px] shrink-0 h-full border-r border-ink-200/70 bg-paper flex-col overflow-hidden">
-      <div className="px-4 h-14 flex items-center gap-2 border-b border-ink-200/70">
-        <LogoMark />
-        <span className="font-semibold tracking-tight text-[15px]">AsNeeded</span>
-        <button className="ml-auto w-6 h-6 rounded inline-flex items-center justify-center hover:bg-ink-100 text-ink-500">
-          <Icon name="chevrons-left" className="w-3.5 h-3.5" />
-        </button>
+    <div className="rounded-lg border border-ink-200 bg-white p-3">
+      <div className="flex items-center gap-2">
+        <Dot tone="green" pulse />
+        <div className="text-[11px] font-mono text-ink-700">All systems operational</div>
       </div>
-
-      <div className="mx-3 mt-3 px-2.5 py-2 rounded-lg border border-ink-200 bg-white flex items-center gap-2.5">
-        <span className="w-7 h-7 rounded-md bg-teal-700 text-white inline-flex items-center justify-center font-mono text-[11px] shrink-0">
-          {initials || "AG"}
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="text-[12px] font-medium tracking-tight truncate">{agencyName}</div>
-        </div>
-      </div>
-
-      <nav className="px-2 mt-3 flex flex-col gap-px">
-        {navItems.map((n) => {
-          const active = activeNav === n.id;
-          return (
-            <Link
-              key={n.id}
-              href={n.href}
-              className={`group flex items-center gap-2.5 px-2.5 h-9 rounded-md text-[13px] tracking-tight ${
-                active ? "bg-ink-900 text-paper" : "text-ink-700 hover:bg-ink-100"
-              }`}
-            >
-              <Icon
-                name={n.icon}
-                className={`w-4 h-4 ${active ? "text-paper" : "text-ink-500 group-hover:text-ink-800"}`}
-              />
-              <span className="flex-1 text-left">{n.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="mt-auto p-3">
-        <div className="rounded-lg border border-ink-200 bg-white p-3">
-          <div className="flex items-center gap-2">
-            <Dot tone="green" pulse />
-            <div className="text-[11px] font-mono text-ink-700">All systems operational</div>
-          </div>
-          <div className="mt-1.5 text-[10px] font-mono text-ink-500">SOC 2 · HIPAA · 99.95% uptime</div>
-        </div>
-        <div className="mt-3 w-full flex items-center gap-2 px-2 h-9 rounded-md text-[13px] text-ink-800">
-          <Avatar initials={userInitials} tone="teal" size={20} />
-          <div className="flex-1 text-left text-[12px] tracking-tight truncate">{userName}</div>
-        </div>
-        <SignOutButton variant="sidebar" className="mt-1" />
-      </div>
-    </aside>
+      <div className="mt-1.5 text-[10px] font-mono text-ink-500">SOC 2 · HIPAA · 99.95% uptime</div>
+    </div>
   );
 }
 
@@ -754,11 +675,12 @@ export function OpsApp({
 
   return (
     <div className="h-screen bg-paper text-ink-900 flex overflow-hidden">
-      <Sidebar
+      <AgencySidebar
         agencyName={agencyName}
         userName={userName}
         userInitials={userInitials}
         primaryRole={primaryRole}
+        footer={<OpsSidebarFooter />}
       />
       <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
         <Topbar unreadCount={unreadCount} />
