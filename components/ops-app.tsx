@@ -661,17 +661,18 @@ export function OpsApp({
   activityCursor,
 }: OpsAppProps) {
   const [dateStr, setDateStr] = useState("");
+  const [greeting, setGreeting] = useState("");
 
   useEffect(() => {
     const now = new Date();
     setDateStr(
       now.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" }),
     );
+    const hour = now.getHours();
+    setGreeting(hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening");
   }, []);
 
   const firstName = userName.split(" ")[0] ?? userName;
-  const hour = typeof window !== "undefined" ? new Date().getHours() : 12;
-  const greeting = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
 
   return (
     <div className="h-screen bg-paper text-ink-900 flex overflow-hidden">
@@ -691,7 +692,7 @@ export function OpsApp({
             <div>
               <Eyebrow><span suppressHydrationWarning>{dateStr || " "}</span></Eyebrow>
               <h1 className="mt-1 text-[22px] md:text-[28px] leading-tight tracking-[-0.01em] font-medium">
-                Good {greeting}, {firstName}.
+                Good {greeting || "day"}, {firstName}.
                 {/* <div className="font-serif italic text-teal-800"> Operations board.</div> */}
               </h1>
             </div>
